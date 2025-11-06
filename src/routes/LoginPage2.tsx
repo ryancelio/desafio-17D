@@ -5,11 +5,11 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   FacebookAuthProvider,
-  type User,
 } from "firebase/auth";
 import { auth } from "../firebase";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router"; // 👈 CORRIGIDO
 import { FaGoogle, FaFacebookF, FaLock } from "react-icons/fa6";
+import apiClient, { isApiError } from "../api/apiClient"; // 👈 ATUALIZADO
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -28,7 +28,6 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
     if (password.length < 6) {
       setError("Senha deve ter pelo menos 6 caracteres");
       setLoading(false);
@@ -36,44 +35,58 @@ export default function LoginPage() {
     }
 
     try {
+      // 1. Autentica com o Firebase
       await signInWithEmailAndPassword(auth, email, password);
+      // O 'auth.currentUser' agora está definido
+
+      // 2. 👈 ATUALIZADO: Sincroniza com o backend PHP
+      // O interceptor do axios cuida do token.
+      // Passamos apenas o 'nome' (extraído do email) como fallback.
+      await apiClient.syncUser({
+        nome: email.split("@")[0] || "Novo Usuário",
+      });
+
+      // 3. Navega para o dashboard
       navigate("/dashboard");
-    } catch (err) {
-      setError("Email ou senha inválidos.");
+    } catch (err: unknown) {
+      // 👈 ATUALIZADO: Tratamento de erro tipado
+      if (isApiError(err)) {
+        // Erro vindo do nosso backend PHP (ex: token inválido)
+        setError(err.response?.data.error || "Erro de API");
+      } else {
+        // Erro vindo do Firebase (ex: auth/wrong-password)
+        setError("Email ou senha inválidos.");
+      }
       console.error(err);
     } finally {
       setLoading(false);
     }
   }
 
-  async function ensureUserInMySQL(user: User) {
-    try {
-      await fetch("https://seudominio.com/api/sync_user.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          nome: user.displayName || "",
-          isActive: false,
-        }),
-      });
-    } catch (err) {
-      console.error("Erro ao sincronizar usuário com MySQL:", err);
-    }
-  }
-
   async function handleGoogleLogin() {
     const provider = new GoogleAuthProvider();
     setLoading(true);
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      await ensureUserInMySQL(user);
+    setError(null);
 
+    try {
+      // 1. Autentica com o Firebase
+      const result = await signInWithPopup(auth, provider);
+
+      // 2. 👈 ATUALIZADO: Sincroniza com o backend PHP
+      // Passamos o displayName do Google, se existir.
+      await apiClient.syncUser({
+        nome: result.user.displayName || undefined,
+      });
+
+      // 3. Navega para o dashboard
       navigate("/dashboard");
-    } catch (err) {
-      setError("Erro ao entrar com o Google.");
+    } catch (err: unknown) {
+      // 👈 ATUALIZADO: Tratamento de erro tipado
+      if (isApiError(err)) {
+        setError(err.response?.data.error || "Erro de API");
+      } else {
+        setError("Erro ao entrar com o Google.");
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -83,14 +96,27 @@ export default function LoginPage() {
   async function handleFacebookLogin() {
     const provider = new FacebookAuthProvider();
     setLoading(true);
-    try {
-      const response = await signInWithPopup(auth, provider);
-      const user = response.user;
-      await ensureUserInMySQL(user);
+    setError(null);
 
+    try {
+      // 1. Autentica com o Firebase
+      const response = await signInWithPopup(auth, provider);
+
+      // 2. 👈 ATUALIZADO: Sincroniza com o backend PHP
+      // Passamos o displayName do Facebook, se existir.
+      await apiClient.syncUser({
+        nome: response.user.displayName || undefined,
+      });
+
+      // 3. Navega para o dashboard
       navigate("/dashboard");
-    } catch (err) {
-      setError("Erro ao entrar com o Facebook.");
+    } catch (err: unknown) {
+      // 👈 ATUALIZADO: Tratamento de erro tipado
+      if (isApiError(err)) {
+        setError(err.response?.data.error || "Erro de API");
+      } else {
+        setError("Erro ao entrar com o Facebook.");
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -105,6 +131,8 @@ export default function LoginPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md bg-white/80 dark:bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl dark:shadow-[#a8f3dc] border border-white/40"
       >
+        {/* ... O resto do seu JSX (UI) permanece o mesmo ... */}
+        {/* Nenhuma mudança visual é necessária */}
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
