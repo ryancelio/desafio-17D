@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
-import { useNavigate } from "react-router";
+import { auth } from "../firebase";
+import { useNavigate, Link } from "react-router"; // 👈 ATUALIZADO
 import { FaUserPlus } from "react-icons/fa6";
+import apiClient, { isApiError } from "../api/apiClient"; // 👈 NOVO
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -38,27 +38,33 @@ export default function SignUpPage() {
     }
 
     try {
-      // Cria o usuário no Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      // 1. Cria o usuário no Firebase Auth
+      await createUserWithEmailAndPassword(auth, email, password);
+      // O 'auth.currentUser' agora está definido e o interceptor do axios o pegará
 
-      const user = userCredential.user;
-
-      // Cria o documento do usuário no Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        email,
-        nome: "",
-        isActive: false,
-        createdAt: serverTimestamp(),
+      // 2. 👈 ATUALIZADO: Sincroniza o usuário com o backend MySQL
+      // Removemos a lógica do Firestore e chamamos nossa API.
+      await apiClient.syncUser({
+        nome: email.split("@")[0] || "Novo Usuário", // Envia um nome padrão
       });
 
+      // 3. Navega para o dashboard
       navigate("/dashboard");
     } catch (err) {
+      // 'any' para capturar o '.code' do Firebase
       console.error(err);
-      setError("Erro ao criar conta. Tente novamente.");
+
+      // 4. 👈 ATUALIZADO: Tratamento de erro aprimorado
+      if (isApiError(err)) {
+        // Erro vindo do nosso backend PHP
+        setError(err.response?.data.error || "Erro de API");
+      } else if (err.code === "auth/email-already-in-use") {
+        // Erro específico do Firebase
+        setError("Este e-mail já está em uso.");
+      } else {
+        // Outro erro
+        setError("Erro ao criar conta. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -157,12 +163,12 @@ export default function SignUpPage() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Já tem uma conta?{" "}
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="text-[#ff7da2] hover:underline font-medium"
           >
             Entrar
-          </a>
+          </Link>
         </p>
       </motion.div>
     </div>
