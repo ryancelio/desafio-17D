@@ -8,12 +8,48 @@ import { auth } from "../firebase"; // 👈 Importe sua instância 'auth' do Fir
  * Corresponde ao JSON de 'get_user.php'.
  */
 export interface UserProfile {
+  // --- Dados de Autenticação (Sempre existem) ---
   uid: string;
   email: string;
   nome: string;
-  isActive: boolean; // O PHP converte para (bool)
+  isActive: boolean;
   createdAt: string;
   updatedAt: string | null;
+
+  // --- Dados de Perfil (Podem ser nulos antes do onboarding) ---
+  data_nascimento: string | null;
+  altura_cm: number | null;
+  genero: "masculino" | "feminino" | "outro" | null;
+
+  // --- Dados de Fitness (Têm valor DEFAULT no DB, não são nulos) ---
+  objetivo_atual: "perder_peso" | "manter_peso" | "ganhar_massa";
+  nivel_atividade: "sedentario" | "leve" | "moderado" | "ativo" | "muito_ativo";
+
+  // --- Dias de Treino (O PHP envia `[]` se for nulo) ---
+  dias_treino: ("DOM" | "SEG" | "TER" | "QUA" | "QUI" | "SEX" | "SAB")[];
+}
+
+export interface userPreferences {
+  preference_id: number;
+  user_uid: string;
+  tipo_restricao:
+    | "alergia"
+    | "intolerancia"
+    | "preferencia"
+    | "limitacao_fisica";
+  valor: string;
+}
+
+export interface userMeasurements {
+  measurement_id: number;
+  user_uid: string;
+  data_medicao: string;
+  peso_kg: number;
+  cintura_cm: number | null;
+  quadril_cm: number | null;
+  braco_cm: number | null;
+  coxa_cm: number | null;
+  createdAt: string | null;
 }
 
 /**

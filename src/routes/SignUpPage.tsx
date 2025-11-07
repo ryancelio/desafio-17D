@@ -45,7 +45,7 @@ export default function SignUpPage() {
       // 2. 👈 ATUALIZADO: Sincroniza o usuário com o backend MySQL
       // Removemos a lógica do Firestore e chamamos nossa API.
       await apiClient.syncUser({
-        nome: email.split("@")[0] || "Novo Usuário", // Envia um nome padrão
+        nome: email.split("@")[0] || "", // Envia um nome padrão
       });
 
       // 3. Navega para o dashboard
@@ -58,6 +58,7 @@ export default function SignUpPage() {
       if (isApiError(err)) {
         // Erro vindo do nosso backend PHP
         setError(err.response?.data.error || "Erro de API");
+        // @ts-expect-error Firebase Error
       } else if (err.code === "auth/email-already-in-use") {
         // Erro específico do Firebase
         setError("Este e-mail já está em uso.");
