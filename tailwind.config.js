@@ -1,29 +1,19 @@
-// tailwind.config.js
-import forms from "@tailwindcss/forms";
-
+/** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // <-- Verifique se este caminho está correto
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        // <-- Precisa estar em 'colors'
-        "pastel-pink": "#FCC3D2",
-        "pastel-mint": "#A8F3DC",
-      },
-      ringColor: {
-        // <-- 'ringColor' é o correto para 'focus:ring-'
-        "pastel-mint": "#A8F3DC",
-        "pastel-pink": "#FCC3D2",
-      },
-      borderColor: {
-        // <-- 'borderColor' é o correto para 'focus:border-'
-        "pastel-mint": "#A8F3DC",
-        "pastel-pink": "#FCC3D2",
+        "primary-pastel": "#FCC3D2", // Rosa
+        "secondary-pastel": "#A8F3DC", // Menta
+        "pastel-bg": "#F9F9F9", // Um fundo neutro e suave
+        "text-dark": "#333333",
+        "text-light": "#555555",
       },
     },
   },
-  plugins: [forms],
+  plugins: [
+    // Recomendado para estilização de formulários
+    require("@tailwindcss/forms"),
+  ],
 };
