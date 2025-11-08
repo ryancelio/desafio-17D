@@ -17,6 +17,7 @@ import Dashboard from "./routes/protected/dashboard/Dashboard.tsx";
 import Step1_Profile from "./routes/onboarding/steps/Step1_Profile.tsx";
 import OnboardingLayout from "./routes/onboarding/OnboardingLayout.tsx";
 import OnboardingProvider from "./context/OnboardingContext.tsx";
+import Step2_Goals from "./routes/onboarding/steps/Step2_Goals.tsx";
 
 const needsOnboarding = true;
 
@@ -59,7 +60,7 @@ createRoot(document.getElementById("root")!).render(
             {/* Redireciona /onboarding para a primeira etapa */}
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="profile" element={<Step1_Profile />} />
-            {/* <Route path="goals" element={<Step2_Goals />} /> */}
+            <Route path="goals" element={<Step2_Goals />} />
             {/* <Route path="measurements" element={<Step3_Measurements />} /> */}
             {/* <Route path="preferences" element={<Step4_Preferences />} /> */}
             {/* <Route path="complete" element={<Step5_Complete />} /> */}
