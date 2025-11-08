@@ -14,8 +14,9 @@ import ProtectedRoute from "./routes/ProtectedRoute.tsx";
 import Dashboard from "./routes/protected/dashboard/Dashboard.tsx";
 // import Step5_Complete from "./routes/onboarding/steps/Step5_Complete.tsx";
 // import Step4_Preferences from "./routes/onboarding/steps/Step4_Preferences.tsx";
-// import Step1_Profile from "./routes/onboarding/steps/Step1_Profile.tsx";
+import Step1_Profile from "./routes/onboarding/steps/Step1_Profile.tsx";
 import OnboardingLayout from "./routes/onboarding/OnboardingLayout.tsx";
+import OnboardingProvider from "./context/OnboardingContext.tsx";
 
 const needsOnboarding = true;
 
@@ -45,7 +46,10 @@ createRoot(document.getElementById("root")!).render(
             element={
               <ProtectedRoute>
                 {needsOnboarding ? (
-                  <OnboardingLayout />
+                  // Needs to collect data
+                  <OnboardingProvider>
+                    <OnboardingLayout />
+                  </OnboardingProvider>
                 ) : (
                   <Navigate to="/dashboard" />
                 )}
@@ -54,7 +58,7 @@ createRoot(document.getElementById("root")!).render(
           >
             {/* Redireciona /onboarding para a primeira etapa */}
             <Route index element={<Navigate to="profile" replace />} />
-            {/* <Route path="profile" element={<Step1_Profile />} /> */}
+            <Route path="profile" element={<Step1_Profile />} />
             {/* <Route path="goals" element={<Step2_Goals />} /> */}
             {/* <Route path="measurements" element={<Step3_Measurements />} /> */}
             {/* <Route path="preferences" element={<Step4_Preferences />} /> */}
