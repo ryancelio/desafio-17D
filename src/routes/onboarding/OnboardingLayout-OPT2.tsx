@@ -1,5 +1,10 @@
 import { useLocation, useNavigate, useOutlet } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  type Transition,
+  type Variants,
+} from "framer-motion";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { cloneElement, useMemo, useState, ReactElement } from "react";
 import { useAuth } from "../../context/AuthContext";
@@ -52,7 +57,7 @@ export default function OnboardingLayout(): JSX.Element {
   };
 
   // --- Animations ---
-  const pageVariants = {
+  const pageVariants: Variants = {
     enter: (direction: 1 | -1) => ({
       x: direction > 0 ? 100 : -100,
       opacity: 0,
@@ -72,7 +77,7 @@ export default function OnboardingLayout(): JSX.Element {
     }),
   };
 
-  const buttonSpring = {
+  const buttonSpring: Transition = {
     type: "spring",
     stiffness: 500,
     damping: 25,
@@ -81,12 +86,12 @@ export default function OnboardingLayout(): JSX.Element {
   return (
     <div
       className="min-h-screen w-full flex items-center justify-center 
-                 bg-gradient-to-br from-[#FCE4EC] via-[#E3FCEF] to-[#FFF8E1] 
+                 bg-linear-to-br from-[#FCE4EC] via-[#E3FCEF] to-[#FFF8E1] 
                  overflow-hidden relative"
     >
       {/* Subtle animated background gradient */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-tr from-[#FDCFE8] via-[#CFFFE2] to-[#FCEFCF] opacity-70"
+        className="absolute inset-0 bg-linear-to-tr from-[#FDCFE8] via-[#CFFFE2] to-[#FCEFCF] opacity-70"
         animate={{
           backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
         }}

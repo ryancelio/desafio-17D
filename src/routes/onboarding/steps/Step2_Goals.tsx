@@ -7,6 +7,7 @@ import type {
 } from "../../../types/onboarding";
 import { LuMoon } from "react-icons/lu";
 import { GrRun } from "react-icons/gr";
+import { useEffect } from "react";
 
 const diasSemana: { label: string; value: DiaSemana }[] = [
   { label: "Dom", value: "DOM" },
@@ -27,12 +28,13 @@ const activityLevels = [
 ];
 const objetivos = [
   { value: "perder_peso", label: "Perder Peso" },
-  { value: "manter_peso", label: "Definir" },
+  { value: "definir", label: "Definir" },
   { value: "ganhar_massa", label: "Ganhar Massa" },
 ];
 
 export default function Step2_Goals() {
-  const { onboardingData, updateOnboardingData } = useOnboarding();
+  const { onboardingData, updateOnboardingData, setStepValid } =
+    useOnboarding();
 
   const handleObjetivoClick = (value: Objetivo) => {
     updateOnboardingData({
@@ -78,6 +80,27 @@ export default function Step2_Goals() {
     }
   };
 
+  // Continue Check
+  useEffect(() => {
+    const objetivoValido = onboardingData.goals.objetivo_atual !== "";
+    const nivelAtividadeValido = onboardingData.goals.nivel_atividade !== "";
+    const diasTreinoValido = onboardingData.goals.dias_treino.length !== 0;
+
+    // console.log("Objetivo");
+    // console.log(objetivoValido);
+    // console.log(onboardingData.goals.objetivo_atual);
+
+    // console.log("Nivel AT");
+    // console.log(nivelAtividadeValido);
+    // console.log(onboardingData.goals.nivel_atividade);
+
+    // console.log("DiasTreino");
+    // console.log(diasTreinoValido);
+    // console.log(onboardingData.goals.dias_treino);
+
+    setStepValid(objetivoValido && nivelAtividadeValido && diasTreinoValido);
+  }, [onboardingData.goals, setStepValid]);
+
   return (
     <div className="space-y-6">
       {/* Objetivo Atual */}
@@ -87,7 +110,7 @@ export default function Step2_Goals() {
         transition={{ delay: 0.1 }}
       >
         <label className="block text-gray-700 font-medium mb-2">
-          Qual é o seu objetivo atual?
+          Qual é o seu objetivo atual?<span className="text-red-500"> *</span>
         </label>
 
         {/* Substituímos o 'select' por este 'div' */}
@@ -121,7 +144,8 @@ export default function Step2_Goals() {
         className="w-full my-10" // Garante que o container ocupe o espaço
       >
         <label className="block text-gray-700 font-medium mb-2">
-          Como você descreveria seu nível de atividade física?
+          Como você descreveria seu nível de atividade física?{" "}
+          <span className="text-red-500"> *</span>
         </label>
 
         {/* 5. Container com Ícones + Slider */}
@@ -166,7 +190,8 @@ export default function Step2_Goals() {
         transition={{ delay: 0.3 }}
       >
         <label className="block text-gray-700 font-medium mb-2">
-          Quais dias você pretende treinar?
+          Quais dias você pretende treinar?{" "}
+          <span className="text-red-500"> *</span>
         </label>
 
         <div className="grid grid-cols-4 gap-2">

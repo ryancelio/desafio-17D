@@ -3,7 +3,7 @@
 // --- Tipos baseados nos Enums/Sets do SQL ---
 
 export type Genero = "masculino" | "feminino" | "outro";
-export type Objetivo = "perder_peso" | "manter_peso" | "ganhar_massa";
+export type Objetivo = "perder_peso" | "definir" | "ganhar_massa";
 export type NivelAtividade =
   | "sedentario"
   | "leve"
@@ -50,6 +50,7 @@ export interface IMeasurementsData {
 export interface IPreference {
   tipo_restricao: TipoRestricao;
   valor: string;
+  id: string;
 }
 
 // --- Interface Completa do Store (Estado) ---

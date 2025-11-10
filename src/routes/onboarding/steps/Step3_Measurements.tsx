@@ -8,14 +8,15 @@ import maleBody from "../../../assets/body-male.svg";
 // import femaleBody from "../../../assets/body-female-tagged.svg";
 
 export default function Step3_Measurements() {
-  const { onboardingData, updateOnboardingData } = useOnboarding();
+  const { onboardingData, updateOnboardingData, setStepValid } =
+    useOnboarding();
   const [localMeasurements, setLocalMeasurements] = useState<IMeasurementsData>(
     onboardingData.measurements
   );
   const [highlightedPart, setHighlightedPart] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const genero = onboardingData.personal.genero;
+  // const genero = onboardingData.personal.genero;
   const bodyImage = maleBody; //genero === "feminino" ? femaleBody : maleBody;
 
   useEffect(() => {
@@ -187,6 +188,12 @@ export default function Step3_Measurements() {
     }
   }, [highlightedPart]);
 
+  useEffect(() => {
+    const pesoValido = onboardingData.measurements.peso_kg !== "";
+
+    setStepValid(pesoValido);
+  }, [onboardingData.measurements, setStepValid]);
+
   // If the gender changes, we should re-layout overlays when the new SVG is injected.
   // ReactSVG will call beforeInjection again for the new src.
 
@@ -210,13 +217,25 @@ export default function Step3_Measurements() {
             <motion.div
               key={part.name}
               whileHover={{ scale: 1.02 }}
-              className="flex flex-col"
+              className={
+                "flex flex-col " +
+                `${
+                  part.name === "peso_kg"
+                    ? "place-self-start col-span-2 w-fit"
+                    : ""
+                }`
+              }
             >
               <label
                 htmlFor={part.name}
                 className="text-gray-700 font-medium mb-1"
               >
                 {part.label}
+                {part.name === "peso_kg" ? (
+                  <span className="text-red-500"> *</span>
+                ) : (
+                  <></>
+                )}
               </label>
               <input
                 type="number"
@@ -273,7 +292,7 @@ export default function Step3_Measurements() {
           <div className="w-full h-full grid place-items-center">
             <ReactSVG
               src={bodyImage}
-              beforeInjection={(svg) => handleSVGReady(svg)}
+              beforeInjection={(svg: SVGSVGElement) => handleSVGReady(svg)}
               // ensure the outer wrapper doesn't add extra styles
               fallback={() => <div className="w-full h-full" />}
             />

@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import { fontFamily } from "tailwindcss/defaultTheme";
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
@@ -9,6 +10,9 @@ export default {
         "pastel-bg": "#F9F9F9", // Um fundo neutro e suave
         "text-dark": "#333333",
         "text-light": "#555555",
+      },
+      fontFamily: {
+        sans: ["Nunito Sans", ...fontFamily.sans],
       },
     },
   },

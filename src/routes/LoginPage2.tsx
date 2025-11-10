@@ -124,12 +124,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#fcc3d2] to-[#a8f3dc] dark:from-gray-900 dark:to-gray-800 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#fcc3d2] to-[#a8f3dc] transition-colors">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md bg-white/80 dark:bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl dark:shadow-[#a8f3dc] border border-white/40"
+        className="w-full max-w-md bg-white/80  backdrop-blur-md p-8 rounded-2xl shadow-2xl  border border-white/40"
       >
         {/* ... O resto do seu JSX (UI) permanece o mesmo ... */}
         {/* Nenhuma mudança visual é necessária */}
@@ -144,10 +144,10 @@ export default function LoginPage() {
               <FaLock className="text-white text-xl" />
             </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          <h1 className="text-2xl font-semibold text-gray-800 ">
             Bem-vindo de volta
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-600  mt-1">
             Entre com sua conta para continuar
           </p>
         </motion.div>
@@ -164,7 +164,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
@@ -172,13 +172,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#fcc3d2] focus:ring-2 focus:ring-[#ffafc1] focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white text-gray-800"
+              className="w-full mt-1 p-2 rounded-lg border border-[#fcc3d2] focus:ring-2 focus:ring-[#ffafc1] focus:outline-none text-gray-800"
               placeholder="seu@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-gray-700 ">
               Senha
             </label>
             <input
@@ -186,7 +186,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white text-gray-800"
+              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none text-gray-800"
               placeholder="••••••••"
             />
           </div>
@@ -213,7 +213,7 @@ export default function LoginPage() {
             whileHover={{ scale: 1.03 }}
             onClick={handleGoogleLogin}
             className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg border-gray-300 hover:bg-[#fef3f6]
-              dark:border-gray-700 dark:hover:bg-gray-800 cursor-pointer transition-all dark:text-gray-100 text-gray-700
+              cursor-pointer transition-all text-gray-700
               hover:border-[#ffafc1]
               `}
           >
@@ -224,7 +224,7 @@ export default function LoginPage() {
             whileHover={{ scale: 1.03 }}
             onClick={handleFacebookLogin}
             className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg border-gray-300 hover:bg-[#f2faff]
-              dark:border-gray-700 dark:hover:bg-gray-800 cursor-pointer transition-all dark:text-gray-100 text-gray-700
+              cursor-pointer transition-all text-gray-700
               hover:border-[#70f1cb]
               `}
           >
