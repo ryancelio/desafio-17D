@@ -19,11 +19,9 @@ export default function Step1_Profile() {
   useEffect(() => {
     const nomeValido = onboardingData.personal.nome.trim().length > 2;
     const generoValido = onboardingData.personal.genero !== "";
-    const dataValida = onboardingData.personal.data_nascimento != ""; // (Exemplo)
+    const dataValida = onboardingData.personal.data_nascimento != "";
 
-    console.log(nomeValido);
-    console.log(generoValido);
-    console.log(dataValida);
+    console.log(onboardingData.personal.data_nascimento);
 
     setStepValid(nomeValido && generoValido && dataValida);
   }, [onboardingData.personal, setStepValid]);

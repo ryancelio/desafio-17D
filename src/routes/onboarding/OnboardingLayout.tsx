@@ -114,10 +114,28 @@ export default function OnboardingLayout() {
     // TODO SUBMIT
     console.log(onboardingData);
   };
+  const progressPercentage = ((currentStep + 1) / (LAST_STEP + 1)) * 100;
 
   return (
     <div className="min-w-screen min-h-screen bg-linear-120 overflow-hidden from-[#FCC3D2] to-[#A8F3DC] grid place-items-center">
-      <div className="border-2 border-[#FCC3D2] relative w-[35%] h-[60%]  bg-gray-100 shadow-xl pb-4 pt-6 px-6 rounded-2xl">
+      <div className="border-2 border-[#FCC3D2] relative max-w-[35%]max-h-[75%] min-w-[35%] min-h-fit  bg-gray-100 shadow-xl pb-4 pt-6 px-6 rounded-2xl">
+        <div className="w-[99.6%] bg-gray-200 rounded-lg h-2.5 absolute top-0 left-0 right-0">
+          <motion.div
+            className="h-2.5 rounded-lg" // Remove 'rounded-full'
+            style={{
+              // Use o gradiente do seu tema
+              backgroundImage: "linear-gradient(to right, #FCC3D2, #A8F3DC)",
+            }}
+            initial={{ width: "0%" }}
+            animate={{ width: `${progressPercentage}%` }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 30,
+            }}
+          />
+        </div>
+
         <div className="flex flex-col w-full h-full">
           <div className="flex gap-2">
             <h1>User: {firebaseUser?.email}</h1>
@@ -142,8 +160,6 @@ export default function OnboardingLayout() {
           </AnimatePresence>
 
           <div className="h-10 text-center mt-1">
-            {" "}
-            {/* Aumentei a altura para py-2 */}
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -153,7 +169,7 @@ export default function OnboardingLayout() {
                   transition={{ type: "spring" }}
                   className="flex items-center justify-center gap-2 
                              bg-red-100 border border-red-300 text-red-700 
-                             px-3 py-2 rounded-lg text-sm font-medium"
+                             px-3 py-2 mt-4 rounded-lg text-sm font-medium"
                 >
                   <LuTriangleAlert className="w-4 h-4" />
                   <span>{error}</span>

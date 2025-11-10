@@ -72,12 +72,12 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#fcc3d2] to-[#a8f3dc] dark:from-gray-900 dark:to-gray-800 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#fcc3d2] to-[#a8f3dc] transition-colors">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md bg-white/80 dark:bg-gray-900/70 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/40 dark:shadow-[#fcc3d2]"
+        className="w-full max-w-md bg-white/80   backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/40 "
       >
         <motion.div
           initial={{ scale: 0.8 }}
@@ -90,10 +90,8 @@ export default function SignUpPage() {
               <FaUserPlus className="text-white text-xl" />
             </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
-            Criar conta
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h1 className="text-2xl font-semibold text-gray-800 ">Criar conta</h1>
+          <p className="text-sm text-gray-600  mt-1">
             Registre-se para começar sua jornada
           </p>
         </motion.div>
@@ -110,7 +108,7 @@ export default function SignUpPage() {
 
         <form onSubmit={handleSignUp} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
@@ -118,13 +116,13 @@ export default function SignUpPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#fcc3d2] focus:ring-2 focus:ring-[#ffafc1] focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              className="w-full mt-1 p-2 rounded-lg border border-[#fcc3d2] focus:ring-2 focus:ring-[#ffafc1] focus:outline-none"
               placeholder="seu@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               Senha
             </label>
             <input
@@ -132,13 +130,13 @@ export default function SignUpPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-gray-700 ">
               Confirmar Senha
             </label>
             <input
@@ -146,7 +144,7 @@ export default function SignUpPage() {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none "
               placeholder="••••••••"
             />
           </div>
