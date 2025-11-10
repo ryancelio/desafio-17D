@@ -1,16 +1,32 @@
+import { useEffect } from "react";
 import { useOnboarding } from "../../../context/OnboardingContext";
 import type { Genero } from "../../../types/onboarding";
 import GeneroButton from "../components/GeneroButton";
 import { motion } from "framer-motion";
 
 export default function Step1_Profile() {
-  const { onboardingData, updateOnboardingData } = useOnboarding();
+  const { onboardingData, updateOnboardingData, setStepValid } =
+    useOnboarding();
+
+  const currentGenero = onboardingData.personal.genero;
 
   const handleSetGenero = (value: Genero) => {
     updateOnboardingData({
       personal: { ...onboardingData.personal, genero: value },
     });
   };
+
+  useEffect(() => {
+    const nomeValido = onboardingData.personal.nome.trim().length > 2;
+    const generoValido = onboardingData.personal.genero !== "";
+    const dataValida = onboardingData.personal.data_nascimento != ""; // (Exemplo)
+
+    console.log(nomeValido);
+    console.log(generoValido);
+    console.log(dataValida);
+
+    setStepValid(nomeValido && generoValido && dataValida);
+  }, [onboardingData.personal, setStepValid]);
 
   return (
     <div>
@@ -65,7 +81,9 @@ export default function Step1_Profile() {
           }}
           viewport={{ once: true }}
         >
-          <label htmlFor="nome">Qual o seu nome?</label>
+          <label className="text-gray-800" htmlFor="nome">
+            Qual o seu nome?
+          </label>
           <input
             type="text"
             name="nome"
@@ -95,11 +113,22 @@ export default function Step1_Profile() {
           }}
           viewport={{ once: true }}
         >
-          <label htmlFor="nasc">Qual sua data de nascimento?</label>
+          <label className="text-gray-800" htmlFor="nasc">
+            Qual sua data de nascimento?
+          </label>
           <input
             type="date"
             name="nasc"
             id="nasc"
+            value={onboardingData.personal.data_nascimento}
+            onChange={(e) =>
+              updateOnboardingData({
+                personal: {
+                  ...onboardingData.personal,
+                  data_nascimento: e.target.value,
+                },
+              })
+            }
             className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none text-gray-800"
           />
         </motion.div>
@@ -115,23 +144,28 @@ export default function Step1_Profile() {
           }}
           viewport={{ once: true }}
         >
-          <label htmlFor="genero">Qual o seu genero?</label>
+          <label className="text-gray-800" htmlFor="genero">
+            Qual o seu genero?
+          </label>
           <div className="grid grid-cols-3 gap-4">
             <GeneroButton
               variant="masc"
               onClick={() => handleSetGenero("masculino")}
+              isSelected={currentGenero === "masculino"}
             >
               Masculino
             </GeneroButton>
             <GeneroButton
               variant="fem"
               onClick={() => handleSetGenero("feminino")}
+              isSelected={currentGenero === "feminino"}
             >
               Feminino
             </GeneroButton>
             <GeneroButton
               variant="neutral"
               onClick={() => handleSetGenero("outro")}
+              isSelected={currentGenero === "outro"}
             >
               Outro
             </GeneroButton>

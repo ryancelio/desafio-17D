@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -10,6 +11,8 @@ import { type OnboardingState } from "../types/onboarding";
 type OnboardingcontextType = {
   onboardingData: OnboardingState;
   updateOnboardingData: (data: Partial<OnboardingState>) => void;
+  isStepValid: boolean;
+  setStepValid: (isvalid: boolean) => void;
 };
 
 const initialState: OnboardingState = {
@@ -36,15 +39,21 @@ export default function OnboardingProvider({
 }) {
   const [onboardingData, setOnboardingData] =
     useState<OnboardingState>(initialState);
+  const [isStepValid, setStepValid] = useState(false);
 
   const handleUpdateData = useCallback((data: Partial<OnboardingState>) => {
     setOnboardingData((prev) => ({ ...prev, ...data }));
   }, []);
 
-  const contextValue: OnboardingcontextType = {
-    onboardingData,
-    updateOnboardingData: handleUpdateData,
-  };
+  const contextValue = useMemo(
+    () => ({
+      onboardingData,
+      updateOnboardingData: handleUpdateData,
+      isStepValid,
+      setStepValid,
+    }),
+    [onboardingData, handleUpdateData, isStepValid]
+  );
 
   return (
     <OnboardingContext.Provider value={contextValue}>
