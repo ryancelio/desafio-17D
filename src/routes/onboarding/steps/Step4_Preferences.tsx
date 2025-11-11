@@ -1,7 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { LuTrash2, LuPlus } from "react-icons/lu";
+import { LuTrash2, LuPlus, LuCircleAlert } from "react-icons/lu";
 import { useOnboarding } from "../../../context/OnboardingContext";
-import type { TipoRestricao } from "../../../types/onboarding";
+import {
+  step4PreferencesValidationSchema,
+  type TipoRestricao,
+} from "../../../types/onboarding.schema";
+import { useEffect, useState } from "react";
 
 const preferenciaOptions: { value: TipoRestricao; label: string }[] = [
   { value: "alergia", label: "Alergia" },
@@ -16,9 +20,44 @@ const listItemVariants = {
   visible: { opacity: 1, y: 0, scale: 1 },
   exit: { opacity: 0, x: -50, scale: 0.9 },
 };
+type PreferenceField = "valor" | "tipo_restricao";
 
 export default function Step4_Preferences() {
-  const { onboardingData, updateOnboardingData } = useOnboarding();
+  const { onboardingData, updateOnboardingData, setStepValid } =
+    useOnboarding();
+
+  const { preferences } = onboardingData;
+
+  // 2. Estados de Erro e Touched (usam ID do item como chave)
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // 3. Validação com Zod
+  useEffect(() => {
+    const result = step4PreferencesValidationSchema.safeParse(preferences);
+    setStepValid(result.success);
+
+    if (!result.success) {
+      const newErrors: Record<string, string | undefined> = {};
+      // Mapeia os erros para { id: "mensagem de erro" }
+      for (const issue of result.error.issues) {
+        const [index, field] = issue.path; // Ex: [0, "valor"]
+        const itemId = preferences[index as number]?.id; // Pega o ID
+        if (itemId && field === "valor") {
+          newErrors[itemId] = issue.message;
+        }
+      }
+      setErrors(newErrors);
+    } else {
+      setErrors({});
+    }
+  }, [preferences, setStepValid]);
+
+  const handleBlur = (id: string, field: PreferenceField) => {
+    // Usa "id.field" como chave, ex: "uuid-123.valor"
+    const touchKey = `${id}.${field}`;
+    setTouched((prev) => ({ ...prev, [touchKey]: true }));
+  };
 
   const handleAddPreferencia = () => {
     updateOnboardingData({
@@ -31,34 +70,45 @@ export default function Step4_Preferences() {
 
   // Atualiza o TIPO (select) de um item específico
   const handleTypeChange = (
-    index: number,
+    id: string,
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
     const newValue = e.target.value as TipoRestricao;
-    const newPrefs = onboardingData.preferences.map((item, i) =>
-      i === index ? { ...item, tipo_restricao: newValue } : item
+    const newPrefs = preferences.map((item) =>
+      item.id === id ? { ...item, tipo_restricao: newValue } : item
     );
     updateOnboardingData({ preferences: newPrefs });
+    handleBlur(id, "tipo_restricao");
   };
 
   // Atualiza o VALOR (input) de um item específico
   const handleValueChange = (
-    index: number,
+    id: string,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = e.target.value;
-    const newPrefs = onboardingData.preferences.map((item, i) =>
-      i === index ? { ...item, valor: newValue } : item
+    const newPrefs = preferences.map((item) =>
+      item.id === id ? { ...item, valor: newValue } : item
     );
     updateOnboardingData({ preferences: newPrefs });
   };
 
   // Remove um item específico
   const handleRemovePreference = (idToRemove: string) => {
-    const newPrefs = onboardingData.preferences.filter(
-      (item) => item.id !== idToRemove
-    );
+    const newPrefs = preferences.filter((item) => item.id !== idToRemove);
     updateOnboardingData({ preferences: newPrefs });
+    // (Opcional) Limpa o erro e o touched desse item
+    setErrors((prev) => {
+      const newState = { ...prev };
+      delete newState[idToRemove];
+      return newState;
+    });
+    setTouched((prev) => {
+      const newState = { ...prev };
+      delete newState[`${idToRemove}.valor`];
+      delete newState[`${idToRemove}.tipo_restricao`];
+      return newState;
+    });
   };
 
   function handleInputPlaceholder(tipo_restricao: TipoRestricao): string {
@@ -73,6 +123,27 @@ export default function Step4_Preferences() {
         return "Ex: Problema no ombro, no joelho";
     }
   }
+
+  // 5. Função de renderizar erro (verifica por ID)
+  const renderError = (id: string) => {
+    const touchKey = `${id}.valor`;
+    const error = errors[id];
+    if (!touched[touchKey] || !error) return null;
+
+    return (
+      <AnimatePresence>
+        <motion.p
+          className="flex items-center gap-1 text-sm text-red-600 mt-1"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
+          <LuCircleAlert className="w-4 h-4" />
+          {error}
+        </motion.p>
+      </AnimatePresence>
+    );
+  };
 
   return (
     <motion.div
@@ -104,7 +175,7 @@ export default function Step4_Preferences() {
             </motion.div>
           )}
 
-          {onboardingData.preferences.map((preferencia, index) => (
+          {onboardingData.preferences.map((preferencia) => (
             <motion.div
               key={preferencia.id}
               variants={listItemVariants}
@@ -112,12 +183,13 @@ export default function Step4_Preferences() {
               animate="visible"
               exit="exit"
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="flex items-center gap-2"
+              className="flex flex-wrap items-center gap-2"
             >
               {/* --- Select (Corrigido) --- */}
               <select
                 value={preferencia.tipo_restricao}
-                onChange={(e) => handleTypeChange(index, e)}
+                onChange={(e) => handleTypeChange(preferencia.id, e)}
+                onBlur={() => handleBlur(preferencia.id, "tipo_restricao")}
                 className="p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#A8F3DC] focus:outline-none text-sm"
               >
                 {preferenciaOptions.map((preferenciaOpt) => (
@@ -135,8 +207,13 @@ export default function Step4_Preferences() {
                 type="text"
                 placeholder={handleInputPlaceholder(preferencia.tipo_restricao)}
                 value={preferencia.valor}
-                onChange={(e) => handleValueChange(index, e)}
-                className="flex-1 w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#A8F3DC] focus:outline-none text-sm"
+                onChange={(e) => handleValueChange(preferencia.id, e)}
+                onBlur={() => handleBlur(preferencia.id, "valor")}
+                className={`flex-1 w-full p-2 rounded-lg border focus:outline-none text-sm ${
+                  touched[`${preferencia.id}.valor`] && errors[preferencia.id]
+                    ? "border-red-500 ring-2 ring-red-200"
+                    : "border-gray-300 focus:ring-2 focus:ring-[#A8F3DC]"
+                }`}
               />
 
               {/* --- 4. Botão de Remover --- */}
@@ -149,6 +226,13 @@ export default function Step4_Preferences() {
               >
                 <LuTrash2 className="w-5 h-5" />
               </motion.button>
+
+              {/* 7. Renderiza o erro (fora do wrapper do input) */}
+              <div className="w-full pl-36">
+                {" "}
+                {/* Alinha o erro com o input */}
+                {renderError(preferencia.id)}
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

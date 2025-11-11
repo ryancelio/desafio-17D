@@ -9,9 +9,9 @@ import { useOnboarding } from "../../context/OnboardingContext";
 import { cloneElement, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { LuTriangleAlert } from "react-icons/lu";
+import apiClient, { isApiError } from "../../api/apiClient";
 
 export default function OnboardingLayout() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { onboardingData, isStepValid } = useOnboarding();
   const { firebaseUser } = useAuth();
   const location = useLocation();
@@ -42,6 +42,7 @@ export default function OnboardingLayout() {
   const [animationDirection, setAnimationDirection] = useState(1); // 1 = next, -1 = prev
 
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setError(null);
@@ -50,6 +51,7 @@ export default function OnboardingLayout() {
   const buttonControls = useAnimation();
 
   useEffect(() => {
+    // Anima a cor do botão (verde na última etapa, rosa nas outras)
     buttonControls.start({
       backgroundColor: nextDisabled ? "#A8F3DC" : "#FCC3D2",
     });
@@ -110,10 +112,38 @@ export default function OnboardingLayout() {
     damping: 30,
   };
 
-  const handleSubmit = () => {
-    // TODO SUBMIT
-    console.log(onboardingData);
+  const handleSubmit = async () => {
+    if (isSubmitting) return; // Previne cliques duplos
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Chama a função do apiClient com os dados do contexto
+      const response = await apiClient.submitOnboarding(onboardingData);
+
+      console.log("API Response:", response.message);
+
+      // Sucesso! Redireciona o usuário para o dashboard
+      // (Certifique-se que a página /complete fez sua animação)
+      // Adicionamos um pequeno delay para o usuário ver a página "Complete"
+      setTimeout(() => {
+        navigate("/dashboard"); // ou qualquer que seja sua rota principal
+      }, 1500); // 1.5 segundos
+    } catch (err) {
+      // Lida com erros da API
+      if (isApiError(err)) {
+        setError(err.response?.data.error || "Falha ao enviar dados.");
+      } else {
+        setError("Ocorreu um erro inesperado. Tente novamente.");
+        console.error(err);
+      }
+      setIsSubmitting(false); // Permite tentar novamente em caso de erro
+    }
+    // 'setIsSubmitting(false)' não é chamado aqui em caso de SUCESSO,
+    // pois o usuário será redirecionado.
   };
+
   const progressPercentage = ((currentStep + 1) / (LAST_STEP + 1)) * 100;
 
   return (

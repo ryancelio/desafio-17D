@@ -1,13 +1,15 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useOnboarding } from "../../../context/OnboardingContext";
-import type {
-  DiaSemana,
-  NivelAtividade,
-  Objetivo,
-} from "../../../types/onboarding";
-import { LuMoon } from "react-icons/lu";
+import {
+  step2GoalsValidationSchema,
+  type DiaSemana,
+  type IGoalsData,
+  type NivelAtividade,
+  type Objetivo,
+} from "../../../types/onboarding.schema";
+import { LuCircleAlert, LuMoon } from "react-icons/lu";
 import { GrRun } from "react-icons/gr";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const diasSemana: { label: string; value: DiaSemana }[] = [
   { label: "Dom", value: "DOM" },
@@ -36,13 +38,24 @@ export default function Step2_Goals() {
   const { onboardingData, updateOnboardingData, setStepValid } =
     useOnboarding();
 
+  const { goals } = onboardingData;
+
+  type GoalsField = keyof IGoalsData;
+
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const handleBlur = (field: GoalsField) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   const handleObjetivoClick = (value: Objetivo) => {
     updateOnboardingData({
-      goals: {
-        ...onboardingData.goals,
-        objetivo_atual: value,
-      },
+      goals: { ...goals, objetivo_atual: value },
     });
+    if (!touched.objetivo_atual) {
+      handleBlur("objetivo_atual");
+    }
   };
 
   const currentLevel = activityLevels.find(
@@ -50,19 +63,19 @@ export default function Step2_Goals() {
   );
   const currentSliderValue = currentLevel ? currentLevel.num : 3;
   const currentLabel = currentLevel ? currentLevel.label : "Moderado";
+
   const toggleDia = (dia: DiaSemana) => {
-    const { dias_treino } = onboardingData.goals;
-    const alreadySelected = dias_treino.includes(dia);
-    const newList = alreadySelected
+    const { dias_treino } = goals;
+    const newList = dias_treino.includes(dia)
       ? dias_treino.filter((d) => d !== dia)
       : [...dias_treino, dia];
 
     updateOnboardingData({
-      goals: {
-        ...onboardingData.goals, // Mantém os outros valores
-        dias_treino: newList, // Atualiza os dias
-      },
+      goals: { ...goals, dias_treino: newList },
     });
+    if (!touched.dias_treino) {
+      handleBlur("dias_treino");
+    }
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,35 +84,47 @@ export default function Step2_Goals() {
 
     if (newLevel) {
       updateOnboardingData({
-        goals: {
-          ...onboardingData.goals,
-          // Armazena a *string* (ex: "moderado") no contexto
-          nivel_atividade: newLevel.value as NivelAtividade,
-        },
+        goals: { ...goals, nivel_atividade: newLevel.value as NivelAtividade },
       });
+    }
+    if (!touched.nivel_atividade) {
+      handleBlur("nivel_atividade");
     }
   };
 
   // Continue Check
   useEffect(() => {
-    const objetivoValido = onboardingData.goals.objetivo_atual !== "";
-    const nivelAtividadeValido = onboardingData.goals.nivel_atividade !== "";
-    const diasTreinoValido = onboardingData.goals.dias_treino.length !== 0;
+    const result = step2GoalsValidationSchema.safeParse(goals);
+    setStepValid(result.success);
 
-    // console.log("Objetivo");
-    // console.log(objetivoValido);
-    // console.log(onboardingData.goals.objetivo_atual);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setErrors({
+        objetivo_atual: fieldErrors.objetivo_atual?.[0],
+        nivel_atividade: fieldErrors.nivel_atividade?.[0],
+        dias_treino: fieldErrors.dias_treino?.[0],
+      });
+    } else {
+      setErrors({});
+    }
+  }, [goals, setStepValid]);
 
-    // console.log("Nivel AT");
-    // console.log(nivelAtividadeValido);
-    // console.log(onboardingData.goals.nivel_atividade);
-
-    // console.log("DiasTreino");
-    // console.log(diasTreinoValido);
-    // console.log(onboardingData.goals.dias_treino);
-
-    setStepValid(objetivoValido && nivelAtividadeValido && diasTreinoValido);
-  }, [onboardingData.goals, setStepValid]);
+  const renderError = (field: GoalsField) => {
+    if (!touched[field] || !errors[field]) return null;
+    return (
+      <AnimatePresence>
+        <motion.p
+          className="flex items-center gap-1 text-sm text-red-600 mt-2" // mt-2 para dar espaço
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
+          <LuCircleAlert className="w-4 h-4" />
+          {errors[field]}
+        </motion.p>
+      </AnimatePresence>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -134,6 +159,7 @@ export default function Step2_Goals() {
             );
           })}
         </div>
+        {renderError("objetivo_atual")}
       </motion.div>
 
       {/* Nível de Atividade */}
@@ -159,6 +185,8 @@ export default function Step2_Goals() {
             name="nivel_atividade"
             value={currentSliderValue}
             onChange={handleSliderChange}
+            onMouseUp={() => handleBlur("nivel_atividade")}
+            onTouchEnd={() => handleBlur("nivel_atividade")}
             // 6. Estilização do Slider com Tailwind
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer 
                        accent-[#FCC3D2] dark:accent-[#A8F3DC] 
@@ -181,6 +209,7 @@ export default function Step2_Goals() {
             {currentLabel}
           </motion.span>
         </div>
+        {renderError("nivel_atividade")}
       </motion.div>
 
       {/* Dias de Treino */}
@@ -214,6 +243,7 @@ export default function Step2_Goals() {
             );
           })}
         </div>
+        {renderError("dias_treino")}
       </motion.div>
     </div>
   );
