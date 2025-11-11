@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { type OnboardingState } from "../types/onboarding";
+import { type OnboardingState } from "../types/onboarding.schema";
 
 type OnboardingcontextType = {
   onboardingData: OnboardingState;

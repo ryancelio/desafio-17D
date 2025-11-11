@@ -1,18 +1,27 @@
 import { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useOnboarding } from "../../../context/OnboardingContext";
 import { ReactSVG } from "react-svg";
-import type { IMeasurementsData } from "../../../types/onboarding";
+import {
+  step3MeasurementValidationSchema,
+  type IMeasurementsData,
+} from "../../../types/onboarding.schema";
 
 import maleBody from "../../../assets/body-male.svg";
+import { LuCircleAlert } from "react-icons/lu";
 // import femaleBody from "../../../assets/body-female-tagged.svg";
+
+type MeasurementField = keyof IMeasurementsData;
 
 export default function Step3_Measurements() {
   const { onboardingData, updateOnboardingData, setStepValid } =
     useOnboarding();
-  const [localMeasurements, setLocalMeasurements] = useState<IMeasurementsData>(
-    onboardingData.measurements
-  );
+
+  const { measurements } = onboardingData; // Lê direto do contexto
+
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
   const [highlightedPart, setHighlightedPart] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -20,12 +29,57 @@ export default function Step3_Measurements() {
   const bodyImage = maleBody; //genero === "feminino" ? femaleBody : maleBody;
 
   useEffect(() => {
-    updateOnboardingData({ measurements: localMeasurements });
-  }, [localMeasurements, updateOnboardingData]);
+    const result = step3MeasurementValidationSchema.safeParse(measurements);
+    setStepValid(result.success);
 
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setErrors({
+        peso_kg: fieldErrors.peso_kg?.[0],
+        cintura_cm: fieldErrors.cintura_cm?.[0],
+        quadril_cm: fieldErrors.quadril_cm?.[0],
+        braco_cm: fieldErrors.braco_cm?.[0],
+        coxa_cm: fieldErrors.coxa_cm?.[0],
+      });
+    } else {
+      setErrors({});
+    }
+  }, [measurements, setStepValid]);
+
+  // 6. ATUALIZADO: Escreve direto no contexto e valida a entrada
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setLocalMeasurements((prev) => ({ ...prev, [name]: value }));
+    // Permite apenas strings vazias, números, ou um único ponto decimal
+    if (value === "" || /^[0-9]*\.?[0-9]*$/.test(value)) {
+      updateOnboardingData({
+        measurements: {
+          ...measurements,
+          [name]: value,
+        },
+      });
+    }
+  };
+
+  // 7. ADICIONADO: Handlers de 'blur' e 'renderError'
+  const handleBlur = (field: MeasurementField) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const renderError = (field: MeasurementField) => {
+    if (!touched[field] || !errors[field]) return null;
+    return (
+      <AnimatePresence>
+        <motion.p
+          className="flex items-center gap-1 text-sm text-red-600 mt-1"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+        >
+          <LuCircleAlert className="w-4 h-4" />
+          {errors[field]}
+        </motion.p>
+      </AnimatePresence>
+    );
   };
 
   const bodyParts = [
@@ -238,16 +292,25 @@ export default function Step3_Measurements() {
                 )}
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 id={part.name}
                 name={part.name}
-                value={localMeasurements[part.name as keyof IMeasurementsData]}
+                value={measurements[part.name as keyof IMeasurementsData]}
                 onChange={handleInputChange}
                 onFocus={() => setHighlightedPart(part.zone)}
-                onBlur={() => setHighlightedPart(null)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A8F3DC] focus:outline-none"
+                onBlur={() => {
+                  setHighlightedPart(null);
+                  handleBlur(part.name as keyof IMeasurementsData);
+                }}
+                className={`w-full p-2 border rounded-lg focus:outline-none ${
+                  touched[part.name] && errors[part.name]
+                    ? "border-red-500 ring-2 ring-red-200"
+                    : "border-gray-300 focus:ring-2 focus:ring-[#A8F3DC]"
+                }`}
                 placeholder="0"
               />
+              {renderError(part.name as keyof IMeasurementsData)}
             </motion.div>
           ))}
         </div>

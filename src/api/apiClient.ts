@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { auth } from "../firebase"; // 👈 Importe sua instância 'auth' do Firebase
+import type { OnboardingState } from "../types/onboarding.schema";
 
 // --- 1. DEFINIÇÃO DE TIPOS (Sem 'any') ---
 
@@ -22,7 +23,7 @@ export interface UserProfile {
   genero: "masculino" | "feminino" | "outro" | null;
 
   // --- Dados de Fitness (Têm valor DEFAULT no DB, não são nulos) ---
-  objetivo_atual: "perder_peso" | "manter_peso" | "ganhar_massa";
+  objetivo_atual: "perder_peso" | "definir" | "ganhar_massa";
   nivel_atividade: "sedentario" | "leve" | "moderado" | "ativo" | "muito_ativo";
 
   // --- Dias de Treino (O PHP envia `[]` se for nulo) ---
@@ -57,6 +58,11 @@ export interface userMeasurements {
  */
 export interface ApiResponse {
   message: string;
+}
+
+export interface WeightHistoryEntry {
+  data_medicao: string; // "YYYY-MM-DD"
+  peso_kg: number;
 }
 
 /**
@@ -166,6 +172,26 @@ async function updateUserProfile(
   );
   return response.data;
 }
+/**
+ * Envia os dados completos do onboarding para o backend.
+ * Chama 'submit_onboarding.php'.
+ * @param data O objeto OnboardingState completo do formulário.
+ */
+async function submitOnboarding(data: OnboardingState): Promise<ApiResponse> {
+  // O interceptor já cuida do token
+  const response = await axiosInstance.post<ApiResponse>(
+    "/submit_onboarding.php",
+    data
+  );
+  return response.data;
+}
+
+async function getWeightHistory(): Promise<WeightHistoryEntry[]> {
+  const response = await axiosInstance.get<WeightHistoryEntry[]>(
+    "/get_weight_history.php"
+  );
+  return response.data;
+}
 
 // --- 5. FUNÇÃO AUXILIAR DE ERRO (Opcional, mas recomendado) ---
 
@@ -196,6 +222,8 @@ const apiClient = {
   syncUser,
   getUserProfile,
   updateUserProfile,
+  submitOnboarding,
+  getWeightHistory,
 };
 
 export default apiClient;
