@@ -1,6 +1,10 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { auth } from "../firebase"; // 👈 Importe sua instância 'auth' do Firebase
-import type { OnboardingState } from "../types/onboarding.schema";
+import type {
+  OnboardingState,
+  IPreference,
+  IMeasurementsData,
+} from "../types/onboarding.schema";
 
 // --- 1. DEFINIÇÃO DE TIPOS (Sem 'any') ---
 
@@ -30,7 +34,7 @@ export interface UserProfile {
   dias_treino: ("DOM" | "SEG" | "TER" | "QUA" | "QUI" | "SEX" | "SAB")[];
 }
 
-export interface userPreferences {
+export interface UserPreference extends IPreference {
   preference_id: number;
   user_uid: string;
   tipo_restricao:
@@ -41,16 +45,18 @@ export interface userPreferences {
   valor: string;
 }
 
-export interface userMeasurements {
+export interface UserMeasurement extends IMeasurementsData {
   measurement_id: number;
   user_uid: string;
   data_medicao: string;
+  createdAt: string | null;
+  // Converte os campos para número/nulo (como o PHP os envia)
+  altura_cm: number | null;
   peso_kg: number;
   cintura_cm: number | null;
   quadril_cm: number | null;
   braco_cm: number | null;
   coxa_cm: number | null;
-  createdAt: string | null;
 }
 
 /**
@@ -193,6 +199,29 @@ async function getWeightHistory(): Promise<WeightHistoryEntry[]> {
   return response.data;
 }
 
+/**
+ * Busca a *última* medição do usuário.
+ * Chama 'get_latest_measurements.php'.
+ */
+async function getLatestMeasurements(): Promise<UserMeasurement | null> {
+  const response = await axiosInstance.get<UserMeasurement | null>(
+    "/get_latest_measurements.php"
+  );
+  // Retorna o objeto de medição ou null se não houver nenhum
+  return response.data;
+}
+
+/**
+ * Busca todas as preferências/restrições do usuário.
+ * Chama 'get_user_preferences.php'.
+ */
+async function getUserPreferences(): Promise<UserPreference[]> {
+  const response = await axiosInstance.get<UserPreference[]>(
+    "/get_user_preferences.php"
+  );
+  return response.data;
+}
+
 // --- 5. FUNÇÃO AUXILIAR DE ERRO (Opcional, mas recomendado) ---
 
 /**
@@ -224,6 +253,8 @@ const apiClient = {
   updateUserProfile,
   submitOnboarding,
   getWeightHistory,
+  getUserPreferences,
+  getLatestMeasurements,
 };
 
 export default apiClient;

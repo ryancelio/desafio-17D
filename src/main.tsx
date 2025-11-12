@@ -21,6 +21,7 @@ import Step3_Measurements from "./routes/onboarding/steps/Step3_Measurements.tsx
 import Step4_Preferences from "./routes/onboarding/steps/Step4_Preferences.tsx";
 import Step5_Complete from "./routes/onboarding/steps/Step5_Complete.tsx";
 import AppLayout from "./routes/protected/AppLayout.tsx";
+import ProfilePage from "./routes/protected/Profile/ProfilePage.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -57,7 +58,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/exercicios" element={<div>Exercicios</div>} />
             <Route path="/receitas" element={<div>Receitas</div>} />
-            <Route path="/perfil" element={<div>Perfil</div>} />
+            <Route path="/perfil" element={<ProfilePage />} />
           </Route>
 
           {/* === Rota Protegida (Onboarding) === */}
