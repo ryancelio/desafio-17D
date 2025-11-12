@@ -69,7 +69,7 @@ export default function AppLayout() {
       <aside className="hidden md:flex md:w-64 flex-col border-r bg-white p-4">
         <nav className="flex flex-col gap-2 flex-1">
           <div className="mb-4 pl-3">
-            <h2 className="text-xl font-bold text-[#FCC3D2]">FitApp</h2>
+            <h2 className="text-xl font-bold text-[#FCC3D2]">PowerSlim</h2>
           </div>
           {navigationItems.map((item) => (
             <NavItem key={item.name} item={item} />
@@ -104,7 +104,7 @@ export default function AppLayout() {
       </div>
 
       {/* --- 3. Navegação (Mobile) --- */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around border-t bg-white p-2.5 shadow-md">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-10 flex items-center justify-around border-t bg-white px-2.5 py-1.5 shadow-md">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           return (
