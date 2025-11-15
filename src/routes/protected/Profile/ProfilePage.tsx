@@ -22,6 +22,7 @@ import {
   LuUser,
 } from "react-icons/lu";
 import { motion } from "framer-motion"; // 1. IMPORTAR 'motion'
+import type { DiaSemana } from "../../../types/onboarding.schema";
 
 // --- Funções Auxiliares de Formatação ---
 
@@ -130,6 +131,22 @@ const getBmiStatus = (imc: number | null) => {
 };
 
 const BmiGauge: React.FC<{ percentage: number }> = ({ percentage }) => {
+  // Função auxiliar para calcular a posição das legendas
+  const getLabelPosition = (value: number) => {
+    const minBmi = 15;
+    const maxBmi = 40;
+    const totalRange = maxBmi - minBmi;
+    const clampedValue = Math.max(minBmi, Math.min(value, maxBmi));
+    return ((clampedValue - minBmi) / totalRange) * 100;
+  };
+
+  // Calcula a posição % de cada legenda
+  const labels = [
+    { value: 18.5, pos: getLabelPosition(18.5) },
+    { value: 25, pos: getLabelPosition(25) },
+    { value: 30, pos: getLabelPosition(30) },
+  ];
+
   return (
     <div className="pt-3">
       {/* 1. A Barra Colorida (Gradiente) */}
@@ -144,7 +161,7 @@ const BmiGauge: React.FC<{ percentage: number }> = ({ percentage }) => {
       {/* 2. O Marcador Animado */}
       <div className="relative w-full h-3">
         <motion.div
-          className="absolute -top-2"
+          className="absolute -top-2 z-10" // z-10 para ficar sobre as linhas
           initial={{ left: "0%" }}
           animate={{ left: `${percentage}%` }} // Posição vinda do cálculo
           transition={{
@@ -155,17 +172,70 @@ const BmiGauge: React.FC<{ percentage: number }> = ({ percentage }) => {
           }}
           style={{ transform: "translateX(-50%)" }} // Centraliza o marcador
         >
-          {/* Seta/triângulo apontando para baixo */}
+          {/* Marcador (bolinha + triângulo) */}
           <div className="h-2.5 w-2.5 rounded-full bg-gray-800 border-2 border-white shadow-lg" />
           <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-gray-800" />
         </motion.div>
       </div>
-      {/* 3. Legendas da Barra */}
-      <div className="flex justify-between text-xs text-gray-500 px-1 relative -top-1">
-        <span>18.5</span>
-        <span>25</span>
-        <span>30</span>
+
+      {/* 3. Legendas da Barra (Posicionadas Absolutamente) */}
+      <div className="relative w-full h-4">
+        {labels.map((label) => (
+          <span
+            key={label.value}
+            className="absolute text-xs text-gray-500"
+            style={{
+              left: `${label.pos}%`, // Posição correta
+              transform: "translateX(-50%)", // Centraliza o texto
+            }}
+          >
+            {label.value}
+          </span>
+        ))}
       </div>
+    </div>
+  );
+};
+const allDays: { long: string; short: string; value: DiaSemana }[] = [
+  { long: "Domingo", short: "D", value: "DOM" },
+  { long: "Segunda", short: "S", value: "SEG" },
+  { long: "Terça", short: "T", value: "TER" },
+  { long: "Quarta", short: "Q", value: "QUA" },
+  { long: "Quinta", short: "Q", value: "QUI" },
+  { long: "Sexta", short: "S", value: "SEX" },
+  { long: "Sábado", short: "S", value: "SAB" },
+];
+
+const TrainingDaysDisplay: React.FC<{
+  activeDays: DiaSemana[];
+  today: DiaSemana;
+}> = ({ activeDays, today }) => {
+  return (
+    <div className="flex justify-between items-center gap-1">
+      {allDays.map((day) => {
+        const isActive = activeDays.includes(day.value);
+        const isToday = day.value === today;
+
+        return (
+          <div
+            key={day.value}
+            title={day.long}
+            className={`
+              flex h-8 w-8 items-center justify-center rounded-full 
+              border-2 text-xs font-bold transition-all
+              ${
+                isToday
+                  ? "bg-[#A8F3DC]/60 text-[#2da484] border-[#A8F3DC]" // Cor "Hoje" (Verde)
+                  : isActive
+                  ? "bg-[#FCC3D2]/70 text-[#db889d] border-[#FCC3D2]" // Cor "Ativo" (Rosa)
+                  : "bg-gray-200 text-gray-500 border-gray-300" // Cor "Inativo"
+              }
+            `}
+          >
+            {day.short}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -231,6 +301,19 @@ export default function ProfilePage() {
       bmiPercentage: percentage,
     };
   }, [userProfile, measurements]);
+
+  const today = useMemo(() => {
+    const dayMap: DiaSemana[] = [
+      "DOM",
+      "SEG",
+      "TER",
+      "QUA",
+      "QUI",
+      "SEX",
+      "SAB",
+    ];
+    return dayMap[new Date().getDay()];
+  }, []);
 
   // 5. Estado de Carregamento
   if (isLoading || !userProfile) {
@@ -324,11 +407,16 @@ export default function ProfilePage() {
             value={formatActivity(userProfile.nivel_atividade)}
             icon={LuHeartPulse}
           />
-          <InfoItem
-            label="Dias de Treino"
-            value={userProfile.dias_treino.join(", ")}
-            icon={LuHeartPulse}
-          />
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <LuHeartPulse className="w-4 h-4" />
+              <span>Dias de Treino</span>
+            </div>
+            <TrainingDaysDisplay
+              activeDays={userProfile.dias_treino}
+              today={today}
+            />
+          </div>
         </InfoCard>
 
         <InfoCard

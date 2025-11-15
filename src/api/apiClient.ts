@@ -60,6 +60,17 @@ export interface UserMeasurement extends IMeasurementsData {
 }
 
 /**
+ * Define os filtros que podem ser enviados para a API getRecipes.
+ * Os arrays serão serializados pelo Axios (ex: &includeTags[]=vegano&includeTags[]=rapido)
+ */
+export interface RecipeFilters {
+  search?: string;
+  maxCalories?: number;
+  includeTags?: string[];
+  excludeTags?: string[];
+}
+
+/**
  * Resposta padrão de sucesso para 'sync_user' e 'update_user'.
  */
 export interface ApiResponse {
@@ -87,6 +98,92 @@ export interface SyncUserRequest {
 
 export interface UpdateProfileRequest {
   nome: string; // O 'nome' é obrigatório no update
+}
+
+export interface Macros {
+  proteinas_g: number;
+  carboidratos_g: number;
+  gorduras_g: number;
+}
+
+export interface Recipe {
+  recipe_id: number;
+  titulo: string;
+  descricao_curta: string | null;
+  url_imagem: string | null;
+  tempo_preparo_min: number | null;
+  calorias_kcal: number | null;
+  macros: Macros | null;
+  ingredientes: string[] | null;
+  preparo: string[] | null;
+  tags: string[] | null;
+  createdAt: string;
+}
+
+/**
+ * Corresponde a um item da tabela `exercises`.
+ */
+export interface Exercise {
+  exercise_id: number;
+  nome: string;
+  descricao: string | null;
+  link_video: string | null;
+  musculos_trabalhados: string[] | null;
+  tags: string[] | null;
+  createdAt: string;
+}
+
+/**
+ * Define os filtros para a API getExercises.
+ */
+export interface ExerciseFilters {
+  search?: string;
+  musculos?: string[];
+  tags?: string[];
+}
+
+/**
+ * A prescrição JSON para um exercício (ex: séries, reps, tempo).
+ */
+export interface Prescription {
+  series?: number;
+  reps?: string;
+  carga_kg?: number;
+  rest_seg?: number;
+  tipo?: "tempo" | "normal";
+  duracao_min?: number;
+  duracao_seg?: number;
+}
+
+/**
+ * Um exercício aninhado dentro de uma ficha (workout_plan_exercises + exercises)
+ */
+export interface WorkoutPlanExercise {
+  plan_exercise_id: number;
+  exercise_id: number;
+  ordem: number;
+  prescription: Prescription | null;
+  // Detalhes do exercício (da tabela 'exercises')
+  nome_exercicio: string | null;
+  link_video: string | null;
+  descricao: string | null;
+  musculos_trabalhados: string[] | null;
+  tags: string[] | null;
+}
+
+/**
+ * A ficha de treino completa (workout_plans)
+ */
+export interface WorkoutPlan {
+  plan_id: number;
+  user_uid: string;
+  nome: string;
+  criada_por: "ADMIN" | "USER";
+  data_criacao: string;
+  data_vencimento: string | null;
+  data_ultima_execucao: string | null;
+  is_active: boolean;
+  exercises: WorkoutPlanExercise[]; // Array de exercícios aninhados
 }
 
 // --- 2. CONFIGURAÇÃO DO AXIOS ---
@@ -222,6 +319,44 @@ async function getUserPreferences(): Promise<UserPreference[]> {
   return response.data;
 }
 
+/**
+ * Busca a lista de receitas, aplicando filtros do lado do servidor.
+ * O usuário deve ter 'isActive' = 1 (verificado no PHP).
+ * Chama 'get_recipes.php'.
+ */
+async function getRecipes(filters: RecipeFilters = {}): Promise<Recipe[]> {
+  const response = await axiosInstance.get<Recipe[]>("/get_recipes.php", {
+    params: filters, // Axios serializa o objeto 'filters' em parâmetros de URL
+  });
+  return response.data;
+}
+
+/**
+ * Busca a lista de todos os exercícios, aplicando filtros.
+ * O usuário deve ter 'isActive' = 1 (verificado no PHP).
+ * Chama 'get_exercises.php'.
+ */
+async function getExercises(
+  filters: ExerciseFilters = {}
+): Promise<Exercise[]> {
+  const response = await axiosInstance.get<Exercise[]>("/get_exercises.php", {
+    params: filters, // Axios serializa o objeto 'filters' em parâmetros de URL
+  });
+  return response.data;
+}
+
+/**
+ * Busca todas as fichas de treino (e seus exercícios) do usuário.
+ * O usuário deve ter 'isActive' = 1 (verificado no PHP).
+ * Chama 'get_user_workouts.php'.
+ */
+async function getUserWorkouts(): Promise<WorkoutPlan[]> {
+  const response = await axiosInstance.get<WorkoutPlan[]>(
+    "/get_user_workouts.php"
+  );
+  return response.data;
+}
+
 // --- 5. FUNÇÃO AUXILIAR DE ERRO (Opcional, mas recomendado) ---
 
 /**
@@ -253,8 +388,11 @@ const apiClient = {
   updateUserProfile,
   submitOnboarding,
   getWeightHistory,
-  getUserPreferences,
   getLatestMeasurements,
+  getUserPreferences,
+  getRecipes,
+  getExercises,
+  getUserWorkouts,
 };
 
 export default apiClient;
