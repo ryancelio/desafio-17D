@@ -1,6 +1,7 @@
 // src/routes/ProtectedRoute.tsx (Versão Aprimorada)
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import { LuLoader } from "react-icons/lu";
 
 export default function ProtectedRoute({
   children,
@@ -11,7 +12,11 @@ export default function ProtectedRoute({
   const location = useLocation();
 
   if (loading) {
-    return <div>Carregando...</div>; // Ou um spinner de tela cheia
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-gray-100">
+        <LuLoader className="h-12 w-12 animate-spin text-[#FCC3D2]" />
+      </div>
+    ); // Ou um spinner de tela cheia
   }
 
   if (!firebaseUser) {
