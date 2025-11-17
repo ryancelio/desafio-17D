@@ -9,7 +9,13 @@ const EmailStep: React.FC<StepProps> = ({
   setStepvalid,
 }) => {
   useEffect(() => {
-    const result = z.email().safeParse(onboardingData.personal.email);
+    const emailSchema = z
+      .string()
+      .min(1, "Email is required")
+      .email("Invalid email address");
+
+    const emailToValidate = onboardingData.personal.email || "";
+    const result = emailSchema.safeParse(emailToValidate);
 
     setStepvalid(result.success);
   }, [onboardingData.personal.email, setStepvalid]);
@@ -43,7 +49,7 @@ const EmailStep: React.FC<StepProps> = ({
         </div>
         <input
           type="email"
-          placeholder="Digite seu email"
+          placeholder="seuemail@email.com"
           autoFocus
           value={onboardingData.personal.email || ""}
           onChange={(e) => {
@@ -51,7 +57,7 @@ const EmailStep: React.FC<StepProps> = ({
               personal: { ...onboardingData.personal, email: e.target.value },
             });
           }}
-          className="pl-10 border-b-2 border-gray-300 w-full text-xl font-medium py-2 px-1 text-gray-800 bg-transparent focus:outline-none focus:border-indigo-600 transition-colors duration-300"
+          className={`border-gray-300 focus:border-indigo-600 pl-10 border-b-2 w-full text-xl font-medium py-2 px-1 text-gray-800 bg-transparent focus:outline-none transition-colors duration-300`}
         />
       </div>
     </motion.div>

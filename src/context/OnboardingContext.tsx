@@ -33,7 +33,7 @@ const initialState: OnboardingState = {
     braco_cm: "",
     cintura_cm: "",
     coxa_cm: "",
-    peso_kg: "",
+    peso_kg: "70",
     quadril_cm: "",
   },
   preferences: [],

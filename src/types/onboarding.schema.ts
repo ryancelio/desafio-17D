@@ -64,12 +64,18 @@ export const preferenceSchema = z.object({
   valor: z.string(),
 });
 
+export const PlanoSchema = z.object({
+  id: z.enum(["padrao", "padrao_treino", "padrao_dieta", "completo"]),
+  faturamento: z.enum(["mensal", "anual"]),
+});
+
 // --- Schema Principal do Estado ---
 export const onboardingStateSchema = z.object({
   personal: personalSchema,
   goals: goalsSchema,
   measurements: measurementsSchema,
   preferences: z.array(preferenceSchema),
+  plano: PlanoSchema,
 });
 
 const minDate = new Date("1900-01-01");
