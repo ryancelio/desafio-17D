@@ -16,8 +16,19 @@ type OnboardingcontextType = {
 };
 
 const initialState: OnboardingState = {
-  personal: { altura_cm: 0, nome: "", genero: "", data_nascimento: "" },
-  goals: { dias_treino: [], nivel_atividade: "moderado", objetivo_atual: "" },
+  personal: {
+    altura_cm: 0,
+    nome: "",
+    genero: "",
+    data_nascimento: "",
+    email: "",
+  },
+  goals: {
+    dias_treino: [],
+    nivel_atividade: "moderado",
+    objetivo_atual: "",
+    peso_alvo: 60,
+  },
   measurements: {
     braco_cm: "",
     cintura_cm: "",

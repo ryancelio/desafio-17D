@@ -40,20 +40,22 @@ export const personalSchema = z.object({
   data_nascimento: z.string(), // O <input type="date"> usa string YYYY-MM-DD
   genero: generoSchema.or(z.literal("")), // Permite "" ou o enum
   altura_cm: z.number().int().min(0), // Permite 0
+  email: z.email(),
 });
 
 export const goalsSchema = z.object({
   objetivo_atual: objetivoSchema.or(z.literal("")),
   nivel_atividade: nivelAtividadeSchema.or(z.literal("")),
   dias_treino: z.array(diaSemanaSchema),
+  peso_alvo: z.float32(),
 });
 
 export const measurementsSchema = z.object({
   peso_kg: z.string(),
-  cintura_cm: z.string(),
-  quadril_cm: z.string(),
-  braco_cm: z.string(),
-  coxa_cm: z.string(),
+  cintura_cm: z.string().optional(),
+  quadril_cm: z.string().optional(),
+  braco_cm: z.string().optional(),
+  coxa_cm: z.string().optional(),
 });
 
 export const preferenceSchema = z.object({
@@ -124,7 +126,7 @@ export const step2GoalsValidationSchema = z.object({
     .array(diaSemanaSchema)
     .min(1, "Selecione pelo menos um dia de treino."),
 });
-const optionalNumericString = z
+export const optionalNumericString = z
   // 'preprocess' limpa o dado ANTES da validação.
   .preprocess(
     // 1. Se o valor for uma string vazia ou só espaços, transforme-o em 'undefined'.

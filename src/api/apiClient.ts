@@ -49,14 +49,14 @@ export interface UserMeasurement extends IMeasurementsData {
   measurement_id: number;
   user_uid: string;
   data_medicao: string;
-  createdAt: string | null;
+  createdAt: string | undefined;
   // Converte os campos para número/nulo (como o PHP os envia)
-  altura_cm: number | null;
-  peso_kg: number;
-  cintura_cm: number | null;
-  quadril_cm: number | null;
-  braco_cm: number | null;
-  coxa_cm: number | null;
+  altura_cm: string | undefined;
+  peso_kg: string;
+  cintura_cm: string | undefined;
+  quadril_cm: string | undefined;
+  braco_cm: string | undefined;
+  coxa_cm: string | undefined;
 }
 
 /**
