@@ -287,8 +287,8 @@ export default function ProfilePage() {
     const pesoKg = measurements?.peso_kg || 0;
     let imcValue: number | null = null;
 
-    if (alturaM > 0 && pesoKg > 0) {
-      imcValue = parseFloat((pesoKg / (alturaM * alturaM)).toFixed(1));
+    if (alturaM > 0 && Number(pesoKg) > 0) {
+      imcValue = parseFloat((Number(pesoKg) / (alturaM * alturaM)).toFixed(1));
     }
 
     // Pega o status, cor e percentual da função auxiliar

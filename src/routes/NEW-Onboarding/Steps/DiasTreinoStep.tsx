@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useEffect } from "react";
 import type { DiaSemana } from "../../../types/onboarding.schema";
 import type { StepProps } from "../OnboardingWizard";
 
@@ -15,6 +15,7 @@ const diasSemana: { label: string; value: DiaSemana }[] = [
 const DiasTreinoStep: React.FC<StepProps> = ({
   onboardingData,
   updateOnboardingData,
+  setStepvalid,
 }) => {
   const { goals } = onboardingData;
 
@@ -31,6 +32,14 @@ const DiasTreinoStep: React.FC<StepProps> = ({
     //   handleBlur("dias_treino");
     // }
   };
+
+  useEffect(() => {
+    if (goals.dias_treino.length === 0) {
+      setStepvalid(false);
+    } else {
+      setStepvalid(true);
+    }
+  }, [goals.dias_treino, setStepvalid]);
 
   return (
     <motion.div

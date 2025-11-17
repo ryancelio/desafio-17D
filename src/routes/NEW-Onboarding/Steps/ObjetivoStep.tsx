@@ -2,10 +2,12 @@ import { motion } from "framer-motion";
 import { LuWeight } from "react-icons/lu";
 import type { Objetivo } from "../../../types/onboarding.schema";
 import type { StepProps } from "../OnboardingWizard";
+import { useEffect } from "react";
 
 export const ObjetivoStep: React.FC<StepProps> = ({
   onboardingData,
   updateOnboardingData,
+  setStepvalid,
 }) => {
   const objetivos = [
     { value: "perder_peso", label: "Perder Peso", icon: LuWeight },
@@ -14,6 +16,14 @@ export const ObjetivoStep: React.FC<StepProps> = ({
   ];
 
   const { goals } = onboardingData;
+
+  useEffect(() => {
+    if (goals.objetivo_atual === "") {
+      setStepvalid(false);
+    } else {
+      setStepvalid(true);
+    }
+  }, [goals.objetivo_atual, setStepvalid]);
 
   const handleObjetivoClick = (value: Objetivo) => {
     updateOnboardingData({

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { type OnboardingState } from "../../types/onboarding.schema";
 import { AnimatePresence, motion, useAnimation } from "framer-motion";
 import { useOnboarding } from "../../context/OnboardingContext";
@@ -14,6 +14,7 @@ import NomeStep from "./Steps/NomeStep";
 import EmailStep from "./Steps/EmailStep";
 import TodasMedidasStep from "./Steps/TodasMedidasStep";
 import DiasTreinoStep from "./Steps/DiasTreinoStep";
+import PlanosStep from "./Steps/PlanosStep";
 import GerandoPlanoStep from "./Steps/GerandoPlanoStep";
 import DashboardPreviewStep from "./Steps/DashboardPreviewStep";
 
@@ -23,6 +24,8 @@ export interface StepProps {
   updateOnboardingData: (data: Partial<OnboardingState>) => void;
   setStepvalid: (isvalid: boolean) => void;
   setStep: React.Dispatch<React.SetStateAction<number>>;
+  onboardLoading: boolean;
+  setOnboardLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // --- The Main Onboarding Component ---
@@ -35,24 +38,7 @@ const OnboardingWizard: React.FC = () => {
 
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const validateStep = () => {
-      switch (step) {
-        case 0:
-          // Validation for ObjetivoStep
-          setStepValid(!!onboardingData.goals.objetivo_atual);
-          break;
-        case 1:
-          // Nivel Atividade Step
-          setStepValid(!!onboardingData.goals.nivel_atividade);
-          break;
-        default:
-          setStepValid(true); // Default to valid for steps without validation
-      }
-    };
-
-    validateStep();
-  }, [step, onboardingData, setStepValid]);
+  const [onboardLoading, setOnboardLoading] = useState(false);
 
   // const buttonSpring: Transition = {
   //   type: "spring",
@@ -72,6 +58,7 @@ const OnboardingWizard: React.FC = () => {
     EmailStep,
     GerandoPlanoStep,
     DashboardPreviewStep,
+    PlanosStep,
   ];
 
   // StepComponents + LastStep, so +1
@@ -118,6 +105,28 @@ const OnboardingWizard: React.FC = () => {
     setStep(step + 1);
   };
 
+  const buttonContent = (): string => {
+    if (onboardLoading) {
+      return "Carregando";
+    } else if (step === LAST_STEP) {
+      return "Enviar";
+    } else {
+      return "Continuar";
+    }
+  };
+
+  const buttonOnClick = () => {
+    if (step === LAST_STEP - 1) {
+      handleNav("next");
+    } else if (step === LAST_STEP) {
+      // Se for o último passo (DashboardPreviewStep), finalize o onboarding
+      submitOnboarding();
+    } else {
+      // Para todos os outros passos, apenas navegue
+      handleNav("next");
+    }
+  };
+
   return (
     <div className="h-screen w-screen flex flex-col bg-white">
       {/* Header */}
@@ -149,6 +158,8 @@ const OnboardingWizard: React.FC = () => {
             updateOnboardingData={updateOnboardingData}
             setStepvalid={setStepValid}
             setStep={setStep}
+            setOnboardLoading={setOnboardLoading}
+            onboardLoading={onboardLoading}
           />
         ) : (
           <div>
@@ -178,22 +189,15 @@ const OnboardingWizard: React.FC = () => {
           )}
         </AnimatePresence>
         <motion.button
-          className="grow w-full bg-black text-white font-bold text-xl rounded-xl py-4"
-          onClick={
-            step === LAST_STEP
-              ? () => {
-                  submitOnboarding();
-                  console.log(step);
-                }
-              : () => {
-                  handleNav("next");
-                  console.log(step);
-                }
+          className={
+            "grow w-full bg-black text-white font-bold text-xl rounded-xl py-4 " +
+            `${onboardLoading ? "cursor-not-allowed bg-gray-700" : " bg-black"}`
           }
-          // disabled={nextDisabled}
+          onClick={buttonOnClick}
+          disabled={onboardLoading}
           animate={buttonControls}
         >
-          Continuar
+          {`${buttonContent()}`}
         </motion.button>
       </div>
     </div>

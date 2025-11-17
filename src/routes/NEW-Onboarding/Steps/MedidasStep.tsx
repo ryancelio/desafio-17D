@@ -8,13 +8,13 @@ const MedidasStep: React.FC<StepProps> = ({
   updateOnboardingData,
   setStepvalid,
 }) => {
-  const getPeso: { value: number; label: string }[] = [];
+  const getPeso: { value: string | number; label: string }[] = [];
   for (let i = 50; i <= 200; i++) {
     const weight = i;
     getPeso.push({ value: weight, label: `${weight} kg` });
   }
 
-  const getAltura: { value: number; label: string }[] = [];
+  const getAltura: { value: string | number; label: string }[] = [];
   for (let i = 100; i <= 250; i++) {
     getAltura.push({ value: i, label: `${i} cm` });
   }
@@ -27,7 +27,7 @@ const MedidasStep: React.FC<StepProps> = ({
 
   const { personal, measurements } = onboardingData;
 
-  const [peso, setPeso] = useState(measurements.peso_kg || 70);
+  const [peso, setPeso] = useState(Number(measurements.peso_kg) || 70);
   const [altura, setAltura] = useState(personal.altura_cm || 170);
 
   useEffect(() => {

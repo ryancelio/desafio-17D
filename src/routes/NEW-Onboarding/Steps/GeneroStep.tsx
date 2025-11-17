@@ -10,9 +10,24 @@ export const GeneroStep: React.FC<StepProps> = ({
   setStepvalid,
 }) => {
   const generos = [
-    { value: "masculino", label: "Masculino", icon: BsGenderMale },
-    { value: "feminino", label: "Feminino", icon: BsGenderFemale },
-    { value: "outro", label: "Outro", icon: IoMaleFemaleOutline },
+    {
+      value: "masculino",
+      label: "Masculino",
+      icon: BsGenderMale,
+      activeClass: "bg-blue-200",
+    },
+    {
+      value: "feminino",
+      label: "Feminino",
+      icon: BsGenderFemale,
+      activeClass: "bg-[#FCC3D2]",
+    },
+    {
+      value: "outro",
+      label: "Outro",
+      icon: IoMaleFemaleOutline,
+      activeClass: "bg-gradient-to-r from-blue-200 to-[#FCC3D2]",
+    },
   ];
   const { personal } = onboardingData;
 
@@ -62,9 +77,9 @@ export const GeneroStep: React.FC<StepProps> = ({
                   gnr.value as "masculino" | "feminino" | "outro"
                 )
               } // The text will be centered automatically
-              className={`relative py-4 rounded-xl border text-md transition-all duration-200 flex items-center justify-center px-8 ${
+              className={`relative py-4 rounded-xl border text-md transition-colors duration-200 flex items-center justify-center px-8 ${
                 ativo
-                  ? "bg-[#FCC3D2] text-gray-800 border-transparent shadow-sm"
+                  ? `${gnr.activeClass} text-gray-800 border-transparent shadow-sm`
                   : "bg-white/70 border-gray-300 text-gray-600 hover:bg-[#A8F3DC]/50"
               }`}
             >

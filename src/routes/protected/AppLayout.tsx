@@ -11,6 +11,7 @@ import {
   Loader2 as LuLoader2, // Para o estado de carregamento
 } from "lucide-react";
 import { LuFileText } from "react-icons/lu";
+import { FaPersonRunning } from "react-icons/fa6";
 
 // Itens da Navegação
 const navigationItems = [
@@ -116,12 +117,13 @@ export default function AppLayout() {
         </main>
       </div>
 
+      {/* Fichas */}
       <div className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-20">
         <Link
           to="/treinos"
           className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FCC3D2] text-gray-800 shadow-lg transition-all hover:bg-[#db889d] active:scale-95"
         >
-          <LuDumbbell className="h-8 w-8" />
+          <FaPersonRunning className="h-8 w-8" />
         </Link>
       </div>
 

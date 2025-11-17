@@ -1,29 +1,30 @@
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import type { StepProps } from "../OnboardingWizard";
 
 const GerandoPlanoStep: React.FC<StepProps> = ({
   onboardingData,
   setStepvalid,
+  setOnboardLoading,
+  onboardLoading,
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     // Em um cenário real, aqui você faria a chamada de API
     // para gerar o plano do usuário usando `onboardingData`.
     setStepvalid(false);
+    setOnboardLoading(true);
     const timer = setTimeout(() => {
-      setIsLoading(false);
+      setOnboardLoading(false);
       setStepvalid(true);
     }, 4000); // Simula um tempo de carregamento de 4 segundos
 
     return () => clearTimeout(timer);
-  }, [onboardingData]);
+  }, [onboardingData, setOnboardLoading, setStepvalid]);
 
   return (
     <div className="flex flex-col items-center justify-center text-center gap-8 pt-10">
       <AnimatePresence mode="wait">
-        {isLoading ? (
+        {onboardLoading ? (
           <motion.div
             key="loading"
             initial={{ opacity: 0, y: 20 }}

@@ -19,8 +19,13 @@ import {
   Target as LuTarget,
   Loader2 as LuLoader2,
   AlertTriangle as LuAlertTriangle,
+  GlassWater as LuGlassWater,
+  Plus as LuPlus,
+  Flame as LuFlame,
 } from "lucide-react";
-import { LuGoal, LuWeight } from "react-icons/lu";
+import AddNutritionModal from "./Components/NutritionModal";
+import { LuGoal, LuLeaf, LuWeight } from "react-icons/lu";
+import { motion } from "framer-motion";
 
 // Função para formatar o nome do objetivo
 const formatObjective = (objective: UserProfile["objetivo_atual"]): string => {
@@ -36,11 +41,53 @@ const formatObjective = (objective: UserProfile["objetivo_atual"]): string => {
   }
 };
 
+// --- 1. NOVO: Componente de Barra de Progresso Nutricional ---
+const NutritionProgress: React.FC<{
+  icon: React.ElementType;
+  label: string;
+  current: number;
+  target: number;
+  unit: string;
+  color: string;
+}> = ({ icon: Icon, label, current, target, unit, color }) => {
+  const percentage = target > 0 ? (current / target) * 100 : 0;
+
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-1">
+        <div className="flex items-center gap-2">
+          <Icon className="h-5 w-5 text-gray-500" />
+          <span className="font-semibold text-gray-700">{label}</span>
+        </div>
+        <p className="text-sm font-medium text-gray-600">
+          <span className="font-bold text-gray-800">{current.toFixed(1)}</span>/
+          {target.toFixed(1)} {unit}
+        </p>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+        <motion.div
+          className="h-2.5 rounded-full"
+          style={{ background: color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.min(percentage, 100)}%` }}
+          transition={{
+            type: "spring",
+            stiffness: 100,
+            damping: 20,
+            duration: 1.5,
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isNutritionModalOpen, setNutritionModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,6 +146,42 @@ export default function Dashboard() {
     return { pesoAtual, pesoAlvo, diferenca };
   }, [weightHistory]);
 
+  // --- ATUALIZADO: Dados Nutricionais agora usam state ---
+  const [dailyConsumption, setDailyConsumption] = useState({
+    agua: 1.8,
+    proteinas: 50,
+    fibras: 15,
+    calorias: 800,
+  });
+
+  const nutritionTargets = useMemo(() => {
+    // Fórmula: 35ml de água por kg de peso
+    const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
+
+    // MOCK: Metas diárias que viriam do plano do usuário
+    const metaProteinas = 140;
+    const metaFibras = 30;
+    const metaCalorias = 2200;
+
+    return { aguaRecomendadaL, metaProteinas, metaFibras, metaCalorias };
+  }, [pesoAtual]);
+
+  const handleSaveNutrition = (data: {
+    agua: number;
+    proteinas: number;
+    fibras: number;
+    calorias: number;
+  }) => {
+    // Aqui você faria a chamada à API para salvar os dados.
+    // Por enquanto, apenas atualizamos o estado local.
+    setDailyConsumption((prev) => ({
+      agua: prev.agua + data.agua,
+      proteinas: prev.proteinas + data.proteinas,
+      fibras: prev.fibras + data.fibras,
+      calorias: prev.calorias + data.calorias,
+    }));
+  };
+
   // --- 2. NOVO: CALCULAR DOMÍNIO DO EIXO Y ---
   const yAxisDomain = useMemo(() => {
     // Coleta todos os valores de peso
@@ -146,68 +229,104 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Olá, {firstName}!</h1>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Olá, {firstName}!</h1>
+        <div className="flex items-center gap-2 text-gray-500 mt-1">
+          <LuTarget className="h-4 w-4" />
+          <span className="font-medium">
+            {formatObjective(profile.objetivo_atual)}
+          </span>
+        </div>
+      </div>
 
       {/* --- Grid de Cards --- */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {/* Card de Objetivo */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-[#FCC3D2]/30 p-2">
-              <LuTarget className="h-6 w-6 text-[#db889d]" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">
-              Seu Objetivo
+      <div className="grid grid-cols-2 gap-4">
+        {/* Card de Metas Nutricionais */}
+        <div className="col-span-2 rounded-2xl bg-white p-6 shadow-md space-y-5">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-xl font-semibold text-gray-800">
+              Acompanhamento Diário
             </h3>
+            <button
+              onClick={() => setNutritionModalOpen(true)}
+              className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <LuPlus className="w-4 h-4" />
+              Adicionar
+            </button>
           </div>
-          <p className="mt-4 text-3xl font-bold text-gray-900">
-            {formatObjective(profile.objetivo_atual)}
-          </p>
+          <NutritionProgress
+            icon={LuGlassWater}
+            label="Água"
+            current={dailyConsumption.agua}
+            target={nutritionTargets.aguaRecomendadaL}
+            unit="L"
+            color="linear-gradient(to right, #60a5fa, #3b82f6)" // Azul
+          />
+          <NutritionProgress
+            icon={LuWeight} // Ícone placeholder
+            label="Proteínas"
+            current={dailyConsumption.proteinas}
+            target={nutritionTargets.metaProteinas}
+            unit="g"
+            color="linear-gradient(to right, #fca5a5, #ef4444)" // Vermelho
+          />
+          <NutritionProgress
+            icon={LuLeaf} // Ícone placeholder
+            label="Fibras"
+            current={dailyConsumption.fibras}
+            target={nutritionTargets.metaFibras}
+            unit="g"
+            color="linear-gradient(to right, #86efac, #22c55e)" // Verde
+          />
+          <NutritionProgress
+            icon={LuFlame}
+            label="Calorias"
+            current={dailyConsumption.calorias}
+            target={nutritionTargets.metaCalorias}
+            unit="kcal"
+            color="linear-gradient(to right, #fdbb74, #f97316)" // Laranja
+          />
         </div>
-
-        {/* (Você pode adicionar mais cards aqui, ex: Peso Atual) */}
-
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-[#A8F3DC]/60 p-2">
-              <LuWeight className="h-6 w-6 text-[#2da484]" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">Peso Atual</h3>
-          </div>
-          <p className="mt-4 text-3xl font-bold text-gray-900">
+        {/* Card de Peso Atual */}
+        <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md">
+          <h3 className="text-md font-semibold text-gray-600">Peso Atual</h3>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
             {pesoAtual ? `${pesoAtual.toFixed(1)} kg` : "N/A"}
           </p>
+          <LuWeight className="absolute -right-4 -bottom-4 h-24 w-24 text-gray-200/40" />
         </div>
 
         {/* Card de Meta */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-blue-100 p-2">
-              <LuGoal className="h-6 w-6 text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800">
-              Meta de Peso
-            </h3>
-          </div>
-          <p className="mt-4 text-3xl font-bold text-gray-900">
+        <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md">
+          <h3 className="text-md font-semibold text-gray-600">Meta de Peso</h3>
+          <p className="mt-2 text-3xl font-bold text-gray-900">
             {pesoAlvo.toFixed(1)} kg
           </p>
           {/* Sub-texto com a diferença */}
           {diferenca !== null && (
             <p
-              className={`mt-1 text-sm font-medium ${
+              className={`mt-1 text-xs font-medium ${
                 diferenca > 0 ? "text-red-500" : "text-green-600"
               }`}
             >
               {diferenca === 0
                 ? "Meta atingida!"
-                : `${Math.abs(diferenca).toFixed(1)} kg ${
-                    diferenca > 0 ? "acima" : "abaixo"
-                  } da meta`}
+                : `${diferenca > 0 ? "+" : ""}${diferenca.toFixed(
+                    1
+                  )}kg da meta`}
             </p>
           )}
+          <LuGoal className="absolute -right-4 -bottom-4 h-24 w-24 text-gray-200/40" />
         </div>
       </div>
+
+      {/* --- NOVO: Renderização do Modal --- */}
+      <AddNutritionModal
+        isOpen={isNutritionModalOpen}
+        onClose={() => setNutritionModalOpen(false)}
+        onSave={handleSaveNutrition}
+      />
 
       {/* --- Card do Gráfico --- */}
       {/* --- 4. ATUALIZADO: Card do Gráfico --- */}
