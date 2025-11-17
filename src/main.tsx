@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "@ncdai/react-wheel-picker/style.css";
 // import App from "./App.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router";
@@ -25,6 +26,8 @@ import ProfilePage from "./routes/protected/Profile/ProfilePage.tsx";
 import RecipesPage from "./routes/protected/Recipes/RecipesPage.tsx";
 import ExercisesPage from "./routes/protected/execicios/ExerciciosPage.tsx";
 import WorkoutPlansPage from "./routes/protected/treinos/WorkoutPlanPage.tsx";
+import LandingPage from "./routes/landing/LandingPage.tsx";
+import OnboardingWizard from "./routes/NEW-Onboarding/OnboardingWizard.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -32,7 +35,15 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <Routes>
           {/* === Rotas Públicas === */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/onboard"
+            element={
+              <OnboardingProvider>
+                <OnboardingWizard />
+              </OnboardingProvider>
+            }
+          />
           <Route
             path="/login"
             element={
