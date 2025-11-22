@@ -4,7 +4,7 @@ import "./index.css";
 import "@ncdai/react-wheel-picker/style.css";
 // import App from "./App.tsx";
 import { AuthProvider } from "./context/AuthContext.tsx";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router";
+import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router";
 
 // --- Rotas Públicas ---
 import UserCreationRoute from "./routes/UserCreationRoute.tsx";
@@ -28,6 +28,9 @@ import ExercisesPage from "./routes/protected/execicios/ExerciciosPage.tsx";
 import WorkoutPlansPage from "./routes/protected/treinos/WorkoutPlanPage.tsx";
 import LandingPage from "./routes/landing/LandingPage.tsx";
 import OnboardingWizard from "./routes/NEW-Onboarding/OnboardingWizard.tsx";
+import CreateWorkoutPlanPage from "./routes/protected/treinos/CreateWorkoutPlanPage.tsx";
+import WorkoutExecutionPage from "./routes/protected/treinos/WorkoutExecutionPage.tsx";
+import WorkoutCompletionPage from "./routes/protected/treinos/WorkoutCompletionPage.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -65,16 +68,24 @@ createRoot(document.getElementById("root")!).render(
           <Route
             element={
               <ProtectedRoute>
-                <AppLayout />
+                <Outlet />
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/exercicios" element={<ExercisesPage />} />
-            <Route path="/receitas" element={<RecipesPage />} />
-            <Route path="/treinos" element={<WorkoutPlansPage />} />
-
-            <Route path="/perfil" element={<ProfilePage />} />
+            <Route element={<AppLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/exercicios" element={<ExercisesPage />} />
+              <Route path="/receitas" element={<RecipesPage />} />
+              <Route path="/treinos" element={<WorkoutPlansPage />} />
+              <Route path="/perfil" element={<ProfilePage />} />
+            </Route>
+            <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
+            <Route
+              path="/treinos/concluido/:id"
+              element={<WorkoutCompletionPage />}
+            />
+            <Route path="/treinos/criar" element={<CreateWorkoutPlanPage />} />{" "}
+            {/* <-- NOVA ROTA */}
           </Route>
 
           {/* === Rota Protegida (Onboarding) === */}

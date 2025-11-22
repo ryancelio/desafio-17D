@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import apiClient, {
   isApiError,
+  type DailyConsumption,
   type UserProfile,
   type WeightHistoryEntry, // (Será adicionado no apiClient)
 } from "../../../api/apiClient";
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
 import { LuGoal, LuLeaf, LuWeight } from "react-icons/lu";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 // Função para formatar o nome do objetivo
 const formatObjective = (objective: UserProfile["objetivo_atual"]): string => {
@@ -85,6 +86,9 @@ const NutritionProgress: React.FC<{
 export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
+  const [dailyConsumption, setDailyConsumption] =
+    useState<DailyConsumption | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNutritionModalOpen, setNutritionModalOpen] = useState(false);
@@ -95,13 +99,15 @@ export default function Dashboard() {
       setError(null);
       try {
         // Busca os dados do perfil e o histórico de peso em paralelo
-        const [profileData, historyData] = await Promise.all([
+        const [profileData, historyData, consumptionData] = await Promise.all([
           apiClient.getUserProfile(),
           apiClient.getWeightHistory(),
+          apiClient.getDailyConsumption(),
         ]);
 
         setProfile(profileData);
         setWeightHistory(historyData);
+        setDailyConsumption(consumptionData);
       } catch (err) {
         if (isApiError(err)) {
           setError(err.response?.data.error || "Erro");
@@ -146,40 +152,28 @@ export default function Dashboard() {
     return { pesoAtual, pesoAlvo, diferenca };
   }, [weightHistory]);
 
-  // --- ATUALIZADO: Dados Nutricionais agora usam state ---
-  const [dailyConsumption, setDailyConsumption] = useState({
-    agua: 1.8,
-    proteinas: 50,
-    fibras: 15,
-    calorias: 800,
-  });
-
   const nutritionTargets = useMemo(() => {
-    // Fórmula: 35ml de água por kg de peso
     const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
-
-    // MOCK: Metas diárias que viriam do plano do usuário
-    const metaProteinas = 140;
-    const metaFibras = 30;
-    const metaCalorias = 2200;
-
+    const metaProteinas = 140; // MOCK
+    const metaFibras = 30; // MOCK
+    const metaCalorias = 2000; // MOCK
     return { aguaRecomendadaL, metaProteinas, metaFibras, metaCalorias };
   }, [pesoAtual]);
 
-  const handleSaveNutrition = (data: {
+  const handleSaveNutrition = async (data: {
     agua: number;
     proteinas: number;
     fibras: number;
-    calorias: number;
   }) => {
-    // Aqui você faria a chamada à API para salvar os dados.
-    // Por enquanto, apenas atualizamos o estado local.
-    setDailyConsumption((prev) => ({
-      agua: prev.agua + data.agua,
-      proteinas: prev.proteinas + data.proteinas,
-      fibras: prev.fibras + data.fibras,
-      calorias: prev.calorias + data.calorias,
-    }));
+    try {
+      // Envia os deltas (o que adicionar) para a API
+      const newTotals = await apiClient.addDailyConsumption(data);
+      // Atualiza o estado local com os *novos totais* retornados pela API
+      setDailyConsumption(newTotals);
+    } catch (err) {
+      console.error("Falha ao salvar consumo:", err);
+      // (Opcional: mostrar um 'toast' de erro)
+    }
   };
 
   // --- 2. NOVO: CALCULAR DOMÍNIO DO EIXO Y ---
@@ -205,7 +199,7 @@ export default function Dashboard() {
 
   // --- Estados de UI ---
 
-  if (isLoading) {
+  if (isLoading || !profile || !dailyConsumption) {
     return (
       <div className="flex h-full items-center justify-center">
         <LuLoader2 className="h-12 w-12 animate-spin text-[#FCC3D2]" />
@@ -243,7 +237,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 gap-4">
         {/* Card de Metas Nutricionais */}
         <div className="col-span-2 rounded-2xl bg-white p-6 shadow-md space-y-5">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between gap-1 items-center mb-3">
             <h3 className="text-xl font-semibold text-gray-800">
               Acompanhamento Diário
             </h3>
@@ -252,13 +246,13 @@ export default function Dashboard() {
               className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
             >
               <LuPlus className="w-4 h-4" />
-              Adicionar
+              <span className="hidden md:block">Adicionar</span>
             </button>
           </div>
           <NutritionProgress
             icon={LuGlassWater}
             label="Água"
-            current={dailyConsumption.agua}
+            current={dailyConsumption.agua_l}
             target={nutritionTargets.aguaRecomendadaL}
             unit="L"
             color="linear-gradient(to right, #60a5fa, #3b82f6)" // Azul
@@ -266,7 +260,7 @@ export default function Dashboard() {
           <NutritionProgress
             icon={LuWeight} // Ícone placeholder
             label="Proteínas"
-            current={dailyConsumption.proteinas}
+            current={dailyConsumption.proteinas_g}
             target={nutritionTargets.metaProteinas}
             unit="g"
             color="linear-gradient(to right, #fca5a5, #ef4444)" // Vermelho
@@ -274,7 +268,7 @@ export default function Dashboard() {
           <NutritionProgress
             icon={LuLeaf} // Ícone placeholder
             label="Fibras"
-            current={dailyConsumption.fibras}
+            current={dailyConsumption.fibras_g}
             target={nutritionTargets.metaFibras}
             unit="g"
             color="linear-gradient(to right, #86efac, #22c55e)" // Verde
@@ -282,7 +276,7 @@ export default function Dashboard() {
           <NutritionProgress
             icon={LuFlame}
             label="Calorias"
-            current={dailyConsumption.calorias}
+            current={dailyConsumption.calorias_kcal}
             target={nutritionTargets.metaCalorias}
             unit="kcal"
             color="linear-gradient(to right, #fdbb74, #f97316)" // Laranja
@@ -321,15 +315,17 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- NOVO: Renderização do Modal --- */}
-      <AddNutritionModal
-        isOpen={isNutritionModalOpen}
-        onClose={() => setNutritionModalOpen(false)}
-        onSave={handleSaveNutrition}
-      />
+      {/* --- Renderização do Modal --- */}
+      <AnimatePresence>
+        {isNutritionModalOpen && (
+          <AddNutritionModal
+            onClose={() => setNutritionModalOpen(false)}
+            onSave={handleSaveNutrition}
+          />
+        )}
+      </AnimatePresence>
 
       {/* --- Card do Gráfico --- */}
-      {/* --- 4. ATUALIZADO: Card do Gráfico --- */}
       <div className="rounded-2xl bg-white p-6 shadow-md">
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
           Histórico de Peso (kg)
