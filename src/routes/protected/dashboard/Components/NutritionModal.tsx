@@ -1,10 +1,9 @@
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { useState } from "react";
 import { LuX } from "react-icons/lu";
 
 // --- NOVO: Modal para Adicionar Consumo ---
 const AddNutritionModal: React.FC<{
-  isOpen: boolean;
   onClose: () => void;
   onSave: (data: {
     agua: number;
@@ -12,11 +11,33 @@ const AddNutritionModal: React.FC<{
     fibras: number;
     calorias: number;
   }) => void;
-}> = ({ isOpen, onClose, onSave }) => {
+}> = ({ onClose, onSave }) => {
   const [agua, setAgua] = useState("0");
   const [proteinas, setProteinas] = useState("0");
   const [fibras, setFibras] = useState("0");
   const [calorias, setCalorias] = useState("0");
+
+  const formVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  const modalAnimation = {
+    hidden: { y: "100%", opacity: 0 },
+    visible: { y: 0, opacity: 1 },
+    exit: { y: "100%", opacity: 0 },
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,88 +49,107 @@ const AddNutritionModal: React.FC<{
       fibras: parseInt(fibras.trim(), 10),
       calorias: parseInt(calorias.trim(), 10),
     });
+    setAgua("0");
+    setProteinas("0");
+    setFibras("0");
+    setCalorias("0");
     onClose(); // Fecha o modal após salvar
   };
-
-  if (!isOpen) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center h-full justify-center"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        className="relative bg-white rounded-2xl w-full max-w-sm p-6"
+        variants={modalAnimation}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="relative bg-gray-50 rounded-t-2xl sm:rounded-2xl w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Adicionar Consumo</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100"
+        {/* Handle para estética mobile */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full sm:hidden" />
+
+        <div className="p-6 pt-8">
+          <div className="flex justify-between items-start mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Adicionar Consumo
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+            >
+              <LuX className="w-6 h-6" />
+            </button>
+          </div>
+          <motion.form
+            variants={formVariants}
+            initial="hidden"
+            animate="visible"
+            onSubmit={handleSubmit}
+            className="space-y-5"
           >
-            <LuX className="w-5 h-5 text-gray-600" />
-          </button>
+            <motion.div variants={itemVariants}>
+              <label className="text-sm font-medium text-gray-600">
+                Água (Litros)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={agua}
+                onChange={(e) => setAgua(e.target.value)}
+                className="mt-1 w-full p-3 bg-gray-100 rounded-lg border-2 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition"
+              />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="text-sm font-medium text-gray-600">
+                Proteínas (g)
+              </label>
+              <input
+                type="number"
+                value={proteinas}
+                onChange={(e) => setProteinas(e.target.value)}
+                className="mt-1 w-full p-3 bg-gray-100 rounded-lg border-2 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition"
+              />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="text-sm font-medium text-gray-600">
+                Fibras (g)
+              </label>
+              <input
+                type="number"
+                value={fibras}
+                onChange={(e) => setFibras(e.target.value)}
+                className="mt-1 w-full p-3 bg-gray-100 rounded-lg border-2 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition"
+              />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <label className="text-sm font-medium text-gray-600">
+                Calorias (kcal)
+              </label>
+              <input
+                type="number"
+                value={calorias}
+                onChange={(e) => setCalorias(e.target.value)}
+                className="mt-1 w-full p-3 bg-gray-100 rounded-lg border-2 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition"
+              />
+            </motion.div>
+            <motion.div variants={itemVariants} className="pt-2">
+              <button
+                type="submit"
+                className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300"
+              >
+                Salvar Consumo
+              </button>
+            </motion.div>
+          </motion.form>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Água (Litros)
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              value={agua}
-              onChange={(e) => setAgua(e.target.value)}
-              className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Proteínas (g)
-            </label>
-            <input
-              type="number"
-              value={proteinas}
-              onChange={(e) => setProteinas(e.target.value)}
-              className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Fibras (g)
-            </label>
-            <input
-              type="number"
-              value={fibras}
-              onChange={(e) => setFibras(e.target.value)}
-              className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Calorias (kcal)
-            </label>
-            <input
-              type="number"
-              value={calorias}
-              onChange={(e) => setCalorias(e.target.value)}
-              className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            Salvar Consumo
-          </button>
-        </form>
       </motion.div>
     </motion.div>
   );

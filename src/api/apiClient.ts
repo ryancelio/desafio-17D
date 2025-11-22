@@ -153,6 +153,7 @@ export interface Prescription {
   tipo?: "tempo" | "normal";
   duracao_min?: number;
   duracao_seg?: number;
+  observacoes?: string;
 }
 
 /**
@@ -184,6 +185,66 @@ export interface WorkoutPlan {
   data_ultima_execucao: string | null;
   is_active: boolean;
   exercises: WorkoutPlanExercise[]; // Array de exercícios aninhados
+}
+
+/**
+ * Prescrição para exercícios baseados em repetições (musculação).
+ */
+export interface NormalPrescriptionInput {
+  tipo: "normal";
+  series: number;
+  reps: string;
+  carga_kg: number;
+  rest_seg: number;
+  observacoes?: string;
+}
+
+/**
+ * Prescrição para exercícios baseados em tempo (cardio, pranchas).
+ */
+export interface TimePrescriptionInput {
+  tipo: "tempo";
+  duracao_min: number;
+  rest_seg: number; // Descanso pode ser útil entre rounds de cardio
+  observacoes?: string;
+}
+
+/**
+ * União dos tipos de prescrição que podem ser enviados à API.
+ * O campo 'tipo' discrimina qual é qual.
+ */
+export type WorkoutPrescriptionInput =
+  | NormalPrescriptionInput
+  | TimePrescriptionInput;
+
+export interface CreateWorkoutExerciseInput {
+  exercise_id: number;
+  prescription: WorkoutPrescriptionInput;
+}
+export interface CreateWorkoutRequest {
+  nome: string;
+  exercises: CreateWorkoutExerciseInput[];
+}
+
+/**
+ * Representa os totais de consumo para um dia.
+ * (Corresponde à tabela 'daily_consumption')
+ */
+export interface DailyConsumption {
+  agua_l: number;
+  proteinas_g: number;
+  fibras_g: number;
+  calorias_kcal: number;
+}
+
+/**
+ * Os dados (deltas) enviados ao adicionar consumo.
+ */
+export interface AddConsumptionRequest {
+  agua?: number;
+  proteinas?: number;
+  fibras?: number;
+  calorias?: number;
 }
 
 // --- 2. CONFIGURAÇÃO DO AXIOS ---
@@ -356,6 +417,71 @@ async function getUserWorkouts(): Promise<WorkoutPlan[]> {
   );
   return response.data;
 }
+/**
+ * Cria uma nova ficha de treino personalizada.
+ */
+async function createWorkoutPlan(
+  data: CreateWorkoutRequest
+): Promise<ApiResponse> {
+  const response = await axiosInstance.post<ApiResponse>(
+    "/create_workout_plan.php",
+    data
+  );
+  return response.data;
+}
+
+/**
+ * Busca os detalhes de uma ficha específica para execução.
+ */
+async function getWorkoutDetails(planId: number): Promise<WorkoutPlan> {
+  const response = await axiosInstance.get<WorkoutPlan>(
+    "/get_workout_details.php",
+    {
+      params: { plan_id: planId },
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Marca uma ficha de treino como concluída, atualizando sua data de execução.
+ */
+async function completeWorkout(planId: number): Promise<ApiResponse> {
+  const response = await axiosInstance.post<ApiResponse>(
+    "/complete_workout.php",
+    {
+      plan_id: planId,
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Busca o consumo total (água, proteína, etc.) do dia ATUAL.
+ * Chama 'get_daily_consumption.php'.
+ */
+async function getDailyConsumption(): Promise<DailyConsumption> {
+  const response = await axiosInstance.get<DailyConsumption>(
+    "/get_daily_consumption.php"
+  );
+  return response.data;
+}
+
+/**
+ * Adiciona (soma) valores ao consumo do dia atual.
+ * Chama 'upsert_nutrition.php'.
+ * @param data Os valores a serem ADICIONADOS (deltas).
+ * @returns Os NOVOS totais do dia.
+ */
+async function addDailyConsumption(
+  data: AddConsumptionRequest
+): Promise<DailyConsumption> {
+  const response = await axiosInstance.post<DailyConsumption>(
+    "/upsert_nutrition.php",
+    data
+  );
+  return response.data;
+}
 
 // --- 5. FUNÇÃO AUXILIAR DE ERRO (Opcional, mas recomendado) ---
 
@@ -393,6 +519,11 @@ const apiClient = {
   getRecipes,
   getExercises,
   getUserWorkouts,
+  getDailyConsumption,
+  addDailyConsumption,
+  createWorkoutPlan,
+  getWorkoutDetails,
+  completeWorkout,
 };
 
 export default apiClient;

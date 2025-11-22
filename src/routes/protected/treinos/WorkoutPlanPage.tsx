@@ -7,7 +7,6 @@ import {
   LuLoader as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
   LuFileText,
-  LuCalendarDays,
   LuUser,
   LuCrown,
   LuDumbbell,
@@ -162,10 +161,13 @@ export default function WorkoutPlansPage() {
           <LuFileText className="h-8 w-8 text-gray-800" />
           <h1 className="text-3xl font-bold text-gray-900">Minhas Fichas</h1>
         </div>
-        <button className="flex items-center gap-2 rounded-full bg-[#A8F3DC] px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-[#8de6c8]">
+        <Link
+          to="/treinos/criar"
+          className="flex items-center gap-2 rounded-full bg-[#A8F3DC] px-2.5 py-2.5 md:px-4 md:py-2 text-sm font-medium text-gray-800 shadow-md hover:bg-[#8de6c8]"
+        >
           <LuPlus className="h-4 w-4" />
-          Criar Ficha
-        </button>
+          <span className="hidden md:visible">Criar Ficha</span>
+        </Link>
       </div>
 
       {/* Grid de Fichas */}
