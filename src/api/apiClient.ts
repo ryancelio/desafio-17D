@@ -50,13 +50,14 @@ export interface UserMeasurement extends IMeasurementsData {
   user_uid: string;
   data_medicao: string;
   createdAt: string | undefined;
-  // Converte os campos para número/nulo (como o PHP os envia)
-  altura_cm: string | undefined;
-  peso_kg: string;
-  cintura_cm: string | undefined;
-  quadril_cm: string | undefined;
-  braco_cm: string | undefined;
-  coxa_cm: string | undefined;
+  // O PHP com JSON_NUMERIC_CHECK envia campos DECIMAIS como números.
+  // Campos que podem ser nulos no DB são `number | null`.
+  altura_cm: number | null;
+  peso_kg: number;
+  cintura_cm: number | null;
+  quadril_cm: number | null;
+  braco_cm: number | null;
+  coxa_cm: number | null;
 }
 
 /**
@@ -78,8 +79,29 @@ export interface ApiResponse {
 }
 
 export interface WeightHistoryEntry {
+  measurement_id: number; // <-- ADICIONADO
   data_medicao: string; // "YYYY-MM-DD"
   peso_kg: number;
+}
+
+/**
+ * Resposta da API de detalhes da medição.
+ */
+export interface MeasurementDetailsResponse {
+  details: UserMeasurement;
+  photos: string[]; // Array de URLs de imagem
+  navigation: {
+    previous_id: number | null;
+    next_id: number | null;
+  };
+}
+
+/**
+ * Representa uma única foto retornada pela API de galeria.
+ */
+export interface UserPhoto {
+  url_imagem: string;
+  data_medicao: string; // "YYYY-MM-DD HH:MM:SS"
 }
 
 /**
@@ -249,18 +271,12 @@ export interface AddConsumptionRequest {
 
 // --- 2. CONFIGURAÇÃO DO AXIOS ---
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-if (!API_URL) {
-  console.error("VITE_API_URL não está definida. Verifique seu arquivo .env");
-}
-
 /**
  * Instância principal do Axios.
  * Todas as requisições usarão esta instância.
  */
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: API_URL,
+  baseURL: "/api",
 });
 
 /**
@@ -272,8 +288,8 @@ async function getAuthToken(): Promise<string> {
     // Isso não deve acontecer se a API for chamada por um usuário logado
     throw new Error("Usuário não autenticado.");
   }
-  // Força a atualização do token se ele estiver expirado
-  return user.getIdToken(true);
+
+  return user.getIdToken();
 }
 
 // --- 3. INTERCEPTOR DE AUTENTICAÇÃO ---
@@ -483,6 +499,47 @@ async function addDailyConsumption(
   return response.data;
 }
 
+/**
+ * Adiciona uma nova medição (com fotos) para o usuário.
+ * Chama 'add_measurement.php'.
+ * @param data O FormData contendo os dados da medição e os arquivos de foto.
+ */
+async function addMeasurement(data: FormData): Promise<ApiResponse> {
+  const response = await axiosInstance.post<ApiResponse>(
+    "/add_measurement.php",
+    data,
+    {
+      headers: {
+        // Importante para upload de arquivos
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Busca os detalhes completos de uma medição específica.
+ * Chama 'get_measurement_details.php'.
+ */
+async function getMeasurementDetails(
+  measurementId: number
+): Promise<MeasurementDetailsResponse> {
+  const response = await axiosInstance.get<MeasurementDetailsResponse>(
+    "/get_measurement_details.php",
+    { params: { id: measurementId } }
+  );
+  return response.data;
+}
+
+/**
+ * Busca todas as fotos de medição do usuário logado.
+ * Chama 'get_user_photos.php'.
+ */
+async function getUserPhotos(): Promise<UserPhoto[]> {
+  const response = await axiosInstance.get<UserPhoto[]>("/get_user_photos.php");
+  return response.data;
+}
 // --- 5. FUNÇÃO AUXILIAR DE ERRO (Opcional, mas recomendado) ---
 
 /**
@@ -524,6 +581,9 @@ const apiClient = {
   createWorkoutPlan,
   getWorkoutDetails,
   completeWorkout,
+  addMeasurement,
+  getUserPhotos,
+  getMeasurementDetails,
 };
 
 export default apiClient;

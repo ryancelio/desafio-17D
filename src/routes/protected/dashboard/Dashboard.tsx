@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import apiClient, {
   isApiError,
+  // type ApiResponse,
   type DailyConsumption,
   type UserProfile,
   type WeightHistoryEntry, // (Será adicionado no apiClient)
@@ -25,6 +26,7 @@ import {
   Flame as LuFlame,
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
+import { useNavigate } from "react-router";
 import { LuGoal, LuLeaf, LuWeight } from "react-icons/lu";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -93,6 +95,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isNutritionModalOpen, setNutritionModalOpen] = useState(false);
 
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -126,6 +129,7 @@ export default function Dashboard() {
   // Formata os dados do gráfico (ex: datas)
   const chartData = useMemo(() => {
     return weightHistory.map((entry) => ({
+      measurement_id: entry.measurement_id, // <-- PASSAR O ID PARA O GRÁFICO
       // Formata a data 'YYYY-MM-DD' para 'DD/MM'
       data_medicao: new Date(entry.data_medicao).toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -327,9 +331,17 @@ export default function Dashboard() {
 
       {/* --- Card do Gráfico --- */}
       <div className="rounded-2xl bg-white p-6 shadow-md">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">
-          Histórico de Peso (kg)
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold text-gray-800">
+            Histórico de Peso (kg)
+          </h3>
+          <button
+            onClick={() => navigate("/measurements/add")}
+            className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <LuPlus className="w-4 h-4" /> Adicionar Medida
+          </button>
+        </div>
         {chartData.length > 0 ? ( // Alterado para > 0
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -358,7 +370,21 @@ export default function Dashboard() {
                   stroke="#FCC3D2"
                   strokeWidth={3}
                   dot={{ r: 4, fill: "#FCC3D2" }}
-                  activeDot={{ r: 8, fill: "#db889d" }}
+                  activeDot={{
+                    r: 8,
+                    fill: "#db889d",
+                    stroke: "#fff",
+                    strokeWidth: 2,
+                    cursor: "pointer",
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick: (payload: any) => {
+                      if (payload?.payload?.measurement_id) {
+                        navigate(
+                          `/measurements/${payload.payload.measurement_id}`
+                        );
+                      }
+                    },
+                  }}
                 />
 
                 {/* Linha de Referência da Meta (Azul Pontilhada) */}

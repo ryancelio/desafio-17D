@@ -31,6 +31,8 @@ import OnboardingWizard from "./routes/NEW-Onboarding/OnboardingWizard.tsx";
 import CreateWorkoutPlanPage from "./routes/protected/treinos/CreateWorkoutPlanPage.tsx";
 import WorkoutExecutionPage from "./routes/protected/treinos/WorkoutExecutionPage.tsx";
 import WorkoutCompletionPage from "./routes/protected/treinos/WorkoutCompletionPage.tsx";
+import MeasurementDetailsPage from "./routes/protected/measurements/MeasurementDetailsPage.tsx";
+import AddMeasurementsPage from "./routes/protected/measurements/AddMeasurementsPage.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -78,6 +80,14 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/receitas" element={<RecipesPage />} />
               <Route path="/treinos" element={<WorkoutPlansPage />} />
               <Route path="/perfil" element={<ProfilePage />} />
+              <Route
+                path="/measurements/add"
+                element={<AddMeasurementsPage />}
+              />
+              <Route
+                path="/measurements/:id"
+                element={<MeasurementDetailsPage />}
+              />
             </Route>
             <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
             <Route
