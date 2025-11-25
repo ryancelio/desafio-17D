@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import apiClient, {
   isApiError,
   type Exercise,
@@ -101,7 +101,7 @@ const getEmbedUrl = (url: string | null): string | null => {
     ) {
       return `https://www.youtube.com/embed/${videoUrl.searchParams.get("v")}`;
     }
-  } catch (error) {
+  } catch {
     console.error("URL de vídeo inválida:", url);
   }
   return null;
@@ -281,7 +281,7 @@ export default function ExercisesPage() {
 
   // --- NOVO LAYOUT DE 2 COLUNAS ---
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       <div className="flex items-center gap-3">
         <LuDumbbell className="h-8 w-8 text-gray-800" />
         <h1 className="text-3xl font-bold text-gray-900">Exercícios</h1>

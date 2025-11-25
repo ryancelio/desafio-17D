@@ -14,6 +14,7 @@ import NomeStep from "./Steps/NomeStep";
 import EmailStep from "./Steps/EmailStep";
 import TodasMedidasStep from "./Steps/TodasMedidasStep";
 import DiasTreinoStep from "./Steps/DiasTreinoStep";
+import FotosProgressoStep from "./Steps/FotosProgressoStep";
 import PlanosStep from "./Steps/PlanosStep";
 import GerandoPlanoStep from "./Steps/GerandoPlanoStep";
 import DashboardPreviewStep from "./Steps/DashboardPreviewStep";
@@ -40,11 +41,6 @@ const OnboardingWizard: React.FC = () => {
 
   const [onboardLoading, setOnboardLoading] = useState(false);
 
-  // const buttonSpring: Transition = {
-  //   type: "spring",
-  //   stiffness: 500,
-  //   damping: 30,
-  // };
   const stepComponents = [
     ObjetivoStep,
     NivelAtvdStep,
@@ -53,6 +49,7 @@ const OnboardingWizard: React.FC = () => {
     MedidasStep,
     PesoAlvoStep,
     TodasMedidasStep,
+    FotosProgressoStep,
     DiasTreinoStep,
     NomeStep,
     EmailStep,

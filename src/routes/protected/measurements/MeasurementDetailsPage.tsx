@@ -112,6 +112,11 @@ export default function MeasurementDetailsPage() {
     }
 
     const { details, photos } = data;
+    const hasBodyMeasurements =
+      details.cintura_cm ||
+      details.quadril_cm ||
+      details.braco_cm ||
+      details.coxa_cm;
 
     return (
       <motion.div
@@ -141,12 +146,18 @@ export default function MeasurementDetailsPage() {
               Medidas Corporais (cm)
             </h3>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <InfoPill label="Cintura" value={details.cintura_cm} />
-            <InfoPill label="Quadril" value={details.quadril_cm} />
-            <InfoPill label="Braço" value={details.braco_cm} />
-            <InfoPill label="Coxa" value={details.coxa_cm} />
-          </div>
+          {hasBodyMeasurements ? (
+            <div className="grid grid-cols-2 gap-4">
+              <InfoPill label="Cintura" value={details.cintura_cm} />
+              <InfoPill label="Quadril" value={details.quadril_cm} />
+              <InfoPill label="Braço" value={details.braco_cm} />
+              <InfoPill label="Coxa" value={details.coxa_cm} />
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 py-4">
+              <p>Nenhuma medida corporal foi adicionada para este registro.</p>
+            </div>
+          )}
         </div>
 
         {/* Card de Fotos */}
@@ -175,58 +186,59 @@ export default function MeasurementDetailsPage() {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
-      {/* Cabeçalho Fixo */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-white p-4 shadow-sm">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="p-2 text-gray-600"
-        >
-          <LuArrowLeft className="h-6 w-6" />
-        </button>
-        <h1 className="text-lg font-semibold text-gray-800">
-          Detalhes da Medição
-        </h1>
-        <div className="w-8"></div> {/* Espaçador */}
-      </header>
+    <div className="flex flex-col bg-gray-50 h-full w-full overflow-y-auto">
+      {/* Cabeçalho e Navegação (Fixos) */}
+      <div className="shrink-0 sticky top-0 z-20 bg-gray-50">
+        <header className="flex items-center justify-between bg-white p-4 shadow-sm">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="p-2 text-gray-600"
+          >
+            <LuArrowLeft className="h-6 w-6" />
+          </button>
+          <h1 className="text-lg font-semibold text-gray-800">
+            Detalhes da Medição
+          </h1>
+          <div className="w-8"></div> {/* Espaçador */}
+        </header>
 
-      {/* Navegação de Datas */}
-      <nav className="sticky top-[68px] z-10 flex items-center justify-between bg-gray-100 p-3 shadow-inner">
-        <button
-          onClick={() => handleNavigate(data?.navigation.previous_id ?? null)}
-          disabled={!data?.navigation.previous_id || isLoading}
-          className="p-2 rounded-full text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
-        >
-          <LuChevronLeft className="h-6 w-6" />
-        </button>
+        <nav className="flex items-center justify-between bg-gray-100 p-3 shadow-inner">
+          <button
+            onClick={() => handleNavigate(data?.navigation.previous_id ?? null)}
+            disabled={!data?.navigation.previous_id || isLoading}
+            className="p-2 rounded-full text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
+          >
+            <LuChevronLeft className="h-6 w-6" />
+          </button>
 
-        <div className="flex flex-col items-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={id}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-2 font-semibold text-gray-700"
-            >
-              <LuCalendar className="h-4 w-4" />
-              <span>{isLoading ? "Carregando..." : formattedDate}</span>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+          <div className="flex flex-col items-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={id}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 font-semibold text-gray-700"
+              >
+                <LuCalendar className="h-4 w-4" />
+                <span>{isLoading ? "Carregando..." : formattedDate}</span>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-        <button
-          onClick={() => handleNavigate(data?.navigation.next_id ?? null)}
-          disabled={!data?.navigation.next_id || isLoading}
-          className="p-2 rounded-full text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
-        >
-          <LuChevronRight className="h-6 w-6" />
-        </button>
-      </nav>
+          <button
+            onClick={() => handleNavigate(data?.navigation.next_id ?? null)}
+            disabled={!data?.navigation.next_id || isLoading}
+            className="p-2 rounded-full text-gray-700 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
+          >
+            <LuChevronRight className="h-6 w-6" />
+          </button>
+        </nav>
+      </div>
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
+      <main className="flex-1 p-4 md:p-6">
         <AnimatePresence mode="wait">{renderContent()}</AnimatePresence>
       </main>
 

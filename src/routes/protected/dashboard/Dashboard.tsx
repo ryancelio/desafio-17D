@@ -23,12 +23,14 @@ import {
   AlertTriangle as LuAlertTriangle,
   GlassWater as LuGlassWater,
   Plus as LuPlus,
+  Star as LuStar,
   Flame as LuFlame,
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
 import { useNavigate } from "react-router";
 import { LuGoal, LuLeaf, LuWeight } from "react-icons/lu";
 import { AnimatePresence, motion } from "framer-motion";
+import { Objetivo } from "../../../types/onboarding.schema";
 
 // Função para formatar o nome do objetivo
 const formatObjective = (objective: UserProfile["objetivo_atual"]): string => {
@@ -87,6 +89,7 @@ const NutritionProgress: React.FC<{
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [goals] = useState<Objetivo | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
   const [dailyConsumption, setDailyConsumption] =
     useState<DailyConsumption | null>(null);
@@ -102,11 +105,13 @@ export default function Dashboard() {
       setError(null);
       try {
         // Busca os dados do perfil e o histórico de peso em paralelo
-        const [profileData, historyData, consumptionData] = await Promise.all([
-          apiClient.getUserProfile(),
-          apiClient.getWeightHistory(),
-          apiClient.getDailyConsumption(),
-        ]);
+        const [profileData, historyData, consumptionData, objetivoData] =
+          await Promise.all([
+            apiClient.getUserProfile(),
+            apiClient.getWeightHistory(),
+            apiClient.getDailyConsumption(),
+            apiClient.get,
+          ]);
 
         setProfile(profileData);
         setWeightHistory(historyData);
@@ -142,9 +147,8 @@ export default function Dashboard() {
   const firstName = profile?.nome.split(" ")[0] || "Usuário";
 
   const { pesoAtual, pesoAlvo, diferenca } = useMemo(() => {
-    // TODO: Substitua este 'placeholder' pelo dado real vindo do perfil
-    // Ex: const pesoAlvo = profile?.peso_alvo || 0;
-    const pesoAlvo = 75.0; // << MOCKUP (Peso Alvo: 75kg)
+    // Busca o peso alvo do perfil do usuário
+    const pesoAlvo = profile?.peso_alvo || 0;
 
     const pesoAtual =
       weightHistory.length > 0
@@ -154,7 +158,7 @@ export default function Dashboard() {
     const diferenca = pesoAtual && pesoAlvo ? pesoAtual - pesoAlvo : null;
 
     return { pesoAtual, pesoAlvo, diferenca };
-  }, [weightHistory]);
+  }, [weightHistory, profile?.peso_alvo]);
 
   const nutritionTargets = useMemo(() => {
     const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
@@ -163,6 +167,24 @@ export default function Dashboard() {
     const metaCalorias = 2000; // MOCK
     return { aguaRecomendadaL, metaProteinas, metaFibras, metaCalorias };
   }, [pesoAtual]);
+
+  // Verifica se todas as metas diárias foram atingidas
+  const allGoalsMet = useMemo(() => {
+    if (!dailyConsumption) return false;
+
+    const waterGoalMet =
+      dailyConsumption.agua_l >= nutritionTargets.aguaRecomendadaL;
+    const proteinGoalMet =
+      dailyConsumption.proteinas_g >= nutritionTargets.metaProteinas;
+    const fiberGoalMet =
+      dailyConsumption.fibras_g >= nutritionTargets.metaFibras;
+    const caloriesWithinLimit =
+      dailyConsumption.calorias_kcal <= nutritionTargets.metaCalorias;
+
+    return (
+      waterGoalMet && proteinGoalMet && fiberGoalMet && caloriesWithinLimit
+    );
+  }, [dailyConsumption, nutritionTargets]);
 
   const handleSaveNutrition = async (data: {
     agua: number;
@@ -203,7 +225,7 @@ export default function Dashboard() {
 
   // --- Estados de UI ---
 
-  if (isLoading || !profile || !dailyConsumption) {
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <LuLoader2 className="h-12 w-12 animate-spin text-[#FCC3D2]" />
@@ -213,20 +235,20 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg bg-red-100 p-4 text-red-700">
+      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg text-center bg-red-100 p-4 text-red-700">
         <LuAlertTriangle className="h-8 w-8" />
-        <h3 className="font-semibold">Erro ao carregar</h3>
+        <h3 className="font-semibold">Erro ao carregar o dashboard</h3>
         <p>{error}</p>
       </div>
     );
   }
 
-  if (!profile) {
-    return <div>Perfil não encontrado.</div>;
+  if (!profile || !dailyConsumption) {
+    return <div>Não foi possível carregar os dados do dashboard.</div>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Olá, {firstName}!</h1>
         <div className="flex items-center gap-2 text-gray-500 mt-1">
@@ -239,8 +261,28 @@ export default function Dashboard() {
 
       {/* --- Grid de Cards --- */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Card de Metas Nutricionais */}
-        <div className="col-span-2 rounded-2xl bg-white p-6 shadow-md space-y-5">
+        {/* Card de Acompanhamento Diário */}
+        <div className="relative col-span-2 space-y-5 overflow-hidden rounded-2xl bg-white p-6 shadow-md">
+          {/* Ribbon de Conquista */}
+          <AnimatePresence>
+            {allGoalsMet && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                className="absolute top-3 -left-11 flex h-8 w-32 transform items-center justify-center bg-yellow-400 shadow-lg -rotate-45"
+                style={{ transform: "rotate(-45deg)" }}
+              >
+                <LuStar
+                  className="h-5 w-5 text-white"
+                  fill="currentColor"
+                  style={{ transform: "rotate(45deg)" }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="flex justify-between gap-1 items-center mb-3">
             <h3 className="text-xl font-semibold text-gray-800">
               Acompanhamento Diário
@@ -376,11 +418,12 @@ export default function Dashboard() {
                     stroke: "#fff",
                     strokeWidth: 2,
                     cursor: "pointer",
+                    // O primeiro argumento é o evento, o segundo é o payload com os dados.
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick: (payload: any) => {
-                      if (payload?.payload?.measurement_id) {
+                    onClick: (_event: any, data: any) => {
+                      if (data?.payload?.measurement_id) {
                         navigate(
-                          `/measurements/${payload.payload.measurement_id}`
+                          `/measurements/${data.payload.measurement_id}`
                         );
                       }
                     },

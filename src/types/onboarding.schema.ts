@@ -36,26 +36,27 @@ export const tipoRestricaoSchema = z.enum([
 // Note que eles permitem os valores do 'initialState' (ex: "" ou 0)
 
 export const personalSchema = z.object({
-  nome: z.string(),
-  data_nascimento: z.string(), // O <input type="date"> usa string YYYY-MM-DD
-  genero: generoSchema.or(z.literal("")), // Permite "" ou o enum
-  altura_cm: z.number().int().min(0), // Permite 0
-  email: z.email(),
+  nome: z.string().nullable(), // DEFAULT NULL
+  data_nascimento: z.string().nullable(), // O <input type="date"> usa string YYYY-MM-DD, DEFAULT NULL
+  genero: generoSchema.nullable(), // DEFAULT NULL
+  altura_cm: z.number().int().min(0).nullable(), // DEFAULT NULL
+  email: z.string().email(), // NOT NULL
 });
 
 export const goalsSchema = z.object({
-  objetivo_atual: objetivoSchema.or(z.literal("")),
-  nivel_atividade: nivelAtividadeSchema.or(z.literal("")),
-  dias_treino: z.array(diaSemanaSchema),
-  peso_alvo: z.float32(),
+  objetivo_atual: objetivoSchema.default("definir"), // DEFAULT 'definir'
+  nivel_atividade: nivelAtividadeSchema.default("sedentario"), // DEFAULT 'sedentario'
+  dias_treino: z.array(diaSemanaSchema).nullable(), // DEFAULT NULL
+  peso_alvo: z.number().nullable(), // peso_alvo_kg DECIMAL(5,2), DEFAULT NULL
 });
 
 export const measurementsSchema = z.object({
-  peso_kg: z.string(),
-  cintura_cm: z.string().optional(),
-  quadril_cm: z.string().optional(),
-  braco_cm: z.string().optional(),
-  coxa_cm: z.string().optional(),
+  // user_measurements table
+  peso_kg: z.number().positive(), // DECIMAL(5,2) NOT NULL
+  cintura_cm: z.number().positive().optional(), // DECIMAL(5,2) DEFAULT NULL
+  quadril_cm: z.number().positive().optional(), // DECIMAL(5,2) DEFAULT NULL
+  braco_cm: z.number().positive().optional(), // DECIMAL(5,2) DEFAULT NULL
+  coxa_cm: z.number().positive().optional(), // DECIMAL(5,2) DEFAULT NULL
 });
 
 export const preferenceSchema = z.object({
@@ -63,8 +64,8 @@ export const preferenceSchema = z.object({
   tipo_restricao: tipoRestricaoSchema,
   valor: z.string(),
 });
-
-export const PlanoSchema = z.object({
+// Renomeado para evitar conflito com outros "Planos" (ex: treino)
+export const planoOnboardingSchema = z.object({
   id: z.enum(["padrao", "padrao_treino", "padrao_dieta", "completo"]),
   faturamento: z.enum(["mensal", "anual"]),
 });
@@ -75,7 +76,8 @@ export const onboardingStateSchema = z.object({
   goals: goalsSchema,
   measurements: measurementsSchema,
   preferences: z.array(preferenceSchema),
-  plano: PlanoSchema,
+  plano: planoOnboardingSchema,
+  fotosProgresso: z.array(z.instanceof(File)).optional(),
 });
 
 const minDate = new Date("1900-01-01");

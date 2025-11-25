@@ -19,10 +19,15 @@ import {
   LuShieldAlert,
   LuSettings,
   LuLoader,
-  LuUser,
+  LuUser as LuUserIcon,
+  LuLogOut,
+  LuKey,
 } from "react-icons/lu";
-import { motion } from "framer-motion"; // 1. IMPORTAR 'motion'
+import { motion, AnimatePresence } from "framer-motion";
 import type { DiaSemana } from "../../../types/onboarding.schema";
+import { signOut } from "firebase/auth";
+import { useNavigate } from "react-router";
+import { auth } from "../../../firebase";
 
 // --- Funções Auxiliares de Formatação ---
 
@@ -90,7 +95,7 @@ const InfoItem: React.FC<{
       <Icon className="w-4 h-4" />
       <span>{label}</span>
     </div>
-    <span className="font-medium text-gray-900">{value || "N/A"}</span>
+    <span className="font-semibold text-gray-900">{value || "N/A"}</span>
   </div>
 );
 
@@ -148,7 +153,7 @@ const BmiGauge: React.FC<{ percentage: number }> = ({ percentage }) => {
   ];
 
   return (
-    <div className="pt-3">
+    <div className="pt-7 p-4">
       {/* 1. A Barra Colorida (Gradiente) */}
       <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-gray-200">
         <div
@@ -251,6 +256,7 @@ export default function ProfilePage() {
   const [preferences, setPreferences] = useState<UserPreference[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSettingsMenuOpen, setSettingsMenuOpen] = useState(false);
 
   // 3. useEffect para buscar dados adicionais (medidas, preferências)
   useEffect(() => {
@@ -279,6 +285,20 @@ export default function ProfilePage() {
     };
     fetchProfileData();
   }, [userProfile]);
+
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    if (window.confirm("Deseja realmente sair?")) {
+      try {
+        await signOut(auth);
+        // O onAuthStateChanged no AuthContext cuidará de limpar o estado
+        navigate("/login"); // Redireciona o usuário
+      } catch (error) {
+        console.error("Erro ao fazer logout:", error);
+      }
+    }
+  };
 
   // 4. Calcular IMC
   // 4. ATUALIZADO: useMemo agora calcula e retorna os dados do IMC
@@ -337,22 +357,51 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Card Principal do Usuário */}
-      <div className="flex flex-col md:flex-row items-center gap-6 rounded-2xl bg-white p-6 shadow-md">
-        <div className="relative">
-          {/* Placeholder da Foto de Perfil */}
+      {/* Card Principal do Usuário - AGORA COM MENU DE OPÇÕES */}
+      <div className="relative rounded-2xl bg-white p-6 shadow-md">
+        <div className="flex flex-col items-center gap-6 md:flex-row">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-200 text-gray-500">
             <LuCircleUser className="h-16 w-16" />
           </div>
-          <button className="absolute -bottom-1 -right-1 rounded-full bg-[#FCC3D2] p-1.5 text-gray-800 shadow-md hover:bg-[#db889d]">
-            <LuSettings className="h-4 w-4" />
-          </button>
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl font-bold text-gray-900">
+              {userProfile.nome}
+            </h1>
+            <p className="text-gray-600">{userProfile.email}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {userProfile.nome}
-          </h1>
-          <p className="text-gray-600">{userProfile.email}</p>
+
+        {/* Botão e Menu de Configurações */}
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={() => setSettingsMenuOpen(!isSettingsMenuOpen)}
+            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+          >
+            <LuSettings className="h-5 w-5" />
+          </button>
+
+          <AnimatePresence>
+            {isSettingsMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              >
+                <button className="flex gap-1 items-center w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100">
+                  <LuKey />
+                  Alterar senha
+                </button>
+                <button
+                  className="flex gap-1 items-center w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                >
+                  <LuLogOut />
+                  Deslogar
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -438,7 +487,7 @@ export default function ProfilePage() {
           <InfoItem
             label="Gênero"
             value={formatGender(userProfile.genero)}
-            icon={LuUser}
+            icon={LuUserIcon}
           />
         </InfoCard>
       </div>
@@ -499,20 +548,6 @@ export default function ProfilePage() {
           )}
         </InfoCard>
       </div>
-
-      {/* Card de Configurações */}
-      <InfoCard
-        title="Configurações da Conta"
-        icon={LuSettings}
-        iconColor="bg-gray-200 text-gray-700"
-      >
-        <button className="text-sm font-medium text-blue-600 hover:underline">
-          Alterar senha
-        </button>
-        <button className="text-sm font-medium text-red-600 hover:underline">
-          Encerrar conta
-        </button>
-      </InfoCard>
     </div>
   );
 }
