@@ -358,10 +358,30 @@ async function updateUserProfile(
  * @param data O objeto OnboardingState completo do formulário.
  */
 async function submitOnboarding(data: OnboardingState): Promise<ApiResponse> {
-  // O interceptor já cuida do token
+  // Se não houver fotos, envie como JSON normal
+  if (!data.fotosProgresso || data.fotosProgresso.length === 0) {
+    const response = await axiosInstance.post<ApiResponse>(
+      "/submit_onboarding.php",
+      data
+    );
+    return response.data;
+  }
+
+  // Se houver fotos, construa um FormData
+  const formData = new FormData();
+
+  // Adiciona os dados do onboarding como uma string JSON
+  formData.append("onboardingData", JSON.stringify(data));
+
+  // Adiciona cada arquivo de foto
+  data.fotosProgresso.forEach((file, index) => {
+    formData.append(`foto_${index}`, file, file.name);
+  });
+
   const response = await axiosInstance.post<ApiResponse>(
     "/submit_onboarding.php",
-    data
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
   );
   return response.data;
 }

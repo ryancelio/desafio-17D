@@ -4,19 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import apiClient, {
   isApiError,
   type WorkoutPlan,
-  type WorkoutPlanExercise,
 } from "../../../api/apiClient";
 import {
   LuLoader as LuLoader2,
-  LuTriangleAlert as LuAlertTriangle,
   LuChevronLeft,
-  LuCheck,
-  LuPlay,
   LuSkipForward,
-  LuTimer,
   LuDumbbell,
   LuInfo,
-  LuX,
   LuPlus,
   LuCircleCheck as LuCheckCircle2,
 } from "react-icons/lu";
@@ -27,7 +21,7 @@ const RestTimerOverlay: React.FC<{
   onComplete: () => void;
   onSkip: () => void;
   onAdd: (seconds: number) => void;
-}> = ({ duration, onComplete, onSkip, onAdd }) => {
+}> = ({ duration, onComplete, onSkip }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const totalTime = useRef(duration);
 

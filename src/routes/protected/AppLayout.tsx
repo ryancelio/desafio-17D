@@ -73,7 +73,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-gray-100">
+    <div className="flex h-screen w-full bg-gray-100">
       {/* --- 1. Sidebar (Desktop) --- */}
       <aside className="hidden md:flex md:h-screen sticky top-0 bottom-0 md:w-64 flex-col border-r border-gray-500/50 bg-white p-4">
         <nav className="flex flex-col gap-2 flex-1">
@@ -111,8 +111,8 @@ export default function AppLayout() {
       </aside>
 
       {/* --- 2. Conteúdo Principal --- */}
-      <div className="flex flex-1 flex-col pb-20 md:pb-0">
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <div className="flex flex-1 flex-col pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto md:p-8">
           <Outlet />
         </main>
       </div>

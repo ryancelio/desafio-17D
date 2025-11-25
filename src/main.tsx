@@ -3,8 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "@ncdai/react-wheel-picker/style.css";
 // import App from "./App.tsx";
-import { AuthProvider } from "./context/AuthContext.tsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.tsx";
 import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router";
+import { Loader2 } from "lucide-react";
 
 // --- Rotas Públicas ---
 import UserCreationRoute from "./routes/UserCreationRoute.tsx";
@@ -33,6 +34,8 @@ import WorkoutExecutionPage from "./routes/protected/treinos/WorkoutExecutionPag
 import WorkoutCompletionPage from "./routes/protected/treinos/WorkoutCompletionPage.tsx";
 import MeasurementDetailsPage from "./routes/protected/measurements/MeasurementDetailsPage.tsx";
 import AddMeasurementsPage from "./routes/protected/measurements/AddMeasurementsPage.tsx";
+import ActiveUserCheckRoute from "./routes/protected/ActiveUserCheckRoute.tsx";
+import RootRedirector from "./hooks/UserRedirect.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -40,7 +43,7 @@ createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <Routes>
           {/* === Rotas Públicas === */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<RootRedirector />} />
           <Route
             path="/onboard"
             element={
@@ -74,22 +77,25 @@ createRoot(document.getElementById("root")!).render(
               </ProtectedRoute>
             }
           >
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/exercicios" element={<ExercisesPage />} />
-              <Route path="/receitas" element={<RecipesPage />} />
-              <Route path="/treinos" element={<WorkoutPlansPage />} />
-              <Route path="/perfil" element={<ProfilePage />} />
-              <Route
-                path="/measurements/add"
-                element={<AddMeasurementsPage />}
-              />
-              <Route
-                path="/measurements/:id"
-                element={<MeasurementDetailsPage />}
-              />
+            {/* Envolvemos o AppLayout com a nova verificação */}
+            <Route element={<ActiveUserCheckRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/exercicios" element={<ExercisesPage />} />
+                <Route path="/receitas" element={<RecipesPage />} />
+                <Route path="/treinos" element={<WorkoutPlansPage />} />
+                <Route path="/perfil" element={<ProfilePage />} />
+                <Route
+                  path="/measurements/add"
+                  element={<AddMeasurementsPage />}
+                />
+                <Route
+                  path="/measurements/:id"
+                  element={<MeasurementDetailsPage />}
+                />
+              </Route>
+              <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
             </Route>
-            <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
             <Route
               path="/treinos/concluido/:id"
               element={<WorkoutCompletionPage />}

@@ -155,7 +155,7 @@ export default function WorkoutPlansPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <LuFileText className="h-8 w-8 text-gray-800" />

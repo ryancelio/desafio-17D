@@ -18,6 +18,7 @@ import {
   LuCircleMinus as LuMinusCircle, // Para excluir tags
   LuBan,
   LuSearch, //
+  LuSlidersHorizontal,
 } from "react-icons/lu";
 import {
   motion,
@@ -278,6 +279,7 @@ export default function RecipesPage() {
   const [maxCalories, setMaxCalories] = useState(1000); // Max inicial
   const [tagFilters, setTagFilters] = useState<Record<string, TagState>>({});
 
+  const [areFiltersVisible, setAreFiltersVisible] = useState(false);
   const debouncedSearchText = useDebounce(searchText, 500);
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -357,71 +359,103 @@ export default function RecipesPage() {
   }
 
   return (
-    // 1. Removido o 'space-y-6' e usado React.Fragment
-    <>
+    <div className="p-4">
       {/* 2. NOVO HEADER DE FILTRO (STICKY) */}
       <div
         className="sticky -top-4 md:-top-8 z-10 
                    bg-white shadow-md border-b border-gray-200 
-                   -mt-4 md:-mt-8 -mx-4 md:-mx-8 
-                   pt-4 md:pt-8 px-4 md:px-8 pb-4"
+                   -mt-4 md:-mt-8 -mx-4 md:-mx-8"
       >
-        <div className="flex items-center mb-4 gap-3">
-          <LuSoup className="h-8 w-8 text-gray-800" />
-          <h1 className="text-3xl font-bold text-gray-900">Receitas</h1>
-        </div>
-
-        {/* 3. O painel de filtros (mesmo código de antes) */}
-        <div className="space-y-4">
-          {/* Filtro de Texto */}
-          <div className="relative">
-            <input
-              type="search"
-              placeholder="Buscar por nome ou descrição..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 pl-10 focus:outline-none focus:ring-2 focus:ring-[#FCC3D2]"
-            />
-            <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <div className="pt-4 md:pt-8 px-4 md:px-8 pb-4">
+          <div className="flex items-center mb-4 gap-3">
+            <LuSoup className="h-8 w-8 text-gray-800" />
+            <h1 className="text-3xl font-bold text-gray-900">Receitas</h1>
           </div>
 
-          {/* Filtro de Calorias */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <label htmlFor="calories" className="font-medium text-gray-700">
-                Calorias Máximas
-              </label>
-              <span className="font-bold text-gray-800">
-                {maxCalories} kcal
-              </span>
-            </div>
-            <input
-              id="calories"
-              type="range"
-              min={100}
-              max={1000}
-              step={50}
-              value={maxCalories}
-              onChange={(e) => setMaxCalories(e.target.valueAsNumber)}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#FCC3D2]"
-            />
-          </div>
-
-          {/* Filtro de Tags */}
-          <div className="space-y-2">
-            <label className="font-medium text-gray-700 text-sm">
-              Filtros (Incluir / Excluir)
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {allAvailableTags.map((tag) => (
-                <TagButton
-                  key={tag}
-                  tag={tag}
-                  state={tagFilters[tag] || "off"}
-                  onClick={() => handleTagClick(tag)}
+          <div className="flex flex-col gap-4">
+            {/* Barra de Busca e Botão de Filtro */}
+            <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                <input
+                  type="search"
+                  placeholder="Buscar por nome ou descrição..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 p-2 pl-10 focus:outline-none focus:ring-2 focus:ring-[#FCC3D2]"
                 />
-              ))}
+                <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              </div>
+              <button
+                onClick={() => setAreFiltersVisible(!areFiltersVisible)}
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                  areFiltersVisible
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                <LuSlidersHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {areFiltersVisible ? "Ocultar Filtros" : "Filtros"}
+                </span>
+              </button>
             </div>
+
+            {/* Painel de Filtros Avançados (Colapsável) */}
+            <AnimatePresence>
+              {areFiltersVisible && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-4 pt-2">
+                    {/* Filtro de Calorias */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <label
+                          htmlFor="calories"
+                          className="font-medium text-gray-700"
+                        >
+                          Calorias Máximas
+                        </label>
+                        <span className="font-bold text-gray-800">
+                          {maxCalories} kcal
+                        </span>
+                      </div>
+                      <input
+                        id="calories"
+                        type="range"
+                        min={100}
+                        max={1000}
+                        step={50}
+                        value={maxCalories}
+                        onChange={(e) => setMaxCalories(e.target.valueAsNumber)}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#FCC3D2]"
+                      />
+                    </div>
+
+                    {/* Filtro de Tags */}
+                    <div className="space-y-2">
+                      <label className="font-medium text-gray-700 text-sm">
+                        Filtros (Incluir / Excluir)
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {allAvailableTags.map((tag) => (
+                          <TagButton
+                            key={tag}
+                            tag={tag}
+                            state={tagFilters[tag] || "off"}
+                            onClick={() => handleTagClick(tag)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
@@ -460,6 +494,6 @@ export default function RecipesPage() {
           />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
