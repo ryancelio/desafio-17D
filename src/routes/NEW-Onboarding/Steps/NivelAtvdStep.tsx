@@ -16,15 +16,15 @@ export const NivelAtvdStep: React.FC<StepProps> = ({
     { value: "ativo", label: "Ativo" },
     { value: "muito_ativo", label: "Muito Ativo" },
   ];
-  const { goals } = onboardingData;
+  const { personal } = onboardingData;
 
   useEffect(() => {
-    if (goals.nivel_atividade === "") {
+    if (!personal.nivel_atividade) {
       setStepvalid(false);
     } else {
       setStepvalid(true);
     }
-  }, [goals.nivel_atividade, setStepvalid]);
+  }, [personal.nivel_atividade, setStepvalid]);
 
   return (
     <motion.div
@@ -44,10 +44,13 @@ export const NivelAtvdStep: React.FC<StepProps> = ({
       <WheelPickerWrapper className="text-2xl">
         <WheelPicker
           options={activityLevels}
-          value={goals.nivel_atividade}
+          value={personal.nivel_atividade}
           onValueChange={(value) =>
             updateOnboardingData({
-              goals: { ...goals, nivel_atividade: value as NivelAtividade },
+              personal: {
+                ...personal,
+                nivel_atividade: value as NivelAtividade,
+              },
             })
           }
           classNames={{

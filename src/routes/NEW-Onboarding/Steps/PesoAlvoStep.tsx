@@ -8,16 +8,18 @@ const PesoAlvoStep: React.FC<StepProps> = ({
 }) => {
   //   const [targetWeight, setTargetWeight] = useState(70);
 
-  const { goals } = onboardingData;
+  const { personal } = onboardingData;
   const [pesoPerder, setPesoPerder] = useState(0);
 
   useEffect(() => {
-    setPesoPerder(
-      onboardingData.goals.peso_alvo -
-        Number(onboardingData.measurements.peso_kg)
-    );
+    if (onboardingData.personal.peso_alvo_kg) {
+      setPesoPerder(
+        onboardingData.personal.peso_alvo_kg -
+          Number(onboardingData.measurements.peso_kg)
+      );
+    }
   }, [
-    onboardingData.goals.peso_alvo,
+    onboardingData.personal.peso_alvo_kg,
     onboardingData.measurements.peso_kg,
     setPesoPerder,
   ]);
@@ -38,14 +40,14 @@ const PesoAlvoStep: React.FC<StepProps> = ({
       </div>
       <div className="flex flex-col items-center gap-8">
         <motion.div
-          key={goals.peso_alvo}
+          key={personal.peso_alvo_kg}
           initial={{ scale: 0.9, opacity: 0.8 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
           className="relative flex items-baseline justify-center"
         >
           <span className="text-6xl font-bold text-gray-800">
-            {goals.peso_alvo}
+            {personal.peso_alvo_kg}
           </span>
           <span className="text-xl font-medium text-gray-500">kg</span>
         </motion.div>
@@ -54,10 +56,10 @@ const PesoAlvoStep: React.FC<StepProps> = ({
           min="40"
           max="150"
           step="1"
-          value={goals.peso_alvo}
+          value={personal.peso_alvo_kg || ""}
           onChange={(e) =>
             updateOnboardingData({
-              goals: { ...goals, peso_alvo: Number(e.target.value) },
+              personal: { ...personal, peso_alvo_kg: Number(e.target.value) },
             })
           }
           className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"

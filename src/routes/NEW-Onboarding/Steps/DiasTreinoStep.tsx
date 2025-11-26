@@ -17,29 +17,26 @@ const DiasTreinoStep: React.FC<StepProps> = ({
   updateOnboardingData,
   setStepvalid,
 }) => {
-  const { goals } = onboardingData;
+  const { personal } = onboardingData;
 
   const toggleDia = (dia: DiaSemana) => {
-    const { dias_treino } = goals;
+    const { dias_treino } = personal;
     const newList = dias_treino.includes(dia)
       ? dias_treino.filter((d) => d !== dia)
       : [...dias_treino, dia];
 
     updateOnboardingData({
-      goals: { ...goals, dias_treino: newList },
+      personal: { ...personal, dias_treino: newList },
     });
-    // if (!touched.dias_treino) {
-    //   handleBlur("dias_treino");
-    // }
   };
 
   useEffect(() => {
-    if (goals.dias_treino.length === 0) {
+    if (personal.dias_treino.length === 0) {
       setStepvalid(false);
     } else {
       setStepvalid(true);
     }
-  }, [goals.dias_treino, setStepvalid]);
+  }, [personal.dias_treino, setStepvalid]);
 
   return (
     <motion.div
@@ -64,7 +61,7 @@ const DiasTreinoStep: React.FC<StepProps> = ({
         >
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-center">
             {diasSemana.map((dia) => {
-              const ativo = onboardingData.goals.dias_treino.includes(
+              const ativo = onboardingData.personal.dias_treino.includes(
                 dia.value
               );
               return (

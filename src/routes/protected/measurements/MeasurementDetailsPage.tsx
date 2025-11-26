@@ -9,7 +9,7 @@ import {
   LuArrowLeft,
   LuChevronLeft,
   LuChevronRight,
-  LuLoader as LuLoader2,
+  LuLoaderCircle as LuLoader2,
   LuTriangleAlert,
   LuCalendar,
   LuWeight,
@@ -148,10 +148,10 @@ export default function MeasurementDetailsPage() {
           </div>
           {hasBodyMeasurements ? (
             <div className="grid grid-cols-2 gap-4">
-              <InfoPill label="Cintura" value={details.cintura_cm} />
-              <InfoPill label="Quadril" value={details.quadril_cm} />
-              <InfoPill label="Braço" value={details.braco_cm} />
-              <InfoPill label="Coxa" value={details.coxa_cm} />
+              <InfoPill label="Cintura" value={details.cintura_cm || "N/A"} />
+              <InfoPill label="Quadril" value={details.quadril_cm || "N/A"} />
+              <InfoPill label="Braço" value={details.braco_cm || "N/A"} />
+              <InfoPill label="Coxa" value={details.coxa_cm || "N/A"} />
             </div>
           ) : (
             <div className="text-center text-gray-500 py-4">

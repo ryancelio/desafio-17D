@@ -18,7 +18,7 @@ import {
   LuListChecks,
   LuShieldAlert,
   LuSettings,
-  LuLoader,
+  LuLoaderCircle as LuLoader,
   LuUser as LuUserIcon,
   LuLogOut,
   LuKey,
@@ -157,7 +157,7 @@ const BmiGauge: React.FC<{ percentage: number }> = ({ percentage }) => {
       {/* 1. A Barra Colorida (Gradiente) */}
       <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-gray-200">
         <div
-          className="bg-gradient-to-r from-blue-400 via-green-400 via-40% to-yellow-400 to-70%"
+          className="bg-linear-to-r from-blue-400 via-green-400 via-40% to-yellow-400 to-70%"
           style={{ width: "80%" }} // A obesidade (vermelho) começa em ~80%
         />
         <div className="flex-1 bg-red-400" />
@@ -179,7 +179,7 @@ const BmiGauge: React.FC<{ percentage: number }> = ({ percentage }) => {
         >
           {/* Marcador (bolinha + triângulo) */}
           <div className="h-2.5 w-2.5 rounded-full bg-gray-800 border-2 border-white shadow-lg" />
-          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-gray-800" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-[5px] border-t-gray-800" />
         </motion.div>
       </div>
 
@@ -535,7 +535,7 @@ export default function ProfilePage() {
           {preferences.length > 0 ? (
             preferences.map((pref) => (
               <InfoItem
-                key={pref.id}
+                key={pref.preference_id}
                 label={formatPreference(pref.tipo_restricao)}
                 value={pref.valor}
                 icon={LuShieldAlert}

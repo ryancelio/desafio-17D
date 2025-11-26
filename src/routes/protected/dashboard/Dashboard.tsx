@@ -28,9 +28,9 @@ import {
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
 import { useNavigate } from "react-router";
-import { LuGoal, LuLeaf, LuWeight } from "react-icons/lu";
+import { LuGoal, LuLeaf, LuPencil, LuWeight } from "react-icons/lu";
 import { AnimatePresence, motion } from "framer-motion";
-import { Objetivo } from "../../../types/onboarding.schema";
+import PesoAlvoModal from "./Components/PesoAlvoModal";
 
 // Função para formatar o nome do objetivo
 const formatObjective = (objective: UserProfile["objetivo_atual"]): string => {
@@ -89,7 +89,6 @@ const NutritionProgress: React.FC<{
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [goals] = useState<Objetivo | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
   const [dailyConsumption, setDailyConsumption] =
     useState<DailyConsumption | null>(null);
@@ -97,6 +96,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNutritionModalOpen, setNutritionModalOpen] = useState(false);
+  const [isEditPesoAlvoModalOpen, setEditPesoAlvoModalOpen] = useState(false);
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -105,13 +105,11 @@ export default function Dashboard() {
       setError(null);
       try {
         // Busca os dados do perfil e o histórico de peso em paralelo
-        const [profileData, historyData, consumptionData, objetivoData] =
-          await Promise.all([
-            apiClient.getUserProfile(),
-            apiClient.getWeightHistory(),
-            apiClient.getDailyConsumption(),
-            apiClient.get,
-          ]);
+        const [profileData, historyData, consumptionData] = await Promise.all([
+          apiClient.getUserProfile(),
+          apiClient.getWeightHistory(),
+          apiClient.getDailyConsumption(),
+        ]);
 
         setProfile(profileData);
         setWeightHistory(historyData);
@@ -148,7 +146,7 @@ export default function Dashboard() {
 
   const { pesoAtual, pesoAlvo, diferenca } = useMemo(() => {
     // Busca o peso alvo do perfil do usuário
-    const pesoAlvo = profile?.peso_alvo || 0;
+    const pesoAlvo = Number(profile?.peso_alvo_kg) || null;
 
     const pesoAtual =
       weightHistory.length > 0
@@ -158,7 +156,7 @@ export default function Dashboard() {
     const diferenca = pesoAtual && pesoAlvo ? pesoAtual - pesoAlvo : null;
 
     return { pesoAtual, pesoAlvo, diferenca };
-  }, [weightHistory, profile?.peso_alvo]);
+  }, [weightHistory, profile?.peso_alvo_kg]);
 
   const nutritionTargets = useMemo(() => {
     const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
@@ -202,11 +200,36 @@ export default function Dashboard() {
     }
   };
 
+  const handleSavePesoAlvo = async (novoPesoAlvo: number) => {
+    try {
+      // Chama a API para atualizar o campo
+      await apiClient.updateUserProfile({ peso_alvo_kg: novoPesoAlvo });
+
+      // Atualiza o estado local para refletir a mudança imediatamente na UI
+      if (profile) {
+        setProfile({ ...profile, peso_alvo_kg: novoPesoAlvo });
+      }
+      setEditPesoAlvoModalOpen(false); // Fecha o modal
+    } catch (err) {
+      console.error("Falha ao salvar peso alvo:", err);
+      // Aqui você pode mostrar uma notificação de erro para o usuário
+      // (Opcional: mostrar um 'toast' de erro)
+    }
+  };
+
+  const handleNavigateToLatestMeasurement = () => {
+    if (weightHistory.length > 0) {
+      const latestMeasurementId =
+        weightHistory[weightHistory.length - 1].measurement_id;
+      navigate(`/measurements/${latestMeasurementId}`);
+    }
+  };
+
   // --- 2. NOVO: CALCULAR DOMÍNIO DO EIXO Y ---
   const yAxisDomain = useMemo(() => {
     // Coleta todos os valores de peso
     const allWeights = weightHistory.map((entry) => entry.peso_kg);
-    if (pesoAlvo > 0) {
+    if (pesoAlvo && pesoAlvo > 0) {
       allWeights.push(pesoAlvo);
     }
 
@@ -341,8 +364,15 @@ export default function Dashboard() {
         <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md">
           <h3 className="text-md font-semibold text-gray-600">Meta de Peso</h3>
           <p className="mt-2 text-3xl font-bold text-gray-900">
-            {pesoAlvo.toFixed(1)} kg
+            {pesoAlvo ? `${pesoAlvo.toFixed(1)} kg` : "N/A"}
           </p>
+          <button
+            className="absolute right-3 top-4 h-5 w-5 text-sm transition-colors"
+            onClick={() => setEditPesoAlvoModalOpen(true)}
+          >
+            <LuPencil className="text-gray-400 w-full h-full hover:text-indigo-600" />
+            <span className="hidden md:block">Editar</span>
+          </button>
           {/* Sub-texto com a diferença */}
           {diferenca !== null && (
             <p
@@ -361,6 +391,15 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <AnimatePresence>
+        {isEditPesoAlvoModalOpen && (
+          <PesoAlvoModal
+            onClose={() => setEditPesoAlvoModalOpen(false)}
+            onSave={handleSavePesoAlvo}
+          />
+        )}
+      </AnimatePresence>
+
       {/* --- Renderização do Modal --- */}
       <AnimatePresence>
         {isNutritionModalOpen && (
@@ -374,14 +413,22 @@ export default function Dashboard() {
       {/* --- Card do Gráfico --- */}
       <div className="rounded-2xl bg-white p-6 shadow-md">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold text-gray-800">
+          <button
+            onClick={handleNavigateToLatestMeasurement}
+            className="text-xl font-semibold text-gray-800 hover:text-indigo-600 transition-colors disabled:hover:text-gray-800 disabled:cursor-default"
+            disabled={weightHistory.length === 0}
+            title={
+              weightHistory.length > 0 ? "Ver detalhes da última medição" : ""
+            }
+          >
             Histórico de Peso (kg)
-          </h3>
+          </button>
           <button
             onClick={() => navigate("/measurements/add")}
             className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
           >
-            <LuPlus className="w-4 h-4" /> Adicionar Medida
+            <LuPlus className="w-4 h-4" />{" "}
+            <span className="hidden md:block">Adicionar Medida</span>
           </button>
         </div>
         {chartData.length > 0 ? ( // Alterado para > 0
@@ -431,7 +478,7 @@ export default function Dashboard() {
                 />
 
                 {/* Linha de Referência da Meta (Azul Pontilhada) */}
-                {pesoAlvo > 0 && (
+                {pesoAlvo && pesoAlvo > 0 && (
                   <ReferenceLine
                     y={pesoAlvo}
                     stroke="#3b82f6" // Azul

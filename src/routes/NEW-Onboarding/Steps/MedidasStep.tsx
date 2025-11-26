@@ -33,7 +33,7 @@ const MedidasStep: React.FC<StepProps> = ({
   useEffect(() => {
     updateOnboardingData({
       personal: { ...personal, altura_cm: Number(altura) },
-      measurements: { ...measurements, peso_kg: String(peso) },
+      measurements: { ...measurements, peso_kg: peso },
     });
 
     setStepvalid(true); // Assumindo que é sempre válida aqui
