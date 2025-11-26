@@ -1,10 +1,6 @@
 import { motion } from "framer-motion";
 import React, { useEffect } from "react";
 import type { StepProps } from "../OnboardingWizard";
-import {
-  optionalNumericString,
-  type IMeasurementsData,
-} from "../../../types/onboarding.schema";
 import z from "zod";
 
 const TodasMedidasStep: React.FC<StepProps> = ({
@@ -68,7 +64,10 @@ const TodasMedidasStep: React.FC<StepProps> = ({
       ),
   });
 
-  const medidas: { value: keyof IMeasurementsData; label: string }[] = [
+  const medidas: {
+    value: keyof typeof onboardingData.measurements;
+    label: string;
+  }[] = [
     { value: "cintura_cm", label: "Cintura" },
     { value: "quadril_cm", label: "Quadril" },
     { value: "braco_cm", label: "Braço" },

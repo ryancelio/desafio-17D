@@ -38,7 +38,7 @@ export const GeneroStep: React.FC<StepProps> = ({
   };
 
   useEffect(() => {
-    if (personal.genero === "") {
+    if (!personal.genero) {
       setStepvalid(false);
     } else {
       setStepvalid(true);

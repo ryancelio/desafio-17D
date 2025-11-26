@@ -5,7 +5,7 @@ import apiClient, {
   type RecipeFilters,
 } from "../../../api/apiClient";
 import {
-  LuLoader as LuLoader2,
+  LuLoaderCircle as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
   LuTimer,
   LuFlame,

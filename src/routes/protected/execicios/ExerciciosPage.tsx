@@ -5,7 +5,7 @@ import apiClient, {
   type ExerciseFilters,
 } from "../../../api/apiClient";
 import {
-  LuLoader as LuLoader2,
+  LuLoaderCircle as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
   LuX,
   LuSearch,

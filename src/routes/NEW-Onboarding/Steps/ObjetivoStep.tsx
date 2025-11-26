@@ -15,19 +15,19 @@ export const ObjetivoStep: React.FC<StepProps> = ({
     { value: "ganhar_massa", label: "Ganhar Massa", icon: LuWeight },
   ];
 
-  const { goals } = onboardingData;
+  const { personal } = onboardingData;
 
   useEffect(() => {
-    if (goals.objetivo_atual === "") {
+    if (!personal.objetivo_atual) {
       setStepvalid(false);
     } else {
       setStepvalid(true);
     }
-  }, [goals.objetivo_atual, setStepvalid]);
+  }, [personal.objetivo_atual, setStepvalid]);
 
   const handleObjetivoClick = (value: Objetivo) => {
     updateOnboardingData({
-      goals: { ...goals, objetivo_atual: value },
+      personal: { ...personal, objetivo_atual: value },
     });
     // if (!touched.objetivo_atual) {
     //   handleBlur("objetivo_atual");
@@ -53,7 +53,7 @@ export const ObjetivoStep: React.FC<StepProps> = ({
         {/* Substituímos o 'select' por este 'div' */}
         <div className="flex flex-col gap-2 px-8">
           {objetivos.map((obj) => {
-            const ativo = onboardingData.goals.objetivo_atual === obj.value;
+            const ativo = onboardingData.personal.objetivo_atual === obj.value;
             return (
               <motion.button
                 key={obj.value}

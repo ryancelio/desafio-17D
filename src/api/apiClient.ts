@@ -1,63 +1,30 @@
 import axios, { type AxiosInstance, type AxiosError } from "axios";
 import { auth } from "../firebase"; // 👈 Importe sua instância 'auth' do Firebase
 import type {
+  DiaSemana,
+  Genero,
+  NivelAtividade,
+  Objetivo,
   OnboardingState,
-  IPreference,
-  IMeasurementsData,
-} from "../types/onboarding.schema";
+  TipoRestricao,
+} from "../types/onboarding.schema"; // Importando tipos Enum
+import { IMeasurementsData } from "../types/onboarding.schema"; // Importando o schema Zod
+import { z } from "zod";
 
 // --- 1. DEFINIÇÃO DE TIPOS (Sem 'any') ---
 
-/**
- * A estrutura de dados do usuário, conforme retornado pelo seu banco MySQL.
- * Corresponde ao JSON de 'get_user.php'.
- */
-export interface UserProfile {
-  // --- Dados de Autenticação (Sempre existem) ---
-  uid: string;
-  email: string;
-  nome: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string | null;
-
-  // --- Dados de Perfil (Podem ser nulos antes do onboarding) ---
-  data_nascimento: string | null;
-  altura_cm: number | null;
-  genero: "masculino" | "feminino" | "outro" | null;
-
-  // --- Dados de Fitness (Têm valor DEFAULT no DB, não são nulos) ---
-  objetivo_atual: "perder_peso" | "definir" | "ganhar_massa";
-  nivel_atividade: "sedentario" | "leve" | "moderado" | "ativo" | "muito_ativo";
-
-  // --- Dias de Treino (O PHP envia `[]` se for nulo) ---
-  dias_treino: ("DOM" | "SEG" | "TER" | "QUA" | "QUI" | "SEX" | "SAB")[];
-}
-
-export interface UserPreference extends IPreference {
+export interface UserPreference {
   preference_id: number;
   user_uid: string;
-  tipo_restricao:
-    | "alergia"
-    | "intolerancia"
-    | "preferencia"
-    | "limitacao_fisica";
+  tipo_restricao: TipoRestricao;
   valor: string;
 }
 
-export interface UserMeasurement extends IMeasurementsData {
+export interface UserMeasurement extends z.infer<typeof IMeasurementsData> {
   measurement_id: number;
   user_uid: string;
   data_medicao: string;
   createdAt: string | undefined;
-  // O PHP com JSON_NUMERIC_CHECK envia campos DECIMAIS como números.
-  // Campos que podem ser nulos no DB são `number | null`.
-  altura_cm: number | null;
-  peso_kg: number;
-  cintura_cm: number | null;
-  quadril_cm: number | null;
-  braco_cm: number | null;
-  coxa_cm: number | null;
 }
 
 /**
@@ -111,6 +78,28 @@ export interface ApiErrorResponse {
   error: string;
 }
 
+export interface UserProfile {
+  // --- Dados de Autenticação (Sempre existem) ---
+  uid: string;
+  email: string;
+  nome: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+
+  // --- Dados de Perfil (Podem ser nulos antes do onboarding) ---
+  data_nascimento: string | null;
+  altura_cm: number | null;
+  genero: Genero | null;
+
+  // --- Dados de Fitness (Têm valor DEFAULT no DB, não são nulos) ---
+  objetivo_atual: Objetivo;
+  nivel_atividade: NivelAtividade;
+  peso_alvo_kg: number | null;
+
+  // --- Dias de Treino (O PHP envia `[]` se for nulo) ---
+  dias_treino: DiaSemana[];
+}
 /**
  * Tipos de entrada para as funções da API.
  */
@@ -119,7 +108,14 @@ export interface SyncUserRequest {
 }
 
 export interface UpdateProfileRequest {
-  nome: string; // O 'nome' é obrigatório no update
+  nome?: string;
+  data_nascimento?: string | null;
+  altura_cm?: number | null;
+  genero?: Genero | null;
+  objetivo_atual?: Objetivo;
+  nivel_atividade?: NivelAtividade;
+  peso_alvo_kg?: number | null;
+  dias_treino?: DiaSemana[];
 }
 
 export interface Macros {
@@ -335,19 +331,19 @@ async function syncUser(data: SyncUserRequest): Promise<ApiResponse> {
  * Chama 'get_user.php'.
  */
 async function getUserProfile(): Promise<UserProfile> {
-  const response = await axiosInstance.get<UserProfile>("/get_user.php");
+  const response = await axiosInstance.get<UserProfile>("/users/get_user.php");
   return response.data;
 }
 
 /**
- * Atualiza o nome do usuário no banco MySQL.
- * Chama 'update_user.php'.
+ * Atualiza os dados do perfil do usuário no banco MySQL.
+ * Chama 'update_user_profile.php'.
  */
 async function updateUserProfile(
   data: UpdateProfileRequest
 ): Promise<ApiResponse> {
-  const response = await axiosInstance.post<ApiResponse>(
-    "/update_user.php",
+  const response = await axiosInstance.post<ApiResponse>( // Alterado para o novo endpoint
+    "/users/update.php",
     data
   );
   return response.data;
