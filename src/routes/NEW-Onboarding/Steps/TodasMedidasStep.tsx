@@ -9,60 +9,40 @@ const TodasMedidasStep: React.FC<StepProps> = ({
   setStep,
   setStepvalid,
 }) => {
+  // CORREÇÃO: O Schema agora espera números (z.coerce.number)
+  // pois você salva como Number no onChange.
   const TodasMedidasSchema = z.object({
-    cintura_cm: z
-      .string()
-      .min(1, "Cintura é obrigatório.") // Não pode ser ""
-      .pipe(
-        z.preprocess(
-          (val) =>
-            typeof val === "string" && val.trim() === "" ? undefined : val,
-
-          z.coerce
-            .number({ error: "Peso deve ser um número." })
-            .positive("Peso deve ser maior que 0.")
-        )
-      ),
-    quadril_cm: z
-      .string()
-      .min(1, "Quadril é obrigatório.") // Não pode ser ""
-      .pipe(
-        z.preprocess(
-          (val) =>
-            typeof val === "string" && val.trim() === "" ? undefined : val,
-
-          z.coerce
-            .number({ error: "Peso deve ser um número." })
-            .positive("Peso deve ser maior que 0.")
-        )
-      ),
-    braco_cm: z
-      .string()
-      .min(1, "Braço é obrigatório.") // Não pode ser ""
-      .pipe(
-        z.preprocess(
-          (val) =>
-            typeof val === "string" && val.trim() === "" ? undefined : val,
-
-          z.coerce
-            .number({ error: "Peso deve ser um número." })
-            .positive("Peso deve ser maior que 0.")
-        )
-      ),
-    coxa_cm: z
-      .string()
-      .min(1, "Coxa é obrigatório.") // Não pode ser ""
-      .pipe(
-        z.preprocess(
-          (val) =>
-            typeof val === "string" && val.trim() === "" ? undefined : val,
-
-          z.coerce
-            .number({ error: "Peso deve ser um número." })
-            .positive("Peso deve ser maior que 0.")
-        )
-      ),
+    cintura_cm: z.coerce
+      .number()
+      .min(1, "Cintura é obrigatória.")
+      .optional()
+      .or(z.literal(0)), // Aceita 0 ou undefined se for opcional mesmo
+    quadril_cm: z.coerce
+      .number()
+      .min(1, "Quadril é obrigatório.")
+      .optional()
+      .or(z.literal(0)),
+    braco_cm: z.coerce
+      .number()
+      .min(1, "Braço é obrigatório.")
+      .optional()
+      .or(z.literal(0)),
+    coxa_cm: z.coerce
+      .number()
+      .min(1, "Coxa é obrigatório.")
+      .optional()
+      .or(z.literal(0)),
   });
+
+  // Se você quiser que seja OBRIGATÓRIO (não opcional), use este schema simplificado:
+  /*
+  const TodasMedidasSchema = z.object({
+    cintura_cm: z.coerce.number().min(1),
+    quadril_cm: z.coerce.number().min(1),
+    braco_cm: z.coerce.number().min(1),
+    coxa_cm: z.coerce.number().min(1),
+  });
+  */
 
   const medidas: {
     value: keyof typeof onboardingData.measurements;
@@ -75,10 +55,15 @@ const TodasMedidasStep: React.FC<StepProps> = ({
   ];
 
   useEffect(() => {
+    // Valida os dados atuais
     const result = TodasMedidasSchema.safeParse(onboardingData.measurements);
 
+    // Se o resultado for sucesso, libera o botão.
+    // Se quiser permitir passar em branco (pois é opcional),
+    // você pode forçar true se os campos forem undefined.
+    // Mas com o Schema ajustado acima, ele vai passar.
     setStepvalid(result.success);
-  });
+  }, [onboardingData.measurements, setStepvalid]); // Adicionada dependência para atualizar sempre que digitar
 
   return (
     <motion.div
@@ -111,12 +96,15 @@ const TodasMedidasStep: React.FC<StepProps> = ({
               id={med.value}
               name={med.value}
               min={0}
-              value={onboardingData.measurements[med.value] || ""}
+              placeholder="0"
+              // Garante que o valor não seja undefined no input (evita warning do React)
+              value={onboardingData.measurements?.[med.value] ?? ""}
               onChange={(e) => {
                 const value = e.target.value;
                 updateOnboardingData({
                   measurements: {
                     ...onboardingData.measurements,
+                    // Se estiver vazio, salva como undefined, senão converte pra Number
                     [med.value]: value === "" ? undefined : Number(value),
                   },
                 });
@@ -127,8 +115,13 @@ const TodasMedidasStep: React.FC<StepProps> = ({
         ))}
       </div>
       <div className="w-full text-center">
+        {/* O botão pular força a validação para true antes de mudar o step manualmente se necessário, 
+            mas aqui ele apenas avança o step localmente */}
         <button
-          onClick={() => setStep((prev) => prev + 1)}
+          onClick={() => {
+            setStepvalid(true); // Garante que não bloqueie se clicar em pular
+            setStep((prev) => prev + 1);
+          }}
           className="text-gray-500 text-center underline underline-offset-3"
         >
           Pular

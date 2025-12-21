@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import apiClient, {
   isApiError,
-  type MeasurementDetailsResponse,
+  // type MeasurementDetailsResponse,
 } from "../../../api/apiClient";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -17,6 +17,8 @@ import {
   LuImage,
 } from "react-icons/lu";
 import FullscreenImageViewer from "./components/FullscreenImageViewer";
+import type { MeasurementDetailsResponse } from "../../../types/api-types";
+import { SecureImage } from "../components/SecureImage";
 
 const InfoPill: React.FC<{ label: string; value: string | number | null }> = ({
   label,
@@ -169,14 +171,14 @@ export default function MeasurementDetailsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {photos.map((url, index) => (
-                <motion.img
-                  key={index}
-                  src={`/api/${url}`}
-                  alt={`Foto da medição ${index + 1}`}
-                  className="h-40 w-full rounded-lg object-cover shadow-sm cursor-pointer"
-                  onClick={() => setFullscreenImageIndex(index)}
-                  whileHover={{ scale: 1.05 }}
-                />
+                <motion.div whileHover={{ scale: 1.05 }} key={index}>
+                  <SecureImage
+                    src={`/api/${url}`}
+                    alt={`Foto da medição ${index + 1}`}
+                    className="h-40 w-full rounded-lg object-cover shadow-sm cursor-pointer"
+                    onClick={() => setFullscreenImageIndex(index)}
+                  />
+                </motion.div>
               ))}
             </div>
           </div>

@@ -6,25 +6,26 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onAuthStateChanged, type User, signOut } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./../firebase";
-import apiClient, { type UserProfile } from "../api/apiClient"; // 👈 NOVO
+import apiClient from "../api/apiClient"; // 👈 NOVO
+import type { UserProfile } from "../types/models";
 
 interface AuthContextType {
   firebaseUser: User | null;
   userProfile: UserProfile | null; // 👈 DADOS DO MYSQL
   loading: boolean;
-  refetchProfile: () => void; // 👈 Para recarregar após o onboarding
+  refetchProfile: () => Promise<void>; // 👈 Para recarregar após o onboarding
 }
 
 const AuthContext = createContext<AuthContextType>({
   firebaseUser: null,
   userProfile: null,
   loading: true,
-  refetchProfile: () => {},
+  refetchProfile: async () => Promise.resolve(),
 });
 
-const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
+// const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
@@ -60,57 +61,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Inatividade
-  useEffect(() => {
-    let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+  // useEffect(() => {
+  //   let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const handleSignOut = () => {
-      console.log("Usuário deslogado por inatividade.");
-      signOut(auth);
-    };
-    const resetTimer = () => {
-      // Limpa o timer anterior
-      if (inactivityTimer !== null) {
-        clearTimeout(inactivityTimer);
-      }
-      // Cria um novo timer
-      inactivityTimer = setTimeout(handleSignOut, INACTIVITY_TIMEOUT_MS);
-    };
+  //   const handleSignOut = () => {
+  //     console.log("Usuário deslogado por inatividade.");
+  //     signOut(auth);
+  //   };
+  //   const resetTimer = () => {
+  //     // Limpa o timer anterior
+  //     if (inactivityTimer !== null) {
+  //       clearTimeout(inactivityTimer);
+  //     }
+  //     // Cria um novo timer
+  //     inactivityTimer = setTimeout(handleSignOut, INACTIVITY_TIMEOUT_MS);
+  //   };
 
-    // Lista de eventos que contam como "atividade"
-    const activityEvents: (keyof WindowEventMap)[] = [
-      "mousemove",
-      "mousedown",
-      "click",
-      "keydown",
-      "scroll",
-      "touchstart",
-    ];
+  //   // Lista de eventos que contam como "atividade"
+  //   const activityEvents: (keyof WindowEventMap)[] = [
+  //     "mousemove",
+  //     "mousedown",
+  //     "click",
+  //     "keydown",
+  //     "scroll",
+  //     "touchstart",
+  //   ];
 
-    if (!firebaseUser) {
-      if (inactivityTimer !== null) {
-        clearTimeout(inactivityTimer); // Limpa qualquer timer pendente
-        inactivityTimer = null;
-      }
-      return;
-    }
-    resetTimer();
+  //   if (!firebaseUser) {
+  //     if (inactivityTimer !== null) {
+  //       clearTimeout(inactivityTimer); // Limpa qualquer timer pendente
+  //       inactivityTimer = null;
+  //     }
+  //     return;
+  //   }
+  //   resetTimer();
 
-    // Adiciona os event listeners para resetar o timer
-    activityEvents.forEach((event) => {
-      window.addEventListener(event, resetTimer);
-    });
+  //   // Adiciona os event listeners para resetar o timer
+  //   activityEvents.forEach((event) => {
+  //     window.addEventListener(event, resetTimer);
+  //   });
 
-    // Isso é executado quando o componente desmonta ou o 'firebaseUser' muda
-    return () => {
-      if (inactivityTimer !== null) {
-        clearTimeout(inactivityTimer);
-        inactivityTimer = null;
-      }
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, resetTimer);
-      });
-    };
-  }, [firebaseUser]);
+  //   // Isso é executado quando o componente desmonta ou o 'firebaseUser' muda
+  //   return () => {
+  //     if (inactivityTimer !== null) {
+  //       clearTimeout(inactivityTimer);
+  //       inactivityTimer = null;
+  //     }
+  //     activityEvents.forEach((event) => {
+  //       window.removeEventListener(event, resetTimer);
+  //     });
+  //   };
+  // }, [firebaseUser]);
 
   const value = {
     firebaseUser,

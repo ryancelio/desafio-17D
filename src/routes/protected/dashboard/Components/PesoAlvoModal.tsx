@@ -1,12 +1,16 @@
 import { motion, type Variants } from "framer-motion";
 import { useState } from "react";
 import { LuX } from "react-icons/lu";
+import { useAuth } from "../../../../context/AuthContext";
 
 const PesoAlvoModal: React.FC<{
   onClose: () => void;
   onSave: (novoPesoAlvo: number) => void;
 }> = ({ onClose, onSave }) => {
-  const [novoPesoAlvo, setNovoPesoAlvo] = useState("0");
+  const { userProfile } = useAuth();
+  const [novoPesoAlvo, setNovoPesoAlvo] = useState(
+    (userProfile?.profile.peso_alvo || "0").toString()
+  );
 
   const modalAnimation = {
     hidden: { y: "100%", opacity: 0 },

@@ -10,6 +10,7 @@ import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router"; // 👈 CORRIGIDO
 import { FaGoogle, FaFacebookF, FaLock } from "react-icons/fa6";
 import apiClient, { isApiError } from "../api/apiClient"; // 👈 ATUALIZADO
+import { FirebaseError } from "firebase/app";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,44 +19,62 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Função auxiliar para processar a sincronização pós-login
+  const processLoginSuccess = async (userDisplayName?: string | null) => {
+    try {
+      // Sincroniza com o backend PHP
+      await apiClient.syncUser({
+        nome: userDisplayName || email.split("@")[0] || "Usuário",
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Erro na sincronização:", err);
+      // Mesmo que o sync falhe, o usuário logou no Firebase.
+      // Decisão de negócio: Bloquear ou deixar entrar?
+      // Geralmente deixamos entrar e o Dashboard tenta carregar/syncar novamente.
+      navigate("/dashboard");
+    }
+  };
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    if (email.length === 0) {
-      setError("Digite um email.");
-      setLoading(false);
-      return;
-    }
-    if (password.length < 6) {
-      setError("Senha deve ter pelo menos 6 caracteres");
+    if (!email || password.length < 6) {
+      setError("Verifique seus dados.");
       setLoading(false);
       return;
     }
 
     try {
-      // 1. Autentica com o Firebase
-      await signInWithEmailAndPassword(auth, email, password);
-      // O 'auth.currentUser' agora está definido
+      // 1. Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      // 2. 👈 ATUALIZADO: Sincroniza com o backend PHP
-      // O interceptor do axios cuida do token.
-      // Passamos apenas o 'nome' (extraído do email) como fallback.
-      await apiClient.syncUser({
-        nome: email.split("@")[0] || "Novo Usuário",
-      });
-
-      // 3. Navega para o dashboard
-      navigate("/dashboard");
+      // 2. Sync Backend
+      await processLoginSuccess(userCredential.user.displayName);
     } catch (err: unknown) {
-      // 👈 ATUALIZADO: Tratamento de erro tipado
-      if (isApiError(err)) {
-        // Erro vindo do nosso backend PHP (ex: token inválido)
-        setError(err.response?.data.error || "Erro de API");
+      if (err instanceof FirebaseError) {
+        switch (err.code) {
+          case "auth/invalid-credential":
+          case "auth/user-not-found":
+          case "auth/wrong-password":
+            setError("Email ou senha incorretos.");
+            break;
+          case "auth/too-many-requests":
+            setError("Muitas tentativas. Tente mais tarde.");
+            break;
+          default:
+            setError("Erro ao realizar login.");
+        }
+      } else if (isApiError(err)) {
+        setError(err.response?.data.error || "Erro de conexão com servidor.");
       } else {
-        // Erro vindo do Firebase (ex: auth/wrong-password)
-        setError("Email ou senha inválidos.");
+        setError("Ocorreu um erro inesperado.");
       }
       console.error(err);
     } finally {
@@ -63,59 +82,27 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    const provider = new GoogleAuthProvider();
+  async function handleSocialLogin(providerName: "google" | "facebook") {
+    const provider =
+      providerName === "google"
+        ? new GoogleAuthProvider()
+        : new FacebookAuthProvider();
+
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Autentica com o Firebase
       const result = await signInWithPopup(auth, provider);
-
-      // 2. 👈 ATUALIZADO: Sincroniza com o backend PHP
-      // Passamos o displayName do Google, se existir.
-      await apiClient.syncUser({
-        nome: result.user.displayName || undefined,
-      });
-
-      // 3. Navega para o dashboard
-      navigate("/dashboard");
+      await processLoginSuccess(result.user.displayName);
     } catch (err: unknown) {
-      // 👈 ATUALIZADO: Tratamento de erro tipado
-      if (isApiError(err)) {
-        setError(err.response?.data.error || "Erro de API");
+      if (err instanceof FirebaseError) {
+        if (err.code === "auth/popup-closed-by-user") {
+          setError(null); // Usuário fechou a janela, não é erro crítico
+        } else {
+          setError(`Erro ao entrar com ${providerName}.`);
+        }
       } else {
-        setError("Erro ao entrar com o Google.");
-      }
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleFacebookLogin() {
-    const provider = new FacebookAuthProvider();
-    setLoading(true);
-    setError(null);
-
-    try {
-      // 1. Autentica com o Firebase
-      const response = await signInWithPopup(auth, provider);
-
-      // 2. 👈 ATUALIZADO: Sincroniza com o backend PHP
-      // Passamos o displayName do Facebook, se existir.
-      await apiClient.syncUser({
-        nome: response.user.displayName || undefined,
-      });
-
-      // 3. Navega para o dashboard
-      navigate("/dashboard");
-    } catch (err: unknown) {
-      // 👈 ATUALIZADO: Tratamento de erro tipado
-      if (isApiError(err)) {
-        setError(err.response?.data.error || "Erro de API");
-      } else {
-        setError("Erro ao entrar com o Facebook.");
+        setError("Erro inesperado.");
       }
       console.error(err);
     } finally {
@@ -131,8 +118,6 @@ export default function LoginPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-md bg-white/80  backdrop-blur-md p-8 rounded-2xl shadow-2xl  border border-white/40"
       >
-        {/* ... O resto do seu JSX (UI) permanece o mesmo ... */}
-        {/* Nenhuma mudança visual é necessária */}
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
@@ -211,7 +196,7 @@ export default function LoginPage() {
         <div className="mt-5 flex flex-col sm:flex-row gap-3">
           <motion.button
             whileHover={{ scale: 1.03 }}
-            onClick={handleGoogleLogin}
+            onClick={() => handleSocialLogin("google")}
             className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg border-gray-300 hover:bg-[#fef3f6]
               cursor-pointer transition-all text-gray-700
               hover:border-[#ffafc1]
@@ -222,7 +207,7 @@ export default function LoginPage() {
 
           <motion.button
             whileHover={{ scale: 1.03 }}
-            onClick={handleFacebookLogin}
+            onClick={() => handleSocialLogin("facebook")}
             className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg border-gray-300 hover:bg-[#f2faff]
               cursor-pointer transition-all text-gray-700
               hover:border-[#70f1cb]

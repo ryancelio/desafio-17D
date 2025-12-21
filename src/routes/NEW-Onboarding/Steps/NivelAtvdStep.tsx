@@ -1,8 +1,9 @@
 import { WheelPickerWrapper, WheelPicker } from "@ncdai/react-wheel-picker";
 import { motion } from "framer-motion";
-import type { NivelAtividade } from "../../../types/onboarding.schema";
+// import type { NivelAtividade } from "../../../types/onboarding.schema";
 import type { StepProps } from "../OnboardingWizard";
 import { useEffect } from "react";
+import type { NivelAtividade } from "../../../types/models";
 
 export const NivelAtvdStep: React.FC<StepProps> = ({
   onboardingData,

@@ -1,10 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import apiClient, {
-  isApiError,
-  type WorkoutPlan,
-} from "../../../api/apiClient";
+import apiClient, { isApiError } from "../../../api/apiClient";
 import {
   LuLoader as LuLoader2,
   LuChevronLeft,
@@ -14,6 +11,7 @@ import {
   LuPlus,
   LuCircleCheck as LuCheckCircle2,
 } from "react-icons/lu";
+import type { WorkoutPlan } from "../../../types/models";
 
 // --- COMPONENTE: Timer de Descanso (Overlay) ---
 const RestTimerOverlay: React.FC<{
@@ -204,6 +202,7 @@ export default function WorkoutExecutionPage() {
 
   // Helpers
   const currentExercise = plan?.exercises[currentExerciseIndex];
+
   const prescription = currentExercise?.prescription;
   const totalSets = prescription?.series || 3;
 
@@ -270,7 +269,15 @@ export default function WorkoutExecutionPage() {
       {/* Header Fixo */}
       <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-4 py-3 shadow-sm">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (
+              window.confirm(
+                "Deseja mesmo sair? O Progresso do treino atual será perdido!"
+              )
+            ) {
+              navigate("/treinos");
+            }
+          }}
           className="rounded-full p-2 hover:bg-gray-100"
         >
           <LuChevronLeft className="h-6 w-6 text-gray-700" />

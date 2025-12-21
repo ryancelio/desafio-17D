@@ -1,124 +1,156 @@
 import { useEffect, useState, useMemo } from "react";
-import apiClient, {
-  isApiError,
-  // type ApiResponse,
-  type DailyConsumption,
-  type UserProfile,
-  type WeightHistoryEntry, // (Será adicionado no apiClient)
-} from "../../../api/apiClient";
+import apiClient, { isApiError } from "../../../api/apiClient";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  ReferenceLine,
-  Label,
-} from "recharts";
-import {
-  Target as LuTarget,
-  Loader2 as LuLoader2,
-  AlertTriangle as LuAlertTriangle,
-  GlassWater as LuGlassWater,
-  Plus as LuPlus,
-  Star as LuStar,
-  Flame as LuFlame,
+  Loader2,
+  Calendar,
+  Dumbbell,
+  ArrowRight,
+  Droplets,
+  Utensils,
+  Plus,
+  Target,
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
 import { useNavigate } from "react-router";
-import { LuGoal, LuLeaf, LuPencil, LuWeight } from "react-icons/lu";
+import { LuPencil } from "react-icons/lu";
 import { AnimatePresence, motion } from "framer-motion";
 import PesoAlvoModal from "./Components/PesoAlvoModal";
+import DailyMonitoringCard from "./Components/DailyMonitoringCard";
+import WeightEvolutionChart from "./Components/WeightEvolutionChart"; // <--- Importado
+import type {
+  DailyConsumption,
+  // UserProfile,
+  WeightHistoryEntry,
+} from "../../../types/models";
+import { useAuth } from "../../../context/AuthContext";
+import type {
+  AddConsumptionRequest,
+  DailyConsumptionResponse,
+} from "../../../types/api-types";
 
-// Função para formatar o nome do objetivo
-const formatObjective = (objective: UserProfile["objetivo_atual"]): string => {
-  switch (objective) {
-    case "perder_peso":
-      return "Perder Peso";
-    case "definir":
-      return "Definição Muscular";
-    case "ganhar_massa":
-      return "Ganhar Massa";
-    default:
-      return "Não definido";
-  }
+// --- Helpers ---
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
 };
 
-// --- 1. NOVO: Componente de Barra de Progresso Nutricional ---
-const NutritionProgress: React.FC<{
+const formatDate = () => {
+  return new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+};
+
+// --- Subcomponentes ---
+const cardColorVariants: Record<string, { bg: string; text: string }> = {
+  blue: { bg: "bg-blue-100", text: "text-blue-600" },
+  green: { bg: "bg-green-100", text: "text-green-600" },
+  pink: { bg: "bg-pink-100", text: "text-pink-600" },
+  purple: { bg: "bg-purple-100", text: "text-purple-600" },
+};
+
+const QuickActionCard: React.FC<{
   icon: React.ElementType;
   label: string;
-  current: number;
-  target: number;
-  unit: string;
-  color: string;
-}> = ({ icon: Icon, label, current, target, unit, color }) => {
-  const percentage = target > 0 ? (current / target) * 100 : 0;
+  color: "blue" | "green" | "pink" | "purple"; // Tipagem restrita para segurança
+  onClick: () => void;
+}> = ({ icon: Icon, label, color, onClick }) => {
+  // Pega as classes do mapa ou usa azul como fallback
+  const theme = cardColorVariants[color] || cardColorVariants.blue;
 
   return (
-    <div>
-      <div className="flex justify-between items-end mb-1">
-        <div className="flex items-center gap-2">
-          <Icon className="h-5 w-5 text-gray-500" />
-          <span className="font-semibold text-gray-700">{label}</span>
-        </div>
-        <p className="text-sm font-medium text-gray-600">
-          <span className="font-bold text-gray-800">{current.toFixed(1)}</span>/
-          {target.toFixed(1)} {unit}
-        </p>
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all gap-2"
+    >
+      <div className={`p-3 rounded-full ${theme.bg} ${theme.text}`}>
+        <Icon className="w-6 h-6" />
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-        <motion.div
-          className="h-2.5 rounded-full"
-          style={{ background: color }}
-          initial={{ width: 0 }}
-          animate={{ width: `${Math.min(percentage, 100)}%` }}
-          transition={{
-            type: "spring",
-            stiffness: 100,
-            damping: 20,
-            duration: 1.5,
-          }}
-        />
-      </div>
-    </div>
+      <span className="text-xs font-semibold text-gray-600">{label}</span>
+    </motion.button>
   );
 };
 
-export default function Dashboard() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
-  const [dailyConsumption, setDailyConsumption] =
-    useState<DailyConsumption | null>(null);
+const NextWorkoutCard: React.FC<{
+  onClick: () => void;
+  isLoading: boolean;
+}> = ({ onClick, isLoading }) => (
+  <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group">
+    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+      <Dumbbell className="w-24 h-24 rotate-12" />
+    </div>
 
+    <div className="relative z-10">
+      <div className="flex items-center gap-2 mb-2 text-indigo-300">
+        <Dumbbell className="w-4 h-4" />
+        <span className="text-xs font-bold uppercase tracking-wider">
+          Próximo Treino
+        </span>
+      </div>
+
+      <h3 className="text-xl font-bold mb-1">Continuar Evoluindo</h3>
+      <p className="text-gray-400 text-sm mb-6 max-w-[80%]">
+        Não perca o ritmo! Acesse suas fichas e registre seu progresso de hoje.
+      </p>
+
+      <button
+        onClick={onClick}
+        disabled={isLoading}
+        className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 shadow-indigo-500/20 shadow-lg"
+      >
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          "Ver Meus Treinos"
+        )}
+        <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  </div>
+);
+
+// --- Componente Principal ---
+
+export default function Dashboard() {
+  const { userProfile: profile, refetchProfile } = useAuth();
+
+  // Estados de Dados
+  const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
+  const [nutritionData, setNutritionData] =
+    useState<DailyConsumptionResponse | null>(null);
+
+  // Estados de UI
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [isNutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [isEditPesoAlvoModalOpen, setEditPesoAlvoModalOpen] = useState(false);
 
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Busca os dados do perfil e o histórico de peso em paralelo
-        const [profileData, historyData, consumptionData] = await Promise.all([
-          apiClient.getUserProfile(),
+        const [historyData, nutritionResponse] = await Promise.all([
           apiClient.getWeightHistory(),
           apiClient.getDailyConsumption(),
         ]);
 
-        setProfile(profileData);
         setWeightHistory(historyData);
-        setDailyConsumption(consumptionData);
+        // setDailyConsumption(consumptionData);
+        setNutritionData(nutritionResponse); // Salva o objeto completo (consumed + targets)
       } catch (err) {
         if (isApiError(err)) {
           setError(err.response?.data.error || "Erro");
         } else {
-          setError("Falha ao carregar o dashboard.");
+          setError("Falha ao carregar dados.");
         }
         console.error(err);
       } finally {
@@ -129,268 +161,252 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  // Formata os dados do gráfico (ex: datas)
-  const chartData = useMemo(() => {
-    return weightHistory.map((entry) => ({
-      measurement_id: entry.measurement_id, // <-- PASSAR O ID PARA O GRÁFICO
-      // Formata a data 'YYYY-MM-DD' para 'DD/MM'
-      data_medicao: new Date(entry.data_medicao).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-      }),
-      peso_kg: entry.peso_kg,
-    }));
-  }, [weightHistory]);
-
   const firstName = profile?.nome.split(" ")[0] || "Usuário";
 
   const { pesoAtual, pesoAlvo, diferenca } = useMemo(() => {
-    // Busca o peso alvo do perfil do usuário
-    const pesoAlvo = Number(profile?.peso_alvo_kg) || null;
-
+    const pesoAlvo = Number(profile?.profile.peso_alvo) || null;
     const pesoAtual =
       weightHistory.length > 0
         ? weightHistory[weightHistory.length - 1].peso_kg
         : null;
-
     const diferenca = pesoAtual && pesoAlvo ? pesoAtual - pesoAlvo : null;
-
     return { pesoAtual, pesoAlvo, diferenca };
-  }, [weightHistory, profile?.peso_alvo_kg]);
+  }, [profile?.profile.peso_alvo, weightHistory]);
 
-  const nutritionTargets = useMemo(() => {
-    const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
-    const metaProteinas = 140; // MOCK
-    const metaFibras = 30; // MOCK
-    const metaCalorias = 2000; // MOCK
-    return { aguaRecomendadaL, metaProteinas, metaFibras, metaCalorias };
-  }, [pesoAtual]);
+  // const nutritionTargets = useMemo(() => {
+  //   const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
+  //   return {
+  //     aguaRecomendadaL,
+  //     metaProteinas: 140,
+  //     metaFibras: 30,
+  //     metaCalorias: 2000,
+  //   };
+  // }, [pesoAtual]);
 
-  // Verifica se todas as metas diárias foram atingidas
+  const currentConsumption = nutritionData?.consumed || {
+    agua_l: 0,
+    proteinas_g: 0,
+    fibras_g: 0,
+    calorias_kcal: 0,
+    carboidratos_g: 0,
+    gorduras_g: 0,
+  };
+
+  const currentTargets: DailyConsumptionResponse["targets"] =
+    nutritionData?.targets || {
+      agua_l: 2.5,
+      proteinas_g: 140,
+      fibras_g: 30,
+      calorias_kcal: 2000, // Fallback seguro
+      carboidratos_g: 30,
+      gorduras_g: 30,
+    };
+  const mappedTargets = {
+    aguaRecomendadaL: currentTargets.agua_l,
+    metaProteinas: currentTargets.proteinas_g,
+    metaFibras: currentTargets.fibras_g,
+    metaCalorias: currentTargets.calorias_kcal,
+  };
+
   const allGoalsMet = useMemo(() => {
-    if (!dailyConsumption) return false;
-
-    const waterGoalMet =
-      dailyConsumption.agua_l >= nutritionTargets.aguaRecomendadaL;
-    const proteinGoalMet =
-      dailyConsumption.proteinas_g >= nutritionTargets.metaProteinas;
-    const fiberGoalMet =
-      dailyConsumption.fibras_g >= nutritionTargets.metaFibras;
-    const caloriesWithinLimit =
-      dailyConsumption.calorias_kcal <= nutritionTargets.metaCalorias;
-
+    if (!nutritionData) return false;
     return (
-      waterGoalMet && proteinGoalMet && fiberGoalMet && caloriesWithinLimit
+      currentConsumption.agua_l >= mappedTargets.aguaRecomendadaL &&
+      currentConsumption.proteinas_g >= mappedTargets.metaProteinas &&
+      currentConsumption.fibras_g >= mappedTargets.metaFibras &&
+      currentConsumption.calorias_kcal <= mappedTargets.metaCalorias // Calorias é <=
     );
-  }, [dailyConsumption, nutritionTargets]);
+  }, [
+    nutritionData,
+    currentConsumption.agua_l,
+    currentConsumption.proteinas_g,
+    currentConsumption.fibras_g,
+    currentConsumption.calorias_kcal,
+    mappedTargets.aguaRecomendadaL,
+    mappedTargets.metaProteinas,
+    mappedTargets.metaFibras,
+    mappedTargets.metaCalorias,
+  ]);
 
-  const handleSaveNutrition = async (data: {
-    agua: number;
-    proteinas: number;
-    fibras: number;
-  }) => {
+  const handleSaveNutrition = async (
+    data: AddConsumptionRequest,
+    mode: "add" | "set"
+  ) => {
     try {
-      // Envia os deltas (o que adicionar) para a API
-      const newTotals = await apiClient.addDailyConsumption(data);
-      // Atualiza o estado local com os *novos totais* retornados pela API
-      setDailyConsumption(newTotals);
+      let newTotals: DailyConsumption;
+      if (mode === "add") newTotals = await apiClient.addDailyConsumption(data);
+      else newTotals = await apiClient.setDailyConsumption(data);
+
+      setNutritionData({
+        consumed: newTotals,
+        targets: currentTargets,
+      });
+      setNutritionModalOpen(false);
     } catch (err) {
-      console.error("Falha ao salvar consumo:", err);
-      // (Opcional: mostrar um 'toast' de erro)
+      console.error(err);
     }
   };
 
   const handleSavePesoAlvo = async (novoPesoAlvo: number) => {
     try {
-      // Chama a API para atualizar o campo
       await apiClient.updateUserProfile({ peso_alvo_kg: novoPesoAlvo });
-
-      // Atualiza o estado local para refletir a mudança imediatamente na UI
-      if (profile) {
-        setProfile({ ...profile, peso_alvo_kg: novoPesoAlvo });
-      }
-      setEditPesoAlvoModalOpen(false); // Fecha o modal
+      if (profile) await refetchProfile();
+      setEditPesoAlvoModalOpen(false);
     } catch (err) {
-      console.error("Falha ao salvar peso alvo:", err);
-      // Aqui você pode mostrar uma notificação de erro para o usuário
-      // (Opcional: mostrar um 'toast' de erro)
+      console.error(err);
     }
   };
-
-  const handleNavigateToLatestMeasurement = () => {
-    if (weightHistory.length > 0) {
-      const latestMeasurementId =
-        weightHistory[weightHistory.length - 1].measurement_id;
-      navigate(`/measurements/${latestMeasurementId}`);
-    }
-  };
-
-  // --- 2. NOVO: CALCULAR DOMÍNIO DO EIXO Y ---
-  const yAxisDomain = useMemo(() => {
-    // Coleta todos os valores de peso
-    const allWeights = weightHistory.map((entry) => entry.peso_kg);
-    if (pesoAlvo && pesoAlvo > 0) {
-      allWeights.push(pesoAlvo);
-    }
-
-    // Se não houver dados, retorna um padrão
-    if (allWeights.length === 0) {
-      return [60, 90]; // Um fallback razoável
-    }
-
-    const min = Math.min(...allWeights);
-    const max = Math.max(...allWeights);
-
-    // Adiciona um "padding" de 2kg acima e abaixo
-    const padding = 2;
-    return [Math.floor(min - padding), Math.ceil(max + padding)];
-  }, [weightHistory, pesoAlvo]);
-
-  // --- Estados de UI ---
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <LuLoader2 className="h-12 w-12 animate-spin text-[#FCC3D2]" />
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-300" />
       </div>
     );
   }
 
-  if (error) {
+  if (!profile)
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-lg text-center bg-red-100 p-4 text-red-700">
-        <LuAlertTriangle className="h-8 w-8" />
-        <h3 className="font-semibold">Erro ao carregar o dashboard</h3>
-        <p>{error}</p>
+      <div className="p-8 text-center text-gray-500">
+        Erro ao carregar perfil.
       </div>
     );
-  }
-
-  if (!profile || !dailyConsumption) {
-    return <div>Não foi possível carregar os dados do dashboard.</div>;
-  }
 
   return (
-    <div className="space-y-6 p-4">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Olá, {firstName}!</h1>
-        <div className="flex items-center gap-2 text-gray-500 mt-1">
-          <LuTarget className="h-4 w-4" />
-          <span className="font-medium">
-            {formatObjective(profile.objetivo_atual)}
-          </span>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <p className="text-sm font-medium text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+            <Calendar className="w-4 h-4" /> {formatDate()}
+          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mt-1">
+            {getGreeting()},{" "}
+            <span className="text-indigo-600">{firstName}</span>.
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Vamos focar no objetivo:{" "}
+            <strong className="text-gray-700 capitalize">
+              {profile.profile.objetivo.replace("_", " ")}
+            </strong>
+          </p>
         </div>
       </div>
 
-      {/* --- Grid de Cards --- */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Card de Acompanhamento Diário */}
-        <div className="relative col-span-2 space-y-5 overflow-hidden rounded-2xl bg-white p-6 shadow-md">
-          {/* Ribbon de Conquista */}
-          <AnimatePresence>
-            {allGoalsMet && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                className="absolute top-3 -left-11 flex h-8 w-32 transform items-center justify-center bg-yellow-400 shadow-lg -rotate-45"
-                style={{ transform: "rotate(-45deg)" }}
-              >
-                <LuStar
-                  className="h-5 w-5 text-white"
-                  fill="currentColor"
-                  style={{ transform: "rotate(45deg)" }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+      {/* Grid Principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* --- COLUNA ESQUERDA --- */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Monitoramento Diário */}
+          <DailyMonitoringCard
+            dailyConsumption={currentConsumption}
+            nutritionTargets={mappedTargets}
+            allGoalsMet={allGoalsMet}
+            onOpenModal={() => setNutritionModalOpen(true)}
+          />
 
-          <div className="flex justify-between gap-1 items-center mb-3">
-            <h3 className="text-xl font-semibold text-gray-800">
-              Acompanhamento Diário
-            </h3>
-            <button
-              onClick={() => setNutritionModalOpen(true)}
-              className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <LuPlus className="w-4 h-4" />
-              <span className="hidden md:block">Adicionar</span>
-            </button>
+          {/* Componente de Gráfico Separado */}
+          <div className="h-80 w-full">
+            <WeightEvolutionChart
+              weightHistory={weightHistory}
+              pesoAlvo={pesoAlvo}
+            />
           </div>
-          <NutritionProgress
-            icon={LuGlassWater}
-            label="Água"
-            current={dailyConsumption.agua_l}
-            target={nutritionTargets.aguaRecomendadaL}
-            unit="L"
-            color="linear-gradient(to right, #60a5fa, #3b82f6)" // Azul
-          />
-          <NutritionProgress
-            icon={LuWeight} // Ícone placeholder
-            label="Proteínas"
-            current={dailyConsumption.proteinas_g}
-            target={nutritionTargets.metaProteinas}
-            unit="g"
-            color="linear-gradient(to right, #fca5a5, #ef4444)" // Vermelho
-          />
-          <NutritionProgress
-            icon={LuLeaf} // Ícone placeholder
-            label="Fibras"
-            current={dailyConsumption.fibras_g}
-            target={nutritionTargets.metaFibras}
-            unit="g"
-            color="linear-gradient(to right, #86efac, #22c55e)" // Verde
-          />
-          <NutritionProgress
-            icon={LuFlame}
-            label="Calorias"
-            current={dailyConsumption.calorias_kcal}
-            target={nutritionTargets.metaCalorias}
-            unit="kcal"
-            color="linear-gradient(to right, #fdbb74, #f97316)" // Laranja
-          />
-        </div>
-        {/* Card de Peso Atual */}
-        <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md">
-          <h3 className="text-md font-semibold text-gray-600">Peso Atual</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {pesoAtual ? `${pesoAtual.toFixed(1)} kg` : "N/A"}
-          </p>
-          <LuWeight className="absolute -right-4 -bottom-4 h-24 w-24 text-gray-200/40" />
         </div>
 
-        {/* Card de Meta */}
-        <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-md">
-          <h3 className="text-md font-semibold text-gray-600">Meta de Peso</h3>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
-            {pesoAlvo ? `${pesoAlvo.toFixed(1)} kg` : "N/A"}
-          </p>
-          <button
-            className="absolute right-3 top-4 h-5 w-5 text-sm transition-colors"
-            onClick={() => setEditPesoAlvoModalOpen(true)}
-          >
-            <LuPencil className="text-gray-400 w-full h-full hover:text-indigo-600" />
-            <span className="hidden md:block">Editar</span>
-          </button>
-          {/* Sub-texto com a diferença */}
-          {diferenca !== null && (
-            <p
-              className={`mt-1 text-xs font-medium ${
-                diferenca > 0 ? "text-red-500" : "text-green-600"
-              }`}
-            >
-              {diferenca === 0
-                ? "Meta atingida!"
-                : `${diferenca > 0 ? "+" : ""}${diferenca.toFixed(
-                    1
-                  )}kg da meta`}
-            </p>
-          )}
-          <LuGoal className="absolute -right-4 -bottom-4 h-24 w-24 text-gray-200/40" />
+        {/* --- COLUNA DIREITA --- */}
+        <div className="space-y-6">
+          {/* CTA Treino */}
+          <NextWorkoutCard
+            onClick={() => navigate("/treinos")}
+            isLoading={false}
+          />
+
+          {/* Ações Rápidas */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">
+              Acesso Rápido
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <QuickActionCard
+                icon={Droplets}
+                label="Água"
+                color="blue"
+                onClick={() => setNutritionModalOpen(true)}
+              />
+              <QuickActionCard
+                icon={Utensils}
+                label="Dieta"
+                color="green"
+                onClick={() => navigate("/receitas")}
+              />
+              <QuickActionCard
+                icon={Plus}
+                label="Medida"
+                color="pink"
+                onClick={() => navigate("/measurements/add")}
+              />
+              <QuickActionCard
+                icon={Target}
+                label="Meta"
+                color="purple"
+                onClick={() => setEditPesoAlvoModalOpen(true)}
+              />
+            </div>
+          </div>
+
+          {/* Resumo de Peso */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-800">Balança</h3>
+              <button
+                onClick={() => setEditPesoAlvoModalOpen(true)}
+                className="text-gray-400 hover:text-indigo-600"
+              >
+                <LuPencil className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-gray-50">
+              <span className="text-sm text-gray-500">Atual</span>
+              <span className="text-xl font-bold text-gray-900">
+                {pesoAtual?.toFixed(1)}{" "}
+                <span className="text-xs font-normal text-gray-400">kg</span>
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-2 border-b border-gray-50">
+              <span className="text-sm text-gray-500">Meta</span>
+              <span className="text-xl font-bold text-indigo-600">
+                {pesoAlvo?.toFixed(1)}{" "}
+                <span className="text-xs font-normal text-indigo-300">kg</span>
+              </span>
+            </div>
+
+            <div className="pt-3">
+              {diferenca !== null && (
+                <div
+                  className={`p-2 rounded-lg text-center text-sm font-medium ${
+                    diferenca === 0
+                      ? "bg-green-100 text-green-700"
+                      : diferenca > 0
+                      ? "bg-orange-50 text-orange-600"
+                      : "bg-green-50 text-green-600"
+                  }`}
+                >
+                  {diferenca === 0
+                    ? "🎉 Meta Atingida!"
+                    : diferenca > 0
+                    ? `Faltam ${diferenca.toFixed(1)} kg`
+                    : `Passou ${Math.abs(diferenca).toFixed(1)} kg`}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* --- MODALS --- */}
       <AnimatePresence>
         {isEditPesoAlvoModalOpen && (
           <PesoAlvoModal
@@ -400,113 +416,22 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* --- Renderização do Modal --- */}
       <AnimatePresence>
-        {isNutritionModalOpen && (
+        {isNutritionModalOpen && currentConsumption && (
           <AddNutritionModal
             onClose={() => setNutritionModalOpen(false)}
             onSave={handleSaveNutrition}
+            currentValues={{
+              agua_l: currentConsumption.agua_l,
+              proteinas_g: currentConsumption.proteinas_g,
+              fibras_g: currentConsumption.fibras_g,
+              calorias_kcal: currentConsumption.calorias_kcal,
+              carboidratos_g: currentConsumption.carboidratos_g,
+              gorduras_g: currentConsumption.gorduras_g,
+            }}
           />
         )}
       </AnimatePresence>
-
-      {/* --- Card do Gráfico --- */}
-      <div className="rounded-2xl bg-white p-6 shadow-md">
-        <div className="flex justify-between items-center mb-4">
-          <button
-            onClick={handleNavigateToLatestMeasurement}
-            className="text-xl font-semibold text-gray-800 hover:text-indigo-600 transition-colors disabled:hover:text-gray-800 disabled:cursor-default"
-            disabled={weightHistory.length === 0}
-            title={
-              weightHistory.length > 0 ? "Ver detalhes da última medição" : ""
-            }
-          >
-            Histórico de Peso (kg)
-          </button>
-          <button
-            onClick={() => navigate("/measurements/add")}
-            className="flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
-          >
-            <LuPlus className="w-4 h-4" />{" "}
-            <span className="hidden md:block">Adicionar Medida</span>
-          </button>
-        </div>
-        {chartData.length > 0 ? ( // Alterado para > 0
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                <XAxis dataKey="data_medicao" stroke="#6b7280" />
-                <YAxis
-                  stroke="#6b7280"
-                  // Define o domínio manualmente para incluir a meta
-                  domain={yAxisDomain}
-                  // Garante que a linha de referência seja exibida
-                  allowDataOverflow={true}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    borderRadius: "0.5rem",
-                    borderColor: "#ddd",
-                  }}
-                  labelStyle={{ color: "#333", fontWeight: "bold" }}
-                />
-                {/* Linha de Peso Atual (Rosa) */}
-                <Line
-                  type="monotone"
-                  dataKey="peso_kg"
-                  stroke="#FCC3D2"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "#FCC3D2" }}
-                  activeDot={{
-                    r: 8,
-                    fill: "#db889d",
-                    stroke: "#fff",
-                    strokeWidth: 2,
-                    cursor: "pointer",
-                    // O primeiro argumento é o evento, o segundo é o payload com os dados.
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick: (_event: any, data: any) => {
-                      if (data?.payload?.measurement_id) {
-                        navigate(
-                          `/measurements/${data.payload.measurement_id}`
-                        );
-                      }
-                    },
-                  }}
-                />
-
-                {/* Linha de Referência da Meta (Azul Pontilhada) */}
-                {pesoAlvo && pesoAlvo > 0 && (
-                  <ReferenceLine
-                    y={pesoAlvo}
-                    stroke="#3b82f6" // Azul
-                    strokeWidth={2}
-                    strokeDasharray="4 4" // Pontilhado
-                  >
-                    <Label
-                      value={`Meta: ${pesoAlvo} kg`}
-                      position="insideTopLeft"
-                      fill="#3b82f6"
-                      fontSize={12}
-                      offset={10} // Deslocamento para não ficar na borda
-                    />
-                  </ReferenceLine>
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <div className="flex h-80 items-center justify-center text-center text-gray-500">
-            <p>
-              Nenhuma medição encontrada.
-              <br />
-              Adicione seu peso na página "Perfil" para começar.
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

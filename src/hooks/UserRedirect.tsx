@@ -23,7 +23,7 @@ const RootRedirector = () => {
   }
 
   // Se o usuário está logado, mas não completou o onboarding, redireciona para o onboarding.
-  if (userProfile && !userProfile.data_nascimento) {
+  if (userProfile && !userProfile.profile.data_nascimento) {
     return <Navigate to="/onboard" replace />;
   }
 

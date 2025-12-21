@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { LuWeight } from "react-icons/lu";
-import type { Objetivo } from "../../../types/onboarding.schema";
+// import type { Objetivo } from "../../../types/onboarding.schema";
 import type { StepProps } from "../OnboardingWizard";
 import { useEffect } from "react";
+import type { Objetivo } from "../../../types/models";
 
 export const ObjetivoStep: React.FC<StepProps> = ({
   onboardingData,

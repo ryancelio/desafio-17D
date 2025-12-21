@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import apiClient, {
   isApiError,
-  type Recipe,
-  type RecipeFilters,
+  // type Recipe,
+  // type RecipeFilters,
 } from "../../../api/apiClient";
 import {
   LuLoaderCircle as LuLoader2,
@@ -27,6 +27,8 @@ import {
   useTransform,
 } from "framer-motion";
 import useDebounce from "../../../hooks/debouce";
+import type { Recipe } from "../../../types/models";
+import type { RecipeFilters } from "../../../types/api-types";
 
 // --- 2. Tags Disponíveis (Hardcoded por simplicidade) ---
 // Em um app maior, isso poderia vir de uma API
@@ -367,7 +369,7 @@ export default function RecipesPage() {
                    -mt-4 md:-mt-8 -mx-4 md:-mx-8"
       >
         <div className="pt-4 md:pt-8 px-4 md:px-8 pb-4">
-          <div className="flex items-center mb-4 gap-3">
+          <div className="flex items-center mb-4 mt-3 gap-3">
             <LuSoup className="h-8 w-8 text-gray-800" />
             <h1 className="text-3xl font-bold text-gray-900">Receitas</h1>
           </div>

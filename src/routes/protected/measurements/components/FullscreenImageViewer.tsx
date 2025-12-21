@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { LuX, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { SecureImage } from "../../components/SecureImage";
 
 interface FullscreenImageViewerProps {
   photos: string[];
@@ -94,9 +95,8 @@ export default function FullscreenImageViewer({
 
       {/* Imagem Principal */}
       <AnimatePresence initial={false} custom={direction}>
-        <motion.img
+        <motion.div
           key={currentIndex}
-          src={`/api/${photos[currentIndex]}`}
           custom={direction}
           variants={imageVariants as Variants}
           initial="hidden"
@@ -104,7 +104,9 @@ export default function FullscreenImageViewer({
           exit="exit"
           className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
           onClick={(e) => e.stopPropagation()} // Impede que o clique na imagem feche o modal
-        />
+        >
+          <SecureImage src={`/api/${photos[currentIndex]}`} alt="Image" />
+        </motion.div>
       </AnimatePresence>
 
       {/* Navegação Próxima */}

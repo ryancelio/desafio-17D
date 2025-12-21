@@ -5,13 +5,14 @@ import { motion } from "framer-motion";
 import {
   LuArrowLeft,
   LuAward,
-  LuChartBar as LuBarChart,
+  // LuChartBar as LuBarChart,
   LuDumbbell,
   LuLoader as LuLoader2,
   LuShieldCheck,
   LuTriangleAlert,
 } from "react-icons/lu";
-import apiClient, { type WorkoutPlan } from "../../../api/apiClient";
+import apiClient from "../../../api/apiClient";
+import type { WorkoutPlan } from "../../../types/models";
 
 const MuscleChip: React.FC<{ muscle: string; index: number }> = ({
   muscle,
@@ -47,8 +48,8 @@ export default function WorkoutCompletionPage() {
       try {
         const data = await apiClient.getWorkoutDetails(parseInt(id, 10));
         setPlan(data);
-      } catch (e) {
-        setError("Não foi possível carregar os detalhes do treino.", e);
+      } catch {
+        setError("Não foi possível carregar os detalhes do treino.");
       } finally {
         setIsLoading(false);
       }

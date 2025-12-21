@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import React, { useEffect } from "react";
-import type { DiaSemana } from "../../../types/onboarding.schema";
+// import type { DiaSemana } from "../../../types/onboarding.schema";
+
 import type { StepProps } from "../OnboardingWizard";
+import type { DiaSemana } from "../../../types/models";
 
 const diasSemana: { label: string; value: DiaSemana }[] = [
   { label: "Dom", value: "DOM" },
@@ -20,7 +22,7 @@ const DiasTreinoStep: React.FC<StepProps> = ({
   const { personal } = onboardingData;
 
   const toggleDia = (dia: DiaSemana) => {
-    const { dias_treino } = personal;
+    const dias_treino = personal.dias_treino ?? [];
     const newList = dias_treino.includes(dia)
       ? dias_treino.filter((d) => d !== dia)
       : [...dias_treino, dia];
@@ -31,12 +33,13 @@ const DiasTreinoStep: React.FC<StepProps> = ({
   };
 
   useEffect(() => {
-    if (personal.dias_treino.length === 0) {
+    const dias_treino = personal.dias_treino ?? [];
+    if (dias_treino.length === 0) {
       setStepvalid(false);
     } else {
       setStepvalid(true);
     }
-  }, [personal.dias_treino, setStepvalid]);
+  }, [personal?.dias_treino, setStepvalid]);
 
   return (
     <motion.div
@@ -61,9 +64,9 @@ const DiasTreinoStep: React.FC<StepProps> = ({
         >
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-center">
             {diasSemana.map((dia) => {
-              const ativo = onboardingData.personal.dias_treino.includes(
-                dia.value
-              );
+              const ativo =
+                onboardingData.personal.dias_treino?.includes(dia.value) ??
+                false;
               return (
                 <motion.button
                   type="button"
