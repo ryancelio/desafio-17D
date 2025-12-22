@@ -35,7 +35,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://dealory.io", // O domínio base
+        target: "https://powerslim.pro", // O domínio base
         changeOrigin: true,
         secure: false, // Às vezes necessário se o SSL local for auto-assinado
         // A regra abaixo diz: "Se chegar /api/teste, mande para https://dealory.io/api/teste"

@@ -9,6 +9,7 @@ import type {
   NutritionTargets,
   Objetivo,
   UserMeasurement,
+  WorkoutRequest,
 } from "./models";
 
 export interface ApiResponse {
@@ -55,6 +56,9 @@ export interface CreateWorkoutRequest {
   nome: string;
   exercises: CreateWorkoutExerciseInput[];
 }
+
+// O endpoint retorna um array desses objetos
+export type GetWorkoutRequestsResponse = WorkoutRequest[];
 
 export interface AddConsumptionRequest {
   agua_l?: number;

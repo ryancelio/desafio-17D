@@ -198,3 +198,57 @@ export type Notification = {
   is_read: boolean | 1 | 0;
   created_at: string;
 };
+// Define os status possíveis exatamente como estão no Banco de Dados (ENUM)
+export type WorkoutRequestStatus =
+  | "pendente"
+  | "em_analise"
+  | "concluido"
+  | "rejeitado";
+
+// Interface do objeto de pedido individual
+export interface WorkoutRequest {
+  request_id: number;
+  qtd_fichas: number;
+  observacoes: string | null; // Pode vir nulo do banco
+  status: WorkoutRequestStatus;
+  admin_feedback: string | null; // Pode vir nulo se não foi rejeitado/analisado
+  created_at: string; // PHP retorna timestamp como string ISO/Date string
+  updated_at: string | null;
+}
+
+// --- Enumerações e Tipos Auxiliares ---
+
+// Objetivo da dieta (usado no formulário)
+export type DietObjective = "emagrecimento" | "hipertrofia" | "manutencao";
+
+// Status do pedido (usado na listagem)
+export type DietRequestStatus =
+  | "pendente"
+  | "em_analise"
+  | "concluido"
+  | "rejeitado";
+
+// --- Interfaces de Formulário (Request Payload) ---
+
+// O que é enviado no POST para criar o pedido
+export interface DietRequestPayload {
+  objetivo: DietObjective;
+  refeicoes_dia: string; // Ex: "3", "4", "5"
+  suplementos: string; // Ex: "Whey, Creatina"
+  restricoes: string; // Texto livre (textarea)
+}
+
+// --- Interfaces de Resposta (Listagem / GET) ---
+
+// O que vem do banco de dados na listagem de pedidos
+export interface DietRequest {
+  request_id: number;
+  user_uid: string;
+  objetivo: string; // Pode vir como string livre do banco ou ENUM dependendo da implementação
+  restricoes: string; // Vem da coluna 'restricoes'
+  observacoes: string; // Vem da coluna 'observacoes' (onde guardamos refeicoes_dia e suplementos concatenados)
+  status: DietRequestStatus;
+  admin_feedback: string | null;
+  created_at: string; // ISO Date String
+  updated_at: string | null;
+}

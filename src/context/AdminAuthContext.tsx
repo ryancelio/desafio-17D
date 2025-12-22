@@ -24,9 +24,12 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch("https://dealory.io/api/admin/check_auth.php", {
-          credentials: "include", // <--- ADICIONE ISSO PARA ENVIAR O COOKIE
-        });
+        const res = await fetch(
+          "https://powerslim.pro/api/admin/check_auth.php",
+          {
+            credentials: "include", // <--- ADICIONE ISSO PARA ENVIAR O COOKIE
+          }
+        );
         if (res.ok) {
           const data = await res.json();
           setAdmin(data.admin);
@@ -56,6 +59,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
   if (!context)

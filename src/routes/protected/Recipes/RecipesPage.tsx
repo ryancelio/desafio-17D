@@ -365,7 +365,7 @@ export default function RecipesPage() {
       {/* 2. NOVO HEADER DE FILTRO (STICKY) */}
       <div
         className="sticky -top-4 md:-top-8 z-10 
-                   bg-white shadow-md border-b border-gray-200 
+                   bg-white/90 backdrop-blur-md shadow-md border-b border-gray-200/60 
                    -mt-4 md:-mt-8 -mx-4 md:-mx-8"
       >
         <div className="pt-4 md:pt-8 px-4 md:px-8 pb-4">

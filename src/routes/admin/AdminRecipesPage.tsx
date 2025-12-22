@@ -26,6 +26,7 @@ import {
 } from "framer-motion";
 import useDebounce from "../../hooks/debouce"; // Ajuste o caminho
 import type { Recipe } from "../../types/models";
+import { manageRecipes } from "./shared/AdminApi";
 
 // --- Tags Disponíveis ---
 const allAvailableTags = [
@@ -253,23 +254,19 @@ export default function AdminRecipesPage() {
     setError(null);
     try {
       // 1. Chamada direta ao endpoint de Admin
-      const response = await fetch(
-        "https://dealory.io/api/admin/recipes_manage.php",
-        {
-          method: "GET",
-          credentials: "include", // <--- CRUCIAL: Envia o cookie de sessão do Admin
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // const response = await fetch(
+      //   "https://dealory.io/api/admin/recipes_manage.php",
+      //   {
+      //     method: "GET",
+      //     credentials: "include", // <--- CRUCIAL: Envia o cookie de sessão do Admin
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
+      const data = await manageRecipes.get();
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Erro ao buscar receitas.");
-      }
-
-      const allRecipes: Recipe[] = await response.json();
+      const allRecipes: Recipe[] = data;
 
       // 2. Filtragem Client-Side
       // Como o endpoint admin retorna tudo, filtramos aqui para a UI responder rápido
@@ -301,6 +298,7 @@ export default function AdminRecipesPage() {
       });
 
       setRecipes(filteredRecipes);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message || "Falha ao carregar as receitas.");
       console.error(err);

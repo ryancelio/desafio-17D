@@ -1,14 +1,72 @@
 import axios, { type AxiosInstance } from "axios";
-import type { Exercise } from "../../../types/models";
-import type { ExerciseMetadataResponse } from "../../../types/api-types";
+import type {
+  Exercise,
+  WorkoutRequest,
+  Recipe,
+  ExerciseTaxonomy,
+  Prescription,
+  DietRequest,
+} from "../../../types/models";
+import type {
+  ExerciseMetadataResponse,
+  ApiResponse,
+} from "../../../types/api-types";
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: "https://dealory.io/api/admin",
+  baseURL: "https://powerslim.pro/api/admin",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+// Tipo auxiliar para respostas de mutação (create/update/delete) do Admin
+type AdminResponse = Partial<ApiResponse> & {
+  success: boolean;
+  id?: number;
+  message?: string;
+};
+
+// --- Tipos para Payloads de Criação (Baseados nos PHPs fornecidos) ---
+
+export interface DietMealItemPayload {
+  recipe_id: number;
+  porcao: string;
+  observacao?: string;
+}
+
+export interface DietMealPayload {
+  nome: string;
+  horario: string;
+  items: DietMealItemPayload[];
+}
+
+export interface SaveDietPayload {
+  user_uid: string;
+  nome: string;
+  calorias_meta: number;
+  macros_meta: {
+    prot: number;
+    carb: number;
+    fat: number;
+  };
+  meals: DietMealPayload[];
+  request_id?: number; // Opcional: Para marcar o pedido como concluído
+}
+
+export interface WorkoutExercisePayload {
+  exercise_id: number;
+  prescription: Prescription; // Objeto com séries, reps, carga, etc.
+}
+
+export interface SaveWorkoutPayload {
+  plan_id?: number; // Opcional: Se enviado, é edição. Se não, criação.
+  user_uid: string;
+  nome: string;
+  exercises: WorkoutExercisePayload[];
+}
+
+// ---------------------------------------------------------------------
 
 const ManageExerciseMetadata = {
   get: async (): Promise<ExerciseMetadataResponse> => {
@@ -17,26 +75,27 @@ const ManageExerciseMetadata = {
     );
     return response.data;
   },
-  post: async (data: any): Promise<ExerciseMetadataResponse> => {
-    const response = await axiosInstance.post<ExerciseMetadataResponse>(
+  post: async (data: Partial<ExerciseTaxonomy>): Promise<AdminResponse> => {
+    const response = await axiosInstance.post<AdminResponse>(
       "/taxonomies_manage.php",
       data
     );
     return response.data;
   },
-  put: async (data: any): Promise<ExerciseMetadataResponse> => {
-    const response = await axiosInstance.put<ExerciseMetadataResponse>(
+  put: async (data: Partial<ExerciseTaxonomy>): Promise<AdminResponse> => {
+    const response = await axiosInstance.put<AdminResponse>(
       "/taxonomies_manage.php",
       data
     );
     return response.data;
   },
-  delete: async (id: number): Promise<{ success: boolean }> => {
-    // Axios delete envia dados via "params" (query string) ou "data" (body).
-    // Seu PHP espera $_GET['id'] para delete, então usamos 'params' ou mudamos a URL.
-    const response = await axiosInstance.delete("/taxonomies_manage.php", {
-      params: { id }, // Isso gera /taxonomies_manage.php?id=123
-    });
+  delete: async (id: number): Promise<AdminResponse> => {
+    const response = await axiosInstance.delete<AdminResponse>(
+      "/taxonomies_manage.php",
+      {
+        params: { id },
+      }
+    );
     return response.data;
   },
 };
@@ -48,26 +107,171 @@ const ManageExercises = {
     );
     return response.data;
   },
-  post: async (data: any): Promise<any> => {
-    const response = await axiosInstance.post<any>(
+  getById: async (id: number): Promise<Exercise> => {
+    const response = await axiosInstance.get<Exercise>(
+      "/exercises_manage.php",
+      {
+        params: { id },
+      }
+    );
+    return response.data;
+  },
+  post: async (data: Partial<Exercise>): Promise<AdminResponse> => {
+    const response = await axiosInstance.post<AdminResponse>(
       "/exercises_manage.php",
       data
     );
     return response.data;
   },
-  put: async (data: any): Promise<any> => {
-    const response = await axiosInstance.put<any>(
+  put: async (data: Partial<Exercise>): Promise<AdminResponse> => {
+    const response = await axiosInstance.put<AdminResponse>(
       "/exercises_manage.php",
       data
     );
     return response.data;
   },
-  delete: async (id: number): Promise<{ success: boolean }> => {
-    const response = await axiosInstance.delete("/exercises_manage.php", {
-      params: { id },
-    });
+  delete: async (id: number): Promise<AdminResponse> => {
+    const response = await axiosInstance.delete<AdminResponse>(
+      "/exercises_manage.php",
+      {
+        params: { id },
+      }
+    );
     return response.data;
   },
 };
 
-export { ManageExerciseMetadata, ManageExercises };
+const manageRecipes = {
+  get: async (): Promise<Recipe[]> => {
+    const response = await axiosInstance.get("/recipes_manage.php");
+    return response.data;
+  },
+  getById: async (id: number): Promise<Recipe> => {
+    const response = await axiosInstance.get<Recipe>("/recipes_manage.php", {
+      params: { id },
+    });
+    return response.data;
+  },
+  post: async (data: Partial<Recipe>): Promise<AdminResponse> => {
+    const response = await axiosInstance.post<AdminResponse>(
+      "/recipes_manage.php",
+      data
+    );
+    return response.data;
+  },
+  put: async (data: Partial<Recipe>): Promise<AdminResponse> => {
+    const response = await axiosInstance.put<AdminResponse>(
+      "/recipes_manage.php",
+      data
+    );
+    return response.data;
+  },
+  delete: async (id: number): Promise<AdminResponse> => {
+    const response = await axiosInstance.delete<AdminResponse>(
+      "/recipes_manage.php",
+      {
+        params: { id },
+      }
+    );
+    return response.data;
+  },
+};
+
+const getDietRequests = async (): Promise<DietRequest[]> => {
+  const response = await axiosInstance.get("/get_diet_requests.php");
+  return response.data;
+};
+
+// --- Novas Funções Conectadas aos Scripts PHP fornecidos ---
+
+const saveDiet = async (data: SaveDietPayload): Promise<AdminResponse> => {
+  const response = await axiosInstance.post<AdminResponse>(
+    "/save_diet.php",
+    data
+  );
+  return response.data;
+};
+
+const saveWorkout = async (
+  data: SaveWorkoutPayload
+): Promise<AdminResponse> => {
+  const response = await axiosInstance.post<AdminResponse>(
+    "/save_workout.php",
+    data
+  );
+  return response.data;
+};
+const getWorkoutRequests = async (): Promise<WorkoutRequest[]> => {
+  const response = await axiosInstance.get("/get_workout_requests.php");
+  return response.data;
+};
+
+const completeWorkoutRequest = async (
+  requestId: number
+): Promise<AdminResponse> => {
+  const response = await axiosInstance.post<AdminResponse>(
+    "/complete_request.php",
+    {
+      request_id: requestId,
+      status: "concluido",
+    }
+  );
+  return response.data;
+};
+
+// -----------------------------------------------------------
+
+const checkAuth = async (): Promise<{
+  authenticated: boolean;
+  admin: string;
+  role: string;
+}> => {
+  const response = await axiosInstance.get<{
+    authenticated: boolean;
+    admin: string;
+    role: string;
+  }>("/check_auth.php");
+  return response.data;
+};
+
+interface AdminUser {
+  name: string;
+  role: string;
+}
+
+const adminLogin = async (
+  username: string,
+  password: string
+): Promise<{
+  success: boolean;
+  admin?: AdminUser;
+  error?: string;
+}> => {
+  // CORREÇÃO AQUI: Alterado 'admin?: string' para 'admin?: AdminUser'
+  const response = await axiosInstance.post<{
+    success: boolean;
+    admin?: AdminUser;
+    error?: string;
+  }>("/login.php", { username, password });
+
+  return response.data;
+};
+
+const adminLogout = async (): Promise<{ success: boolean }> => {
+  const response = await axiosInstance.get<{ success: boolean }>("/logout.php");
+  return response.data;
+};
+
+export {
+  ManageExerciseMetadata,
+  ManageExercises,
+  manageRecipes,
+  getDietRequests,
+  saveDiet, // Exportado
+  saveWorkout, // Exportado
+  checkAuth,
+  adminLogin,
+  adminLogout,
+  getWorkoutRequests,
+  completeWorkoutRequest,
+};

@@ -5,7 +5,6 @@ import {
   LuUtensils,
   LuSend,
   LuLoader as LuLoader2,
-  LuCircleCheck as LuCheckCircle,
   LuArrowLeft,
   LuLeaf,
   LuDumbbell,
@@ -19,13 +18,7 @@ import {
 } from "react-icons/lu";
 import { useAuth } from "../../../../context/AuthContext";
 import apiClient from "../../../../api/apiClient";
-
-type DietRequestForm = {
-  objetivo: string;
-  refeicoes_dia: string;
-  suplementos: string;
-  restricoes: string;
-};
+import type { DietRequestPayload } from "../../../../types/models";
 
 // Helper para calcular idade
 const calculateAge = (dateString?: string | null) => {
@@ -56,13 +49,11 @@ export default function RequestDietPage() {
   const { firebaseUser, userProfile } = useAuth();
   const navigate = useNavigate();
 
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [loadingPrefs, setLoadingPrefs] = useState(true);
 
-  const { register, handleSubmit, setValue } = useForm<DietRequestForm>({
+  const { register, handleSubmit, setValue } = useForm<DietRequestPayload>({
     defaultValues: {
       objetivo: "emagrecimento",
       refeicoes_dia: "3",
@@ -74,14 +65,13 @@ export default function RequestDietPage() {
   // --- 1. Sincronizar dados do Perfil (Tabela Users) ---
   useEffect(() => {
     if (userProfile?.profile.objetivo) {
-      // Mapeia o ENUM do banco para o ID do formulário
       const mapObj: Record<string, string> = {
         perder_peso: "emagrecimento",
         ganhar_massa: "hipertrofia",
-        definir: "manutencao", // Ou definir
+        definir: "manutencao",
       };
       const formValue = mapObj[userProfile.profile.objetivo] || "emagrecimento";
-      setValue("objetivo", formValue);
+      setValue("objetivo", formValue as DietRequestPayload["objetivo"]);
     }
   }, [userProfile, setValue]);
 
@@ -93,9 +83,8 @@ export default function RequestDietPage() {
         const data = await apiClient.getUserPreferences();
 
         if (Array.isArray(data) && data.length > 0) {
-          // Formata as preferências em texto para o textarea
-          // Ex: "Alergia: Amendoim\nIntolerância: Lactose"
           const formattedText = data
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((p: any) => {
               const tipo =
                 p.tipo_restricao.charAt(0).toUpperCase() +
@@ -115,54 +104,27 @@ export default function RequestDietPage() {
     fetchPreferences();
   }, [firebaseUser, setValue]);
 
-  const onSubmit = async (data: DietRequestForm) => {
+  const onSubmit = async (data: DietRequestPayload) => {
     setStatus("loading");
     setErrorMsg("");
     try {
-      const token = await firebaseUser?.getIdToken();
-      const response = await fetch("https://dealory.io/api/request_diet.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
+      const res = await apiClient.requestDietPlan(data);
 
-      const res = await response.json();
-      if (!response.ok)
-        throw new Error(res.error || "Erro ao enviar solicitação.");
-
-      setStatus("success");
-    } catch (err: any) {
-      setErrorMsg(err.message);
+      if (res.success) {
+        // Redireciona para /dietas passando um state para exibir o Toast de sucesso lá
+        navigate("/dietas", { state: { newRequest: true } });
+      } else {
+        throw new Error("Falha ao processar a resposta.");
+      }
+    } catch (err: unknown) {
+      const message =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err as any).response?.data?.error ||
+        (err instanceof Error ? err.message : "Erro desconhecido.");
+      setErrorMsg(message);
       setStatus("error");
     }
   };
-
-  if (status === "success") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center animate-in fade-in zoom-in duration-300">
-        <div className="bg-green-100 p-6 rounded-full mb-6">
-          <LuCheckCircle className="w-16 h-16 text-green-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800">
-          Solicitação Enviada!
-        </h2>
-        <p className="text-gray-600 mt-2 max-w-md">
-          O nutricionista recebeu seus dados biométricos (Peso, Altura, Idade) e
-          suas restrições carregadas do perfil. Você será notificado assim que o
-          plano estiver pronto.
-        </p>
-        <button
-          onClick={() => navigate("/receitas")}
-          className="mt-8 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all"
-        >
-          Explorar Receitas
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
@@ -352,7 +314,7 @@ export default function RequestDietPage() {
 
               {/* Restrições (Pré-preenchido) */}
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-2 flex justify-between items-end">
+                <label className="text-sm font-bold text-gray-800 mb-2 flex justify-between items-end">
                   <span>Restrições e Preferências</span>
                   {loadingPrefs && (
                     <span className="text-xs text-green-600 flex items-center gap-1">

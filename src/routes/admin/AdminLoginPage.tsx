@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { useNavigate } from "react-router";
+import { adminLogin } from "./shared/AdminApi";
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
@@ -12,20 +13,22 @@ export default function AdminLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("https://dealory.io/api/admin/login.php", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-        credentials: "include", // Descomente se estiver usando sessão PHP em domínios diferentes
-      });
+      // const res = await fetch("https://dealory.io/api/admin/login.php", {
+      //   method: "POST",
+      //   body: JSON.stringify({ username, password }),
+      //   credentials: "include", // Descomente se estiver usando sessão PHP em domínios diferentes
+      // });
 
-      const data = await res.json();
-      if (res.ok) {
+      const data = await adminLogin(username, password);
+
+      // const data = await res.json();
+      if (data.success && data.admin) {
         login(data.admin);
         navigate("/admin/dashboard");
       } else {
         setError(data.error || "Erro ao entrar");
       }
-    } catch (err) {
+    } catch {
       setError("Erro de conexão");
     }
   };

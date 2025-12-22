@@ -13,6 +13,9 @@ import type {
   WorkoutPlan,
   DailyConsumption,
   Notification,
+  WorkoutRequest,
+  DietRequestPayload,
+  DietRequest,
 } from "../types/models";
 
 import type {
@@ -235,6 +238,29 @@ async function getUserWorkouts(): Promise<WorkoutPlan[]> {
   );
   return response.data;
 }
+async function getWorkoutRequests(): Promise<WorkoutRequest[]> {
+  const response = await axiosInstance.get<WorkoutRequest[]>(
+    "/get_workout_requests.php"
+  );
+  return response.data;
+}
+
+async function getDietRequests(): Promise<DietRequest[]> {
+  const response = await axiosInstance.get<DietRequest[]>(
+    "/get_diet_requests.php"
+  );
+  return response.data;
+}
+
+async function requestDietPlan(
+  request: DietRequestPayload
+): Promise<ApiResponse> {
+  const response = await axiosInstance.post<ApiResponse>(
+    "/request_diet.php",
+    request
+  );
+  return response.data;
+}
 
 async function getExerciseMetadata(): Promise<ExerciseMetadataResponse> {
   const response = await axiosInstance.get<ExerciseMetadataResponse>(
@@ -410,6 +436,9 @@ const apiClient = {
   uploadProfilePhoto,
   getPlans,
   cancelSubscription,
+  getWorkoutRequests,
+  getDietRequests,
+  requestDietPlan,
 };
 
 export default apiClient;

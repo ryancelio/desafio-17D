@@ -12,7 +12,7 @@ import {
   LuFlame,
   LuCheck,
 } from "react-icons/lu";
-// import { motion } from "framer-motion";
+import { manageRecipes } from "./shared/AdminApi";
 
 // Tags disponíveis (mesmas da listagem para consistência)
 const AVAILABLE_TAGS = [
@@ -59,10 +59,7 @@ export default function AdminRecipeEditor() {
       const loadRecipe = async () => {
         setIsLoading(true);
         try {
-          const recipe = await fetch(
-            `https://dealory.io/api/admin/recipes_manage.php?id=${id}`,
-            { method: "GET", credentials: "include" }
-          ).then((res) => res.json());
+          const recipe = await manageRecipes.getById(Number(id));
           if (recipe) {
             setForm({
               titulo: recipe.titulo,
@@ -170,24 +167,16 @@ export default function AdminRecipeEditor() {
       ingredientes: form.ingredientes.filter((i) => i.trim() !== ""),
       preparo: form.preparo.filter((i) => i.trim() !== ""),
       // Se for edição, anexa o ID
-      ...(isEditMode && { recipe_id: id }),
+      ...(isEditMode && { recipe_id: Number(id) }),
     };
 
     try {
-      const response = await fetch(
-        "https://dealory.io/api/admin/recipes_manage.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // Descomente se estiver usando sessão PHP em domínios diferentes
-          body: JSON.stringify(payload),
-        }
-      );
+      const data = isEditMode
+        ? await manageRecipes.put(payload)
+        : await manageRecipes.post(payload);
 
-      const data = await response.json();
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "Erro ao salvar receita.");
+      if (!data.success || (data as any).error) {
+        throw new Error((data as any).error || "Erro ao salvar receita.");
       }
 
       alert("Receita salva com sucesso!");

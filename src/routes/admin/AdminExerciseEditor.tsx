@@ -22,11 +22,8 @@ import {
   LuPencil,
   LuX,
 } from "react-icons/lu";
-import { ManageExerciseMetadata } from "./shared/AdminApi";
+import { ManageExerciseMetadata, ManageExercises } from "./shared/AdminApi";
 import { AnimatePresence } from "framer-motion";
-
-// --- CONFIGURAÇÃO ---
-const TAXONOMY_API_URL = "https://dealory.io/api/admin/taxonomies_manage.php";
 
 const initialFormState = {
   nome: "",
@@ -99,25 +96,20 @@ const TaxonomyManagerModal = ({
     setError(null);
 
     try {
-      const payload = {
-        id: editingId, // Se tiver ID é update, senão insert
+      const payload: Partial<ExerciseTaxonomy> = {
+        id: editingId ?? undefined, // Se tiver ID é update, senão insert
         tipo: type,
         label: formData.label,
         value: formData.value,
         ordem: 0,
-        is_active: 1,
+        is_active: true,
       };
 
-      const res = await fetch(TAXONOMY_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      const data = editingId
+        ? await ManageExerciseMetadata.put(payload)
+        : await ManageExerciseMetadata.post(payload);
 
-      const data = await res.json();
-      if (!res.ok || data.error)
-        throw new Error(data.error || "Erro ao salvar");
+      if (!data.success) throw new Error(data.message || "Erro ao salvar");
 
       await onRefresh(); // Recarrega dados no pai
       resetForm();
@@ -133,11 +125,8 @@ const TaxonomyManagerModal = ({
       return;
     setLoading(true);
     try {
-      const res = await fetch(`${TAXONOMY_API_URL}?id=${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Erro ao deletar");
+      const data = await ManageExerciseMetadata.delete(id);
+      if (!data.success) throw new Error("Erro ao deletar");
       await onRefresh();
     } catch (err) {
       console.error(err);
@@ -341,14 +330,8 @@ export default function AdminExerciseEditor() {
         await fetchMetadata(); // Carrega metadados
 
         if (isEditMode) {
-          const res = await fetch(
-            `https://dealory.io/api/admin/exercises_manage.php?id=${id}`,
-            { method: "GET", credentials: "include" }
-          );
-          if (!res.ok) throw new Error("Erro ao buscar dados.");
-
-          const exercise = await res.json();
-          if (!exercise.error) {
+          const exercise = await ManageExercises.getById(Number(id));
+          if (exercise) {
             setForm({
               nome: exercise.nome,
               descricao: exercise.descricao || "",
@@ -361,7 +344,7 @@ export default function AdminExerciseEditor() {
               categoria: exercise.categoria || "ambos",
             });
           } else {
-            setError(exercise.error);
+            setError("Exercício não encontrado.");
           }
         }
       } catch (err: any) {
@@ -403,23 +386,17 @@ export default function AdminExerciseEditor() {
 
     const payload = {
       ...form,
-      ...(isEditMode && { exercise_id: id }),
+      ...(isEditMode && { exercise_id: Number(id) }),
     };
 
     try {
-      const response = await fetch(
-        "https://dealory.io/api/admin/exercises_manage.php",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        }
-      );
+      const data = isEditMode
+        ? await ManageExercises.put(payload)
+        : await ManageExercises.post(payload);
 
-      const data = await response.json();
-      if (!response.ok || data.error)
-        throw new Error(data.error || "Erro ao salvar.");
+      // Check for success and if there's an error message in the response
+      if (!data.success || (data as any).error)
+        throw new Error((data as any).error || "Erro ao salvar.");
 
       navigate("/admin/exercicios");
     } catch (err: any) {
