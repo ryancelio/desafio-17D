@@ -27,6 +27,7 @@ import {
 import useDebounce from "../../hooks/debouce"; // Ajuste o caminho
 import type { Recipe } from "../../types/models";
 import { manageRecipes } from "./shared/AdminApi";
+import { toast } from "sonner";
 
 // --- Tags Disponíveis ---
 const allAvailableTags = [
@@ -253,17 +254,6 @@ export default function AdminRecipesPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Chamada direta ao endpoint de Admin
-      // const response = await fetch(
-      //   "https://dealory.io/api/admin/recipes_manage.php",
-      //   {
-      //     method: "GET",
-      //     credentials: "include", // <--- CRUCIAL: Envia o cookie de sessão do Admin
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //   }
-      // );
       const data = await manageRecipes.get();
 
       const allRecipes: Recipe[] = data;
@@ -336,17 +326,13 @@ export default function AdminRecipesPage() {
     setRecipes((prev) => prev.filter((r) => r.recipe_id !== id));
 
     try {
-      const res = await fetch(
-        `https://dealory.io/api/admin/recipes_manage.php?id=${id}`, // Updated API endpoint
-        {
-          method: "DELETE",
-          credentials: "include", // Uncomment if you are using sessions and require cookies
-        }
-      );
+      const res = await manageRecipes.delete(id);
 
-      if (!res.ok) throw new Error("Erro ao deletar");
+      if (!res.success) throw new Error("Erro ao deletar");
+
+      toast.success("Receita excluída com sucesso.");
     } catch {
-      alert("Erro ao excluir receita. Tente novamente.");
+      toast.error("Erro ao excluir receita. Tente novamente.");
       setRecipes(previousRecipes); // Reverte em caso de erro
     }
   };

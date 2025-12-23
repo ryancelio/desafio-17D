@@ -10,6 +10,7 @@ import type {
   Objetivo,
   UserMeasurement,
   WorkoutRequest,
+  CreditPackage,
 } from "./models";
 
 export interface ApiResponse {
@@ -57,7 +58,6 @@ export interface CreateWorkoutRequest {
   exercises: CreateWorkoutExerciseInput[];
 }
 
-// O endpoint retorna um array desses objetos
 export type GetWorkoutRequestsResponse = WorkoutRequest[];
 
 export interface AddConsumptionRequest {
@@ -85,16 +85,16 @@ export interface CreditCategoryDetail {
   source_next_debit: "plan" | "extra";
 }
 
-// Estrutura da Resposta Completa
 export interface AllCreditsResponse {
   workout: CreditCategoryDetail;
   diet: CreditCategoryDetail;
   next_reset_date: string;
 }
 
-// --- FILTROS DE BUSCA ---
+// --- FILTROS ---
 
 export interface RecipeFilters {
+  id?: number;
   search?: string;
   maxCalories?: number;
   includeTags?: string[];
@@ -119,32 +119,32 @@ export interface MeasurementDetailsResponse {
   };
 }
 
-// --- RESPOSTA DE DIETA (GET /get_user_diets.php) ---
+// --- DIETA ---
 
 export interface DietItemResponse {
   item_id: number;
   recipe_id: number;
   titulo: string;
-  imagem: string | null; // url_imagem pode ser null
-  porcao: string | null; // porcao_sugerida
-  obs: string | null; // observacao
-  calorias: number; // calorias_kcal
-  macros: Macros | null; // JSON decodificado da receita
-  tempo: number | null; // tempo_preparo_min
+  imagem: string | null;
+  porcao: string | null;
+  obs: string | null;
+  calorias: number;
+  macros: Macros | null;
+  tempo: number | null;
 }
 
 export interface DietMealResponse {
   meal_id: number;
-  nome: string; // ex: "Café da Manhã"
-  horario: string | null; // ex: "08:00:00"
+  nome: string;
+  horario: string | null;
   items: DietItemResponse[];
 }
 
 export interface DietPlanResponse {
   plan_id: number;
-  nome: string; // ex: "Dieta Hipertrofia"
+  nome: string;
   calorias_meta: number;
-  macros_meta: Macros | null; // JSON decodificado das metas do plano
+  macros_meta: Macros | null;
   is_active: boolean;
   meals: DietMealResponse[];
 }
@@ -154,4 +154,43 @@ export type GetUserDietsResponse = DietPlanResponse[];
 export interface ExerciseMetadataResponse {
   musculos: ExerciseTaxonomy[];
   tags: ExerciseTaxonomy[];
+}
+
+export interface Plan {
+  id: number;
+  name: string;
+  price_monthly: number;
+  price_annually: number;
+  features: string[];
+  is_featured?: boolean;
+}
+
+// --- LOJA ---
+export type GetCreditPackagesResponse = CreditPackage[];
+
+// --- ADMIN PAYLOADS (Para AdminApi.ts) ---
+
+export interface DietMealItemPayload {
+  recipe_id: number;
+  porcao: string;
+  observacao?: string;
+}
+
+export interface DietMealPayload {
+  nome: string;
+  horario: string;
+  items: DietMealItemPayload[];
+}
+
+export interface SaveDietPayload {
+  user_uid: string;
+  nome: string;
+  calorias_meta: number;
+  macros_meta: {
+    prot: number;
+    carb: number;
+    fat: number;
+  };
+  meals: DietMealPayload[];
+  request_id?: string | number | null; // Aceita string vinda da URL
 }

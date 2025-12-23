@@ -24,12 +24,14 @@ import { FaPersonRunning } from "react-icons/fa6";
 import apiClient from "../../api/apiClient";
 import { IoReload } from "react-icons/io5";
 import type { Notification } from "../../types/models";
+import { Toaster } from "sonner";
 
 // ---------------- Navigation Config ----------------
 
 const navigationItems = [
   { name: "Início", href: "/dashboard", icon: LuLayoutDashboard },
   { name: "Minhas Fichas", href: "/treinos", icon: LuFileText },
+  { name: "Minhas Dietas", href: "/dietas", icon: LuUtensils },
   { name: "Exercícios", href: "/exercicios", icon: LuDumbbell },
   { name: "Receitas", href: "/receitas", icon: LuSoup },
 ];
@@ -109,12 +111,8 @@ export default function AppLayout() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       );
-      await fetch("/api/mark_notification_read.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ notification_id: id }),
-      });
+
+      await apiClient.markNotificationRead(Number(id));
     } catch (err) {
       console.error("Erro mark read", err);
     }
@@ -333,6 +331,11 @@ export default function AppLayout() {
           ref={mainRef}
           className="flex-1 overflow-y-auto scroll-smooth w-full pt-16 pb-24 px-4 md:pt-8 md:pb-8 md:px-8"
         >
+          <Toaster
+            richColors
+            swipeDirections={["left", "right"]}
+            position="top-center"
+          />
           <Outlet />
         </main>
       </div>

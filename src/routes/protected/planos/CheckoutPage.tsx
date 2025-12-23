@@ -10,6 +10,7 @@ import {
   LuLoader as LuLoader2,
   LuArrowLeft,
 } from "react-icons/lu";
+import { toast } from "sonner";
 
 // Use sua Public Key correta (mesma do onboarding)
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
@@ -69,9 +70,13 @@ export default function CheckoutPage() {
       } else {
         throw new Error(data.error || "Erro ao gerar link de pagamento.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      alert("Erro ao conectar: " + error.message);
+      if (error instanceof Error) {
+        toast.error("Erro ao conectar: " + error.message);
+      } else {
+        toast.error("Erro ao conectar: Falha na requisição");
+      }
       setLoading(false);
     }
   };
@@ -97,7 +102,7 @@ export default function CheckoutPage() {
             genericButton.click();
           } else {
             console.error("Botão interno do Brick não encontrado.");
-            alert("Aguarde o carregamento completo do formulário.");
+            toast.error("Aguarde o carregamento completo do formulário.");
           }
         }
       }
@@ -133,10 +138,10 @@ export default function CheckoutPage() {
 
       if (result.status === "approved") {
         await refetchProfile(); // Atualiza status global
-        alert("Pagamento aprovado! Seu plano foi atualizado.");
+        toast.error("Pagamento aprovado! Seu plano foi atualizado.");
         navigate("/assinatura"); // Volta para gestão
       } else {
-        alert(
+        toast.error(
           "Pagamento não aprovado: " +
             (result.message || "Verifique os dados do cartão")
         );
@@ -144,7 +149,7 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       console.error(error);
-      alert("Erro ao processar pagamento. Tente novamente.");
+      toast.error("Erro ao processar pagamento. Tente novamente.");
       setLoading(false);
     }
   };

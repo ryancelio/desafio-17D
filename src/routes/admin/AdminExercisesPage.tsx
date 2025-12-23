@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import useDebounce from "../../hooks/debouce";
 import { ManageExerciseMetadata, ManageExercises } from "./shared/AdminApi";
+import { toast } from "sonner";
 
 // --- CARD ADMINISTRATIVO ---
 const AdminExerciseCard: React.FC<{
@@ -340,16 +341,12 @@ export default function AdminExercisesPage() {
     const prev = [...exercises];
     setExercises(prev.filter((e) => e.exercise_id !== id));
     try {
-      const res = await fetch(
-        `https://dealory.io/api/admin/exercises_manage.php?id=${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
-      if (!res.ok) throw new Error("Erro API");
+      const data = await ManageExercises.delete(id);
+      if (!data.success) throw new Error(data.message);
+      toast.success("Exercício excluído com sucesso.");
+      setSelectedExercise(null);
     } catch {
-      alert("Erro ao excluir.");
+      toast.error("Erro ao excluir.");
       setExercises(prev);
     }
   };

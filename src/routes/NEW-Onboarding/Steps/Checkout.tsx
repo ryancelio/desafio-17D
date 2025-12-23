@@ -7,6 +7,7 @@ import { useAuth } from "../../../context/AuthContext";
 import type { StepProps } from "../OnboardingWizard";
 import { motion } from "framer-motion";
 import { LuShieldCheck, LuLock, LuLoader as LuLoader2 } from "react-icons/lu";
+import { toast } from "sonner";
 
 // Use sua Public Key correta
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
@@ -56,7 +57,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       }
     } catch (error: any) {
       console.error(error);
-      alert("Erro ao conectar: " + error.message);
+      toast.error("Erro ao conectar: " + error.message);
       setLoading(false);
     }
   };
@@ -82,7 +83,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             genericButton.click();
           } else {
             console.error("Botão interno do Brick não encontrado.");
-            alert(
+            toast.error(
               "O formulário de pagamento ainda está carregando. Tente novamente em alguns segundos."
             );
           }
@@ -120,7 +121,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       if (result.status === "approved") {
         navigate("/onboard/sucesso");
       } else {
-        alert(
+        toast.error(
           "Pagamento não aprovado: " +
             (result.message || "Verifique os dados do cartão")
         );
@@ -128,7 +129,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       }
     } catch (error) {
       console.error(error);
-      alert("Erro ao processar pagamento. Tente novamente.");
+      toast.error("Erro ao processar pagamento. Tente novamente.");
       setLoading(false);
     }
   };

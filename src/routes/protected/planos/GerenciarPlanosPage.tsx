@@ -13,16 +13,7 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-// Tipos
-interface Plan {
-  id: number;
-  name: string;
-  price_monthly: number;
-  price_annually: number;
-  features: string[];
-  is_featured: number;
-}
+import type { Plan } from "../../../types/api-types";
 
 export default function SubscriptionPage() {
   const { userProfile, refetchProfile, loading: authLoading } = useAuth();
@@ -262,7 +253,7 @@ export default function SubscriptionPage() {
                         }
                     `}
                 >
-                  {plan.is_featured === 1 && billingCycle === "annual" && (
+                  {plan.is_featured && billingCycle === "annual" && (
                     <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-lg">
                       RECOMENDADO
                     </div>

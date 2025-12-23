@@ -40,7 +40,7 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white p-6 flex flex-col shadow-xl">
         <h2 className="text-2xl font-bold mb-8 text-indigo-400 flex items-center gap-2">
-          Dealory Admin
+          PowerSlim Admin
         </h2>
 
         <nav className="flex-1 space-y-2">

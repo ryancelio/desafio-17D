@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { adminLogout, checkAuth } from "../routes/admin/shared/AdminApi";
+import { toast } from "sonner";
 
 interface AdminUser {
   name: string;
@@ -24,16 +26,19 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch(
-          "https://powerslim.pro/api/admin/check_auth.php",
-          {
-            credentials: "include", // <--- ADICIONE ISSO PARA ENVIAR O COOKIE
-          }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setAdmin(data.admin);
+        // const res = await fetch(
+        //   "https://powerslim.pro/api/admin/check_auth.php",
+        //   {
+        //     credentials: "include", // <--- ADICIONE ISSO PARA ENVIAR O COOKIE
+        //   }
+        // );
+        const data = await checkAuth();
+
+        if (!data.authenticated) {
+          toast.error("Sessão expirada. Faça login novamente.");
+          return;
         }
+        setAdmin(data.admin);
       } catch (err) {
         console.error("Erro ao verificar sessão admin", err);
       } finally {
@@ -46,9 +51,11 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = (user: AdminUser) => setAdmin(user);
 
   const logout = async () => {
-    await fetch("https://dealory.io/api/admin/logout.php", {
-      credentials: "include", // <--- ADICIONE ISSO PARA ENVIAR O COOKIE
-    });
+    const res = await adminLogout();
+    if (!res.success) {
+      toast.error("Erro ao fazer logout. Tente novamente.");
+      return;
+    }
     setAdmin(null);
   };
 

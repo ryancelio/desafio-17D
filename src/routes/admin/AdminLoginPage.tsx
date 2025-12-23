@@ -13,12 +13,6 @@ export default function AdminLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // const res = await fetch("https://dealory.io/api/admin/login.php", {
-      //   method: "POST",
-      //   body: JSON.stringify({ username, password }),
-      //   credentials: "include", // Descomente se estiver usando sessão PHP em domínios diferentes
-      // });
-
       const data = await adminLogin(username, password);
 
       // const data = await res.json();

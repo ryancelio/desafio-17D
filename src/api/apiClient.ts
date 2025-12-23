@@ -32,6 +32,7 @@ import type {
   AllCreditsResponse,
   DailyConsumptionResponse,
   ExerciseMetadataResponse,
+  Plan,
 } from "../types/api-types";
 
 import type { OnboardingState } from "../types/onboarding.schema";
@@ -82,7 +83,7 @@ async function syncUserPreferences(preferences: UserPreference[]) {
   });
   return res.data;
 }
-async function getPlans() {
+async function getPlans(): Promise<Plan[]> {
   const res = await axiosInstance.get("/get_plans.php");
   return res.data;
 }
@@ -214,6 +215,20 @@ async function getUserDiets(): Promise<GetUserDietsResponse> {
 async function getNotifications(): Promise<Notification[]> {
   const res = await axiosInstance.get("/get_notifications.php");
   return res.data;
+}
+
+async function markNotificationRead(id: number): Promise<ApiResponse> {
+  const res = await axiosInstance.post("/mark_notification_read.php", {
+    id: id,
+  });
+  return res.data;
+}
+
+async function checkPaymentStatus(paymentId: number | string) {
+  const response = await axiosInstance.get(
+    `/check_payment_status.php?id=${paymentId}`
+  );
+  return response.data; // Retorna { status: 'approved' | 'pending' | ... }
 }
 
 async function getRecipes(filters: RecipeFilters = {}): Promise<Recipe[]> {
@@ -360,6 +375,30 @@ async function getUserPhotos(src: string): Promise<UserPhoto[]> {
   return response.data;
 }
 
+async function purchaseCredits(payload: {
+  token: string;
+  issuer_id: string;
+  payment_method_id: string;
+  transaction_amount: number;
+  installments: number;
+  payer: { email: string };
+  package_id: string;
+  credits_amount: number;
+}) {
+  const response = await axiosInstance.post(
+    "/process_credit_payment.php",
+    payload
+  );
+  return response.data;
+}
+
+async function getCreditPackages(type: "workout" | "diet" = "workout") {
+  const response = await axiosInstance.get(
+    "/get_credit_packages.php?type=" + type
+  );
+  return response.data;
+}
+
 async function uploadProgressPhotos(files: File[]): Promise<string[]> {
   const formData = new FormData();
 
@@ -439,6 +478,10 @@ const apiClient = {
   getWorkoutRequests,
   getDietRequests,
   requestDietPlan,
+  purchaseCredits,
+  getCreditPackages,
+  markNotificationRead,
+  checkPaymentStatus,
 };
 
 export default apiClient;

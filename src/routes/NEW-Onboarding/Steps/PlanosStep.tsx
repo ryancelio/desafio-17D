@@ -5,43 +5,43 @@ import {
   LuCheck,
   LuLoaderCircle as LuLoader2,
   LuSparkles,
+  LuTriangleAlert,
 } from "react-icons/lu";
+import apiClient from "../../../api/apiClient"; // Ajuste o caminho conforme sua estrutura
+import type { Plan } from "../../../types/api-types";
 
-// Interface baseada no banco de dados
-interface LocalPlan {
-  id: number;
-  name: string;
-  price_monthly: number;
-  price_annually: number;
-  features: string[];
-  is_featured?: boolean;
-}
-
+// Tipo para controle de faturamento
 type Faturamento = "monthly" | "annual";
 
 export const PlanosStep: React.FC<StepProps> = ({
   setStepvalid,
   updateOnboardingData,
 }) => {
-  const [plans, setPlans] = useState<LocalPlan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [faturamento, setFaturamento] = useState<Faturamento>("annual");
   const [planoSelecionadoId, setPlanoSelecionadoId] = useState<number | null>(
     null
   );
 
+  // --- Carregar Planos via API Client ---
   useEffect(() => {
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        const response = await fetch("https://dealory.io/api/get_plans.php");
-        const data = await response.json();
+        setError(null);
+        const data = await apiClient.getPlans();
 
         if (Array.isArray(data)) {
           setPlans(data);
+        } else {
+          throw new Error("Formato de dados inválido.");
         }
-      } catch (error) {
-        console.error("Erro ao buscar planos:", error);
+      } catch (err) {
+        console.error("Erro ao buscar planos:", err);
+        setError("Não foi possível carregar as ofertas no momento.");
       } finally {
         setLoading(false);
       }
@@ -49,7 +49,8 @@ export const PlanosStep: React.FC<StepProps> = ({
     fetchPlans();
   }, []);
 
-  const handleSelectPlano = (plan: LocalPlan, tipoFaturamento: Faturamento) => {
+  // --- Lógica de Seleção ---
+  const handleSelectPlano = (plan: Plan, tipoFaturamento: Faturamento) => {
     setPlanoSelecionadoId(plan.id);
     const finalPrice =
       tipoFaturamento === "monthly" ? plan.price_monthly : plan.price_annually;
@@ -64,6 +65,7 @@ export const PlanosStep: React.FC<StepProps> = ({
     });
   };
 
+  // Atualiza a seleção se mudar o faturamento (mantendo o mesmo plano selecionado)
   useEffect(() => {
     if (planoSelecionadoId) {
       const plan = plans.find((p) => p.id === planoSelecionadoId);
@@ -72,6 +74,7 @@ export const PlanosStep: React.FC<StepProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [faturamento]);
 
+  // Validação do Step
   useEffect(() => {
     setStepvalid(!!planoSelecionadoId);
   }, [planoSelecionadoId, setStepvalid]);
@@ -82,13 +85,31 @@ export const PlanosStep: React.FC<StepProps> = ({
       currency: "BRL",
     }).format(value);
 
+  // --- Renderização de Loading ---
   if (loading)
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <LuLoader2 className="animate-spin w-10 h-10 text-indigo-600" />
         <p className="text-gray-500 text-sm font-medium">
-          Carregando ofertas...
+          Carregando ofertas exclusivas...
         </p>
+      </div>
+    );
+
+  // --- Renderização de Erro ---
+  if (error)
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
+        <div className="bg-red-50 p-4 rounded-full">
+          <LuTriangleAlert className="w-8 h-8 text-red-500" />
+        </div>
+        <p className="text-gray-600 text-sm">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-indigo-600 font-bold hover:underline text-sm"
+        >
+          Tentar novamente
+        </button>
       </div>
     );
 
@@ -108,9 +129,8 @@ export const PlanosStep: React.FC<StepProps> = ({
         </p>
       </div>
 
-      {/* Toggle Profissional */}
+      {/* Toggle Profissional (Mensal/Anual) */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md py-4 mb-4 flex justify-center">
-        {/* Container com largura fixa para garantir centralização dos filhos */}
         <div className="relative bg-gray-100 p-1.5 rounded-2xl flex items-center shadow-inner w-72">
           {/* Fundo Animado */}
           <motion.div
@@ -123,7 +143,6 @@ export const PlanosStep: React.FC<StepProps> = ({
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
 
-          {/* Botão Mensal */}
           <button
             onClick={() => setFaturamento("monthly")}
             className={`flex-1 relative z-10 py-2.5 text-sm font-bold transition-colors rounded-xl text-center ${
@@ -135,7 +154,6 @@ export const PlanosStep: React.FC<StepProps> = ({
             Mensal
           </button>
 
-          {/* Botão Anual */}
           <button
             onClick={() => setFaturamento("annual")}
             className={`flex-1 relative z-10 py-2.5 text-sm font-bold transition-colors rounded-xl text-center flex items-center justify-center ${
@@ -145,13 +163,11 @@ export const PlanosStep: React.FC<StepProps> = ({
             }`}
           >
             Anual
-            {/* Badge de Desconto (Topo Direito - Flutuante) */}
             {faturamento !== "annual" && (
               <span className="absolute -top-3 -right-2 text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200 shadow-sm z-20 whitespace-nowrap">
                 -73% OFF
               </span>
             )}
-            {/* Label Flutuante "12x" (Baixo Centro - Flutuante) */}
             <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 shadow-sm z-20 whitespace-nowrap">
               até 12x
             </span>
@@ -165,17 +181,22 @@ export const PlanosStep: React.FC<StepProps> = ({
           {plans.map((plan) => {
             const isSelected = planoSelecionadoId === plan.id;
 
-            const monthlyPrice = plan.price_monthly;
-            const annualPriceTotal = plan.price_annually;
+            const monthlyPrice = Number(plan.price_monthly);
+            const annualPriceTotal = Number(plan.price_annually);
             const annualPricePerMonth = annualPriceTotal / 12;
 
             const displayPrice =
               faturamento === "monthly" ? monthlyPrice : annualPricePerMonth;
 
-            const economyPct = Math.round(
-              ((monthlyPrice * 12 - annualPriceTotal) / (monthlyPrice * 12)) *
-                100
-            );
+            // Evita divisão por zero
+            const economyPct =
+              monthlyPrice > 0
+                ? Math.round(
+                    ((monthlyPrice * 12 - annualPriceTotal) /
+                      (monthlyPrice * 12)) *
+                      100
+                  )
+                : 0;
 
             return (
               <motion.div
@@ -194,7 +215,8 @@ export const PlanosStep: React.FC<StepProps> = ({
                   }
                 `}
               >
-                {plan.name === "Completo" && (
+                {/* Badge de Recomendado (Lógica baseada no nome ou flag is_featured) */}
+                {(plan.name === "Completo" || plan.is_featured) && (
                   <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-600 to-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm z-10">
                     <div className="flex items-center gap-1">
                       <LuSparkles className="w-3 h-3" /> RECOMENDADO

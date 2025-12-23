@@ -14,7 +14,8 @@ import {
   XCircle,
   History,
   ChevronRight,
-  Salad, // Icone de salada/dieta
+  Salad,
+  PlusCircle, // Importado novo ícone
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
@@ -27,15 +28,6 @@ import type {
 import { useAuth } from "../../../../context/AuthContext";
 import UpgradeModal from "../../dashboard/Components/UpgradeModal";
 import type { DietRequest } from "../../../../types/models";
-
-// --- Tipagem Local para Pedidos ---
-// interface DietRequest {
-//   request_id: number;
-//   status: "pendente" | "em_analise" | "concluido" | "rejeitado";
-//   created_at: string;
-//   objetivo?: string;
-//   admin_feedback?: string;
-// }
 
 // --- Componente: Card da Dieta ---
 const DietCard: React.FC<{ plan: DietPlanResponse }> = ({ plan }) => {
@@ -221,7 +213,7 @@ export default function DietPlansPage() {
         ).toLocaleDateString()}.`,
         action: {
           label: "Comprar Crédito",
-          onClick: () => setShowUpgradeModal(true),
+          onClick: () => navigate("/loja/creditos?type=diet"), // Redireciona para loja
         },
       });
       return;
@@ -273,20 +265,31 @@ export default function DietPlansPage() {
 
             {/* Display de Créditos */}
             {credits && hasAccess && (
-              <div className="flex flex-col items-end bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                  Créditos
-                </span>
-                <span
-                  className={`text-sm font-bold flex items-center gap-1 ${
-                    credits.details.total_remaining > 0
-                      ? "text-emerald-700"
-                      : "text-red-500"
-                  }`}
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col items-end bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                    Créditos
+                  </span>
+                  <span
+                    className={`text-sm font-bold flex items-center gap-1 ${
+                      credits.details.total_remaining > 0
+                        ? "text-emerald-700"
+                        : "text-red-500"
+                    }`}
+                  >
+                    <Ticket className="w-3.5 h-3.5" />
+                    {credits.details.total_remaining}
+                  </span>
+                </div>
+
+                {/* BOTÃO NOVO: Comprar Mais */}
+                <button
+                  onClick={() => navigate("/loja/creditos?type=diet")}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center"
+                  title="Comprar mais créditos"
                 >
-                  <Ticket className="w-3.5 h-3.5" />
-                  {credits.details.total_remaining}
-                </span>
+                  <PlusCircle className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>

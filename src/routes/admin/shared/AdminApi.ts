@@ -10,7 +10,9 @@ import type {
 import type {
   ExerciseMetadataResponse,
   ApiResponse,
+  SaveDietPayload,
 } from "../../../types/api-types";
+import type { PendingLead } from "../../../types/admin";
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: "https://powerslim.pro/api/admin",
@@ -29,30 +31,30 @@ type AdminResponse = Partial<ApiResponse> & {
 
 // --- Tipos para Payloads de Criação (Baseados nos PHPs fornecidos) ---
 
-export interface DietMealItemPayload {
-  recipe_id: number;
-  porcao: string;
-  observacao?: string;
-}
+// export interface DietMealItemPayload {
+//   recipe_id: number;
+//   porcao: string;
+//   observacao?: string;
+// }
 
-export interface DietMealPayload {
-  nome: string;
-  horario: string;
-  items: DietMealItemPayload[];
-}
+// export interface DietMealPayload {
+//   nome: string;
+//   horario: string;
+//   items: DietMealItemPayload[];
+// }
 
-export interface SaveDietPayload {
-  user_uid: string;
-  nome: string;
-  calorias_meta: number;
-  macros_meta: {
-    prot: number;
-    carb: number;
-    fat: number;
-  };
-  meals: DietMealPayload[];
-  request_id?: number; // Opcional: Para marcar o pedido como concluído
-}
+// export interface SaveDietPayload {
+//   user_uid: string;
+//   nome: string;
+//   calorias_meta: number;
+//   macros_meta: {
+//     prot: number;
+//     carb: number;
+//     fat: number;
+//   };
+//   meals: DietMealPayload[];
+//   request_id?: number; // Opcional: Para marcar o pedido como concluído
+// }
 
 export interface WorkoutExercisePayload {
   exercise_id: number;
@@ -219,25 +221,30 @@ const completeWorkoutRequest = async (
   return response.data;
 };
 
-// -----------------------------------------------------------
-
-const checkAuth = async (): Promise<{
-  authenticated: boolean;
-  admin: string;
-  role: string;
-}> => {
-  const response = await axiosInstance.get<{
-    authenticated: boolean;
-    admin: string;
-    role: string;
-  }>("/check_auth.php");
+const getPendingLeads = async (): Promise<PendingLead[]> => {
+  const response = await axiosInstance.get("/pending_leads.php");
   return response.data;
 };
+
+// -----------------------------------------------------------
 
 interface AdminUser {
   name: string;
   role: string;
 }
+
+const checkAuth = async (): Promise<{
+  authenticated: boolean;
+  admin: AdminUser;
+  role: string;
+}> => {
+  const response = await axiosInstance.get<{
+    authenticated: boolean;
+    admin: AdminUser;
+    role: string;
+  }>("/check_auth.php");
+  return response.data;
+};
 
 const adminLogin = async (
   username: string,
@@ -274,4 +281,5 @@ export {
   adminLogout,
   getWorkoutRequests,
   completeWorkoutRequest,
+  getPendingLeads,
 };

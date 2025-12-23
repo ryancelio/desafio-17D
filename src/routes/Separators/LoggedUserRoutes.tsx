@@ -21,6 +21,8 @@ import WorkoutCompletionPage from "../protected/treinos/WorkoutCompletionPage";
 import WorkoutExecutionPage from "../protected/treinos/WorkoutExecutionPage";
 import WorkoutPlansPage from "../protected/treinos/WorkoutPlanPage";
 import ProtectedRoute from "../ProtectedRoute";
+import BuyCreditsPage from "../protected/components/BuyCreditsPage";
+import RecipeDetailsPage from "../protected/Recipes/RecipesDetailPage";
 
 export default function LoggedUserRoutes() {
   return (
@@ -37,6 +39,7 @@ export default function LoggedUserRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/exercicios" element={<ExercisesPage />} />
           <Route path="/receitas" element={<RecipesPage />} />
+          <Route path="/receitas/:id" element={<RecipeDetailsPage />} />
           <Route path="/treinos" element={<WorkoutPlansPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/perfil/editar" element={<EditProfilePage />} />
@@ -49,7 +52,7 @@ export default function LoggedUserRoutes() {
           />
           <Route path="/metas/" element={<ConsumptionHistoryPage />} />
           <Route path="/dietas" element={<DietPlansPage />} />
-          <Route path="/dietas/:id" element={<DietDetailsPage />} />
+          <Route path="/dieta/:id" element={<DietDetailsPage />} />
           <Route path="/dieta/solicitar" element={<RequestDietPage />} />
         </Route>
         <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
@@ -61,6 +64,7 @@ export default function LoggedUserRoutes() {
       <Route path="/treinos/criar" element={<CreateWorkoutPlanPage />} />
       <Route path="/treinos/solicitar" element={<RequestWorkoutPage />} />
       <Route path="/upgrade" element={<ChangePlanPage />} />
+      <Route path="/loja/creditos" element={<BuyCreditsPage />} />
     </Route>
   );
 }

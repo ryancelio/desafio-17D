@@ -18,6 +18,7 @@ import {
   ChevronRight,
   History,
   type LucideProps,
+  PlusCircle,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 
@@ -301,20 +302,32 @@ export default function WorkoutPlansPage() {
 
             {/* Display de Créditos Compacto */}
             {credits && hasAccess && (
-              <div className="flex flex-col items-end bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
-                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-                  Créditos
-                </span>
-                <span
-                  className={`text-sm font-bold flex items-center gap-1 ${
-                    credits.details.total_remaining > 0
-                      ? "text-indigo-700"
-                      : "text-red-500"
-                  }`}
+              <div className="flex items-center gap-2">
+                {/* Bloco de info de créditos */}
+                <div className="flex flex-col items-end bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                    Créditos
+                  </span>
+                  <span
+                    className={`text-sm font-bold flex items-center gap-1 ${
+                      credits.details.total_remaining > 0
+                        ? "text-indigo-700"
+                        : "text-red-500"
+                    }`}
+                  >
+                    <Ticket className="w-3.5 h-3.5" />
+                    {credits.details.total_remaining}
+                  </span>
+                </div>
+
+                {/* BOTÃO NOVO: Comprar Mais */}
+                <button
+                  onClick={() => navigate("/loja/creditos?type=workout")} // Ajuste para sua rota criada no router
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center"
+                  title="Comprar mais créditos"
                 >
-                  <Ticket className="w-3.5 h-3.5" />
-                  {credits.details.total_remaining}
-                </span>
+                  <PlusCircle className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>

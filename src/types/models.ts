@@ -32,7 +32,7 @@ export interface ProfileDetails {
   objetivo: Objetivo;
   peso_alvo: number | null;
   nivel_atividade: NivelAtividade;
-  local_treino?: "academia" | "casa"; // Novo campo
+  local_treino?: "academia" | "casa";
   dias_treino: DiaSemana[];
 }
 
@@ -89,8 +89,10 @@ export interface WeightHistoryEntry {
 }
 
 export interface UserPhoto {
+  photo_id: number;
+  measurement_id: number;
   url_imagem: string;
-  data_medicao: string;
+  data_criacao: string;
 }
 
 // --- NUTRIÇÃO (DIETA E RECEITAS) ---
@@ -183,12 +185,12 @@ export interface WorkoutPlan {
 }
 
 export interface ExerciseTaxonomy {
-  id: number; // Adicionado (necessário para CRUD)
+  id: number;
   label: string;
   value: string;
   tipo: "musculo" | "tag";
-  ordem: number; // Adicionado
-  is_active: boolean; // Adicionado
+  ordem: number;
+  is_active: boolean;
 }
 
 export type Notification = {
@@ -198,57 +200,63 @@ export type Notification = {
   is_read: boolean | 1 | 0;
   created_at: string;
 };
-// Define os status possíveis exatamente como estão no Banco de Dados (ENUM)
+
+// --- PEDIDOS & ADMIN ---
+
 export type WorkoutRequestStatus =
   | "pendente"
   | "em_analise"
   | "concluido"
   | "rejeitado";
 
-// Interface do objeto de pedido individual
 export interface WorkoutRequest {
   request_id: number;
+  user_uid: string;
   qtd_fichas: number;
-  observacoes: string | null; // Pode vir nulo do banco
+  observacoes: string | null;
   status: WorkoutRequestStatus;
-  admin_feedback: string | null; // Pode vir nulo se não foi rejeitado/analisado
-  created_at: string; // PHP retorna timestamp como string ISO/Date string
+  admin_feedback: string | null;
+  created_at: string;
   updated_at: string | null;
 }
 
-// --- Enumerações e Tipos Auxiliares ---
-
-// Objetivo da dieta (usado no formulário)
 export type DietObjective = "emagrecimento" | "hipertrofia" | "manutencao";
 
-// Status do pedido (usado na listagem)
 export type DietRequestStatus =
   | "pendente"
   | "em_analise"
   | "concluido"
   | "rejeitado";
 
-// --- Interfaces de Formulário (Request Payload) ---
-
-// O que é enviado no POST para criar o pedido
 export interface DietRequestPayload {
   objetivo: DietObjective;
-  refeicoes_dia: string; // Ex: "3", "4", "5"
-  suplementos: string; // Ex: "Whey, Creatina"
-  restricoes: string; // Texto livre (textarea)
+  refeicoes_dia: string;
+  suplementos: string;
+  restricoes: string;
 }
 
-// --- Interfaces de Resposta (Listagem / GET) ---
-
-// O que vem do banco de dados na listagem de pedidos
 export interface DietRequest {
   request_id: number;
   user_uid: string;
-  objetivo: string; // Pode vir como string livre do banco ou ENUM dependendo da implementação
-  restricoes: string; // Vem da coluna 'restricoes'
-  observacoes: string; // Vem da coluna 'observacoes' (onde guardamos refeicoes_dia e suplementos concatenados)
+  objetivo: string;
+  restricoes: string;
+  observacoes: string;
   status: DietRequestStatus;
   admin_feedback: string | null;
-  created_at: string; // ISO Date String
+  created_at: string;
   updated_at: string | null;
+}
+
+// --- E-COMMERCE / CRÉDITOS (NOVO) ---
+
+export interface CreditPackage {
+  package_id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  credits: number;
+  type: "workout" | "diet";
+  is_active: boolean;
+  best_value: boolean;
+  created_at: string;
 }

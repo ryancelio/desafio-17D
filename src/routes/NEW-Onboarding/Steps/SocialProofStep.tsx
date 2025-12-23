@@ -16,9 +16,11 @@ const transformations = [
     name: "Ricardo M.",
     result: "-14kg em 3 meses",
     imgBefore:
-      "https://images.unsplash.com/photo-1571019614248-c5c7c319e578?auto=format&fit=crop&w=300&q=80", // Homem fitness antes (simulado)
+      // "https://images.unsplash.com/photo-1571019614248-c5c7c319e578?auto=format&fit=crop&w=300&q=80", // Homem fitness antes (simulado)
+      "/public/antes_depois/Antes Masc.png",
     imgAfter:
-      "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=300&q=80", // Homem fitness depois
+      // "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=300&q=80", // Homem fitness depois
+      "/public/antes_depois/Depois Masc.png",
     tag: "Perda de Peso",
   },
   {
@@ -26,9 +28,11 @@ const transformations = [
     name: "Juliana S.",
     result: "Definição muscular",
     imgBefore:
-      "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=300&q=80", // Mulher antes
+      // "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=300&q=80", // Mulher antes
+      "public/antes_depois/Antes Fem.jpg",
     imgAfter:
-      "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=300&q=80", // Mulher depois (simulado)
+      // "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=300&q=80", // Mulher depois (simulado)
+      "public/antes_depois/Depois Fem.jpg",
     tag: "Hipertrofia",
   },
 ];

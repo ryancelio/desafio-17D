@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import type { PendingLead } from "../../types/admin";
+import { getPendingLeads } from "./shared/AdminApi";
 
 export default function SalesRecoveryPage() {
   const [leads, setLeads] = useState<PendingLead[]>([]);
@@ -49,18 +50,7 @@ export default function SalesRecoveryPage() {
     // Simulação da chamada API (Implemente no apiClient: getPendingLeads)
     const fetchLeads = async () => {
       try {
-        // const data = await apiClient.getPendingLeads();
-        // setLeads(data);
-
-        const response = await fetch(
-          "https://dealory.io/api/admin/pending_leads.php",
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-
-        const data = await response.json();
+        const data = await getPendingLeads();
         setLeads(data);
       } catch (error) {
         toast.error("Erro ao carregar leads");
