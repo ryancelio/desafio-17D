@@ -32,6 +32,40 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Separa o React e ReactDOM
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/react-dom")
+          ) {
+            return "react-vendor";
+          }
+          // Separa o Firebase (costuma ser pesado)
+          if (id.includes("node_modules/firebase")) {
+            return "firebase-vendor";
+          }
+          // Separa o Framer Motion
+          if (id.includes("node_modules/framer-motion")) {
+            return "framer-motion-vendor";
+          }
+          // Separa bibliotecas de ícones e UI
+          if (
+            id.includes("node_modules/lucide-react") ||
+            id.includes("node_modules/react-icons")
+          ) {
+            return "icons-vendor";
+          }
+          // Separa o Mercado Pago
+          if (id.includes("node_modules/@mercadopago")) {
+            return "mercadopago-vendor";
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       "/api": {

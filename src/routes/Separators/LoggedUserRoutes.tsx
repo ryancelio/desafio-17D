@@ -1,36 +1,80 @@
+import { lazy, Suspense } from "react";
 import { Outlet, Route } from "react-router";
+import { Loader2 } from "lucide-react";
+
 import ActiveUserCheckRoute from "../protected/ActiveUserCheckRoute";
 import AppLayout from "../protected/AppLayout";
-import ConsumptionHistoryPage from "../protected/dashboard/consumo/ConsumptionHistoryPage";
-import Dashboard from "../protected/dashboard/Dashboard";
-import ExercisesPage from "../protected/execicios/ExerciciosPage";
-import AddMeasurementsPage from "../protected/measurements/AddMeasurementsPage";
-import MeasurementDetailsPage from "../protected/measurements/MeasurementDetailsPage";
-import ChangePlanPage from "../protected/planos/ChangePlanPage";
-import CheckoutPage from "../protected/planos/CheckoutPage";
-import GerenciarPlanosPage from "../protected/planos/GerenciarPlanosPage";
-import EditProfilePage from "../protected/Profile/EditProfilePage";
-import ProfilePage from "../protected/Profile/ProfilePage";
-import DietPlansPage from "../protected/Recipes/Diets/DietPlansPage";
-import DietDetailsPage from "../protected/Recipes/Diets/DietsDetailsPage";
-import RequestDietPage from "../protected/Recipes/Diets/RequestDietPage";
-import RecipesPage from "../protected/Recipes/RecipesPage";
-import CreateWorkoutPlanPage from "../protected/treinos/CreateWorkoutPlanPage";
-import RequestWorkoutPage from "../protected/treinos/RequestWorkoutPage";
-import WorkoutCompletionPage from "../protected/treinos/WorkoutCompletionPage";
-import WorkoutExecutionPage from "../protected/treinos/WorkoutExecutionPage";
-import WorkoutPlansPage from "../protected/treinos/WorkoutPlanPage";
 import ProtectedRoute from "../ProtectedRoute";
-import BuyCreditsPage from "../protected/components/BuyCreditsPage";
-import RecipeDetailsPage from "../protected/Recipes/RecipesDetailPage";
+
+// Lazy Loading Components
+const Dashboard = lazy(() => import("../protected/dashboard/Dashboard"));
+const ConsumptionHistoryPage = lazy(
+  () => import("../protected/dashboard/consumo/ConsumptionHistoryPage")
+);
+const ExercisesPage = lazy(
+  () => import("../protected/execicios/ExerciciosPage")
+);
+const AddMeasurementsPage = lazy(
+  () => import("../protected/measurements/AddMeasurementsPage")
+);
+const MeasurementDetailsPage = lazy(
+  () => import("../protected/measurements/MeasurementDetailsPage")
+);
+const ChangePlanPage = lazy(() => import("../protected/planos/ChangePlanPage"));
+const CheckoutPage = lazy(() => import("../protected/planos/CheckoutPage"));
+const GerenciarPlanosPage = lazy(
+  () => import("../protected/planos/GerenciarPlanosPage")
+);
+const EditProfilePage = lazy(
+  () => import("../protected/Profile/EditProfilePage")
+);
+const ProfilePage = lazy(() => import("../protected/Profile/ProfilePage"));
+const DietPlansPage = lazy(
+  () => import("../protected/Recipes/Diets/DietPlansPage")
+);
+const DietDetailsPage = lazy(
+  () => import("../protected/Recipes/Diets/DietsDetailsPage")
+);
+const RequestDietPage = lazy(
+  () => import("../protected/Recipes/Diets/RequestDietPage")
+);
+const RecipesPage = lazy(() => import("../protected/Recipes/RecipesPage"));
+const RecipeDetailsPage = lazy(
+  () => import("../protected/Recipes/RecipesDetailPage")
+);
+const CreateWorkoutPlanPage = lazy(
+  () => import("../protected/treinos/CreateWorkoutPlanPage")
+);
+const RequestWorkoutPage = lazy(
+  () => import("../protected/treinos/RequestWorkoutPage")
+);
+const WorkoutCompletionPage = lazy(
+  () => import("../protected/treinos/WorkoutCompletionPage")
+);
+const WorkoutExecutionPage = lazy(
+  () => import("../protected/treinos/WorkoutExecutionPage")
+);
+const WorkoutPlansPage = lazy(
+  () => import("../protected/treinos/WorkoutPlanPage")
+);
+const BuyCreditsPage = lazy(
+  () => import("../protected/components/BuyCreditsPage")
+);
+
+const PageLoader = () => (
+  <div className="flex h-[80vh] w-full items-center justify-center">
+    <Loader2 className="h-10 w-10 animate-spin text-indigo-300" />
+  </div>
+);
 
 export default function LoggedUserRoutes() {
   return (
-    // <div>UserRoutes</div>
     <Route
       element={
         <ProtectedRoute>
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </ProtectedRoute>
       }
     >

@@ -70,11 +70,10 @@ export default function AdminCreateWorkoutPage() {
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  type CategoriaTypes = "todas" | "academia" | "calistenia";
   // Filtros
   const [filterMuscle, setFilterMuscle] = useState(""); // Value do músculo
-  const [filterCategory, setFilterCategory] = useState<
-    "todas" | "academia" | "calistenia"
-  >("todas");
+  const [filterCategory, setFilterCategory] = useState<CategoriaTypes>("todas");
 
   // 1. Carregar Dados Iniciais (Exercícios e Taxonomias)
   useEffect(() => {
@@ -315,7 +314,7 @@ export default function AdminCreateWorkoutPage() {
               {["todas", "academia", "calistenia"].map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setFilterCategory(cat as any)}
+                  onClick={() => setFilterCategory(cat as CategoriaTypes)}
                   className={`flex-1 py-1 text-xs font-semibold rounded-md capitalize transition-all ${
                     filterCategory === cat
                       ? "bg-white text-indigo-600 shadow-sm"

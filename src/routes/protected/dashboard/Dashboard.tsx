@@ -27,7 +27,6 @@ import type {
   AddConsumptionRequest,
   DailyConsumptionResponse,
 } from "../../../types/api-types";
-import { toast } from "sonner";
 
 // --- Helpers ---
 
