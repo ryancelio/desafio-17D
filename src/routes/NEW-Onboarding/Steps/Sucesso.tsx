@@ -7,6 +7,7 @@ import {
   LuLoader,
 } from "react-icons/lu";
 import { motion } from "framer-motion";
+import apiClient from "../../../api/apiClient";
 
 export const Sucesso: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -26,34 +27,32 @@ export const Sucesso: React.FC = () => {
         searchParams.get("payment_id") || searchParams.get("collection_id"); // MP usa collection_id as vezes
 
       // Se não tiver ID nenhum, talvez o usuário chegou aqui por navegação direta
-      if (!preapprovalId && !paymentId) {
-        setStatus("success"); // Assume sucesso se chegou aqui (fallback) ou redireciona
-        setMessage("Bem-vindo a bordo!");
+      // if ((!preapprovalId || preapprovalId === "") && (!paymentId && preapprovalId === "")) {
+      //   setStatus("success"); // Assume sucesso se chegou aqui (fallback) ou redireciona
+      //   setMessage("Bem-vindo a bordo!");
+      //   return;
+      // }
+
+      if (!preapprovalId || preapprovalId === "") {
+        setStatus("error");
+        setMessage(
+          "ID de pré-aprovação ausente. Não foi possível validar o pagamento."
+        );
+        return;
+      }
+
+      if (!paymentId || paymentId === "") {
+        setStatus("error");
+        setMessage(
+          "ID de pagamento ausente. Não foi possível validar o pagamento."
+        );
         return;
       }
 
       if (!firebaseUser) return;
 
       try {
-        const token = await firebaseUser.getIdToken();
-
-        // 2. Chama o Backend para confirmar
-        const response = await fetch(
-          "https://dealory.io/api/confirm_status.php",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              preapproval_id: preapprovalId,
-              payment_id: paymentId,
-            }),
-          }
-        );
-
-        const data = await response.json();
+        const data = await apiClient.confirmStatus(preapprovalId, paymentId);
 
         if (data.status === "active" || data.status === "approved") {
           setStatus("success");

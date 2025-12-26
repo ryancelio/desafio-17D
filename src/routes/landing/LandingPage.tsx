@@ -11,8 +11,18 @@ import {
   LuPlay,
   LuSmartphone,
   LuZap,
-  LuClipboardList, // Novo ícone para avaliação
+  LuClipboardList,
 } from "react-icons/lu";
+// Importando ícone do WhatsApp do pacote react-icons (o mesmo pacote do lu)
+import { FaWhatsapp } from "react-icons/fa";
+
+// --- CONFIGURAÇÃO ---
+// COLOQUE SEU NÚMERO AQUI (formato internacional sem +: 55 + DDD + NUMERO)
+const WHATSAPP_NUMBER = "5511999999999";
+const WHATSAPP_MESSAGE = "Olá! Gostaria de tirar dúvidas sobre o Power Slim.";
+const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  WHATSAPP_MESSAGE
+)}`;
 
 // --- Subcomponentes ---
 
@@ -52,9 +62,25 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 overflow-x-hidden font-sans">
+    <div className="min-h-screen w-full bg-gray-50 overflow-x-hidden font-sans relative">
+      {/* --- BOTÃO FLUTUANTE WHATSAPP --- */}
+      <a
+        href={WHATSAPP_LINK}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+        aria-label="Falar no WhatsApp"
+        title="Falar com Suporte"
+      >
+        <FaWhatsapp className="w-8 h-8" />
+        {/* Tooltip opcional ao passar o mouse */}
+        <span className="absolute right-full mr-3 bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Fale Conosco
+        </span>
+      </a>
+
       {/* --- NAVBAR --- */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <nav className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-indigo-600 p-2 rounded-lg text-white">
@@ -359,16 +385,21 @@ export default function LandingPage() {
           </div>
 
           <div className="flex gap-8 text-sm font-medium">
-            <Link to="#" className="hover:text-white transition-colors">
+            <Link to="/sobre" className="hover:text-white transition-colors">
               Sobre
             </Link>
-            <Link to="#" className="hover:text-white transition-colors">
+            <Link to="/planos" className="hover:text-white transition-colors">
               Planos
             </Link>
-            <Link to="#" className="hover:text-white transition-colors">
-              Privacidade
-            </Link>
-            <Link to="#" className="hover:text-white transition-colors">
+            <a
+              href={WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors flex items-center gap-1"
+            >
+              Suporte <FaWhatsapp />
+            </a>
+            <Link to="/termos" className="hover:text-white transition-colors">
               Termos
             </Link>
           </div>

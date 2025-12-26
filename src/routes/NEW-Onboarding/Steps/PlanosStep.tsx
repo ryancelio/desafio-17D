@@ -32,7 +32,7 @@ export const PlanosStep: React.FC<StepProps> = ({
       try {
         setLoading(true);
         setError(null);
-        const data = await apiClient.getPlans();
+        const data = await apiClient.getPlans(true);
 
         if (Array.isArray(data)) {
           setPlans(data);

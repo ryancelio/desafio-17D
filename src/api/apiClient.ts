@@ -36,6 +36,7 @@ import type {
 } from "../types/api-types";
 
 import type { OnboardingState } from "../types/onboarding.schema";
+import type { RequestForm } from "../routes/protected/treinos/RequestWorkoutPage";
 
 // --- 2. CONFIGURAÇÃO DO AXIOS ---
 
@@ -83,9 +84,14 @@ async function syncUserPreferences(preferences: UserPreference[]) {
   });
   return res.data;
 }
-async function getPlans(): Promise<Plan[]> {
-  const res = await axiosInstance.get("/get_plans.php");
-  return res.data;
+async function getPlans(isPublic = false): Promise<Plan[]> {
+  if (!isPublic) {
+    const res = await axiosInstance.get("/get_plans.php");
+    return res.data;
+  } else {
+    const res = await axios.get("/api/get_plans.php");
+    return res.data;
+  }
 }
 
 async function cancelSubscription() {
@@ -361,11 +367,53 @@ async function getMeasurementDetails(
   );
   return response.data;
 }
+async function createSubscriptionRedirect(
+  plan_id: string,
+  cycle: "monthly" | "yearly"
+): Promise<{ error?: string; init_point?: string }> {
+  const response = await axiosInstance.post<{
+    success: boolean;
+    redirect_url?: string;
+    error?: string;
+  }>("/create_subscription_redirect.php", { plan_id, cycle });
 
-// async function getUserPhotos(): Promise<UserPhoto[]> {
-//   const response = await axiosInstance.get<UserPhoto[]>("/get_user_photos.php");
-//   return response.data;
-// }
+  return response.data;
+}
+async function processPayment(
+  payload: any,
+  db_plan_id: string,
+  cycle: string
+): Promise<{
+  error?: string;
+  status?: string;
+  id?: string | number;
+  message?: string;
+}> {
+  const response = await axiosInstance.post("/process_payment.php", {
+    ...payload,
+    db_plan_id,
+    cycle,
+  });
+  return response.data;
+}
+
+async function confirmStatus(preaprovalId: string, paymentId: string) {
+  const response = await axiosInstance.post("/confirm_status.php", {
+    preapproval_id: preaprovalId,
+    payment_id: paymentId,
+  });
+  return response.data;
+}
+
+async function requestWorkoutPlan(
+  data: RequestForm
+): Promise<{ message?: string; error?: string }> {
+  const response = await axiosInstance.post<{
+    message?: string;
+    error?: string;
+  }>("/request_workout.php", data);
+  return response.data;
+}
 
 async function getUserPhotos(src: string): Promise<UserPhoto[]> {
   const response = await axiosInstance.get<UserPhoto[]>("/get_image.php", {
@@ -482,6 +530,10 @@ const apiClient = {
   getCreditPackages,
   markNotificationRead,
   checkPaymentStatus,
+  createSubscriptionRedirect,
+  processPayment,
+  confirmStatus,
+  requestWorkoutPlan,
 };
 
 export default apiClient;

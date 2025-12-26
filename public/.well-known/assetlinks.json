@@ -5,8 +5,15 @@
       "namespace": "android_app",
       "package_name": "pro.powerslim.twa",
       "sha256_cert_fingerprints": [
-        "08:49:E3:2B:22:A0:44:D4:27:A5:3C:AE:5F:5F:92:66:E7:2C:4D:5E:AD:FB:D6:19:E2:FB:6D:2E:85:75:DE:AF"
+        "30:4F:80:5E:FA:51:8C:17:25:F4:20:85:6C:DB:1D:11:24:63:D7:AE:72:5E:7A:C8:EA:58:9E:1E:74:1C:E1:27"
       ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "web",
+      "site": "https://www.powerslim.pro"
     }
   }
 ]

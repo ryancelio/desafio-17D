@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import ActiveUserCheckRoute from "../protected/ActiveUserCheckRoute";
 import AppLayout from "../protected/AppLayout";
 import ProtectedRoute from "../ProtectedRoute";
+import RenewPlanPage from "../protected/planos/RenewalPlanPage";
 
 // Lazy Loading Components
 const Dashboard = lazy(() => import("../protected/dashboard/Dashboard"));
@@ -88,8 +89,6 @@ export default function LoggedUserRoutes() {
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/perfil/editar" element={<EditProfilePage />} />
           <Route path="/measurements/add" element={<AddMeasurementsPage />} />
-          <Route path="/assinatura" element={<GerenciarPlanosPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
           <Route
             path="/measurements/:id"
             element={<MeasurementDetailsPage />}
@@ -100,14 +99,17 @@ export default function LoggedUserRoutes() {
           <Route path="/dieta/solicitar" element={<RequestDietPage />} />
         </Route>
         <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
+        <Route
+          path="/treinos/concluido/:id"
+          element={<WorkoutCompletionPage />}
+        />
       </Route>
-      <Route
-        path="/treinos/concluido/:id"
-        element={<WorkoutCompletionPage />}
-      />
       <Route path="/treinos/criar" element={<CreateWorkoutPlanPage />} />
       <Route path="/treinos/solicitar" element={<RequestWorkoutPage />} />
       <Route path="/upgrade" element={<ChangePlanPage />} />
+      <Route path="/assinatura" element={<GerenciarPlanosPage />} />
+      <Route path="/assinatura/renovar" element={<RenewPlanPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/loja/creditos" element={<BuyCreditsPage />} />
     </Route>
   );

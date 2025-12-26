@@ -163,6 +163,7 @@ export interface Plan {
   price_annually: number;
   features: string[];
   is_featured?: boolean;
+  // is_active: boolean;
 }
 
 // --- LOJA ---

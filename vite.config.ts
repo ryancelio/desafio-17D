@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate", // Atualiza o app automaticamente quando há nova versão
+      workbox: {
+        navigateFallbackDenylist: [/^\/api/, /^\/\.well-known/],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+      },
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
       manifest: {
         name: "PowerSlim",
@@ -72,7 +76,7 @@ export default defineConfig({
         target: "https://powerslim.pro", // O domínio base
         changeOrigin: true,
         secure: false, // Às vezes necessário se o SSL local for auto-assinado
-        // A regra abaixo diz: "Se chegar /api/teste, mande para https://dealory.io/api/teste"
+        // A regra abaixo diz: "Se chegar /api/teste, mande para https://powerslim.pro/api/teste"
         // Se a pasta no servidor for diferente (ex: 'php_api'), mude o replacement.
         rewrite: (path) => path.replace(/^\/api/, "/api"),
       },

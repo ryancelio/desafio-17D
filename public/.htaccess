@@ -1,0 +1,51 @@
+# ----------------------------------------------------------------------
+# 1. CACHE CONTROL PARA PWA
+# ----------------------------------------------------------------------
+<FilesMatch "^(sw\.js|registerSW\.js|manifest\.webmanifest|workbox-.*\.js)$">
+    FileETag None
+    <IfModule mod_headers.c>
+        Header unset ETag
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
+
+# ----------------------------------------------------------------------
+# 2. TIPOS MIME E SEGURANÇA
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    <FilesMatch "assetlinks.json">
+        Header set Content-Type "application/json"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_authz_core.c>
+    <LocationMatch "^/\.well-known/">
+        Require all granted
+    </LocationMatch>
+</IfModule>
+
+# ----------------------------------------------------------------------
+# 3. REGRAS DE ROTEAMENTO (SPA + API + IMAGENS)
+# ----------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # 1. Ignora API e well-known
+    RewriteRule ^api/ - [L]
+    RewriteRule ^\.well-known/ - [L]
+
+    # 2. Se arquivo OU diretório existe, serve direto (IMAGENS INCLUÍDAS)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 3. Proteção: retorna 404 apenas para assets do Vite inexistentes
+    RewriteCond %{REQUEST_URI} ^/assets/.*\.(js|css|map|json)$ [NC]
+    RewriteRule ^ - [R=404,L]
+
+    # 4. SPA fallback (React / Vite)
+    RewriteRule . /index.html [L]
+</IfModule>

@@ -24,7 +24,7 @@ import {
   LuCircleX as LuXCircle,
   LuClock,
   LuCamera,
-  LuChevronRight,
+  // LuChevronRight,
   LuSparkles,
   LuDumbbell,
   LuX,
@@ -623,19 +623,29 @@ export default function ProfilePage() {
                 <LuCalendarClock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                 <span className="truncate">
                   {planData.renovacao
-                    ? `Renova: ${new Date(
+                    ? `Vence em: ${new Date(
                         planData.renovacao
                       ).toLocaleDateString("pt-BR")}`
-                    : "Sem renovação"}
+                    : "Acesso vitalício ou indefinido"}
                 </span>
               </div>
-              <button
-                onClick={() => navigate("/assinatura")}
-                className="w-full flex items-center justify-center gap-2 bg-white text-slate-900 py-3 rounded-xl text-sm font-bold active:bg-gray-100 transition-colors shadow-lg"
-              >
-                Gerenciar Assinatura
-                <LuChevronRight className="w-4 h-4" />
-              </button>
+
+              {/* Botões de Ação Atualizados */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => navigate("/assinatura")}
+                  className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 py-3 rounded-xl text-xs font-bold transition-colors"
+                >
+                  Gerenciar
+                </button>
+                <button
+                  onClick={() => navigate("/assinatura/renovar")}
+                  className="flex items-center justify-center gap-2 bg-white text-slate-900 py-3 rounded-xl text-xs font-bold active:bg-gray-100 transition-colors shadow-lg hover:bg-gray-50"
+                >
+                  <LuSparkles className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                  Renovar
+                </button>
+              </div>
             </div>
           </div>
         </div>

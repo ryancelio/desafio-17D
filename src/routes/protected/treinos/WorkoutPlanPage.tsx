@@ -448,7 +448,7 @@ export default function WorkoutPlansPage() {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        onUpgrade={() => navigate("/assinatura/mudar")}
+        onUpgrade={() => navigate("/assinatura")}
       />
     </>
   );

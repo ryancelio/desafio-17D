@@ -2,12 +2,18 @@
 import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
 import type { IPaymentBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/payment/type";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { useAuth } from "../../../context/AuthContext";
 import type { StepProps } from "../OnboardingWizard";
 import { motion } from "framer-motion";
-import { LuShieldCheck, LuLock, LuLoader as LuLoader2 } from "react-icons/lu";
+import {
+  LuShieldCheck,
+  LuLock,
+  LuLoader as LuLoader2,
+  LuCreditCard,
+} from "react-icons/lu";
 import { toast } from "sonner";
+import apiClient from "../../../api/apiClient";
 
 // Use sua Public Key correta
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
@@ -17,7 +23,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
   const { firebaseUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
-  const [isBrickReady, setIsBrickReady] = useState(false); // Novo estado de controle
+  const [isBrickReady, setIsBrickReady] = useState(false);
   const brickContainerRef = useRef<HTMLDivElement>(null);
 
   const selectedPlan = onboardingData.selectedPlan;
@@ -27,29 +33,22 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
     initMercadoPago(PUBLIC_KEY, { locale: "pt-BR" });
   }, []);
 
+  // Helper de formatação
+  const formatMoney = (val: number | string) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(Number(val));
+  };
+
   // --- FLUXO MENSAL (REDIRECT) ---
   const handleMonthlyRedirect = async () => {
     setLoading(true);
     try {
-      if (!firebaseUser) throw new Error("Usuário não autenticado.");
-      const token = await firebaseUser.getIdToken();
-
-      const response = await fetch(
-        "https://dealory.io/api/create_subscription_redirect.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            plan_id: selectedPlan?.plan_id,
-            cycle: "monthly",
-          }),
-        }
+      const data = await apiClient.createSubscriptionRedirect(
+        String(selectedPlan?.plan_id),
+        "monthly"
       );
-
-      const data = await response.json();
       if (data.init_point) {
         window.location.href = data.init_point;
       } else {
@@ -67,16 +66,14 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
     if (isMonthly) {
       await handleMonthlyRedirect();
     } else {
-      // Tenta encontrar o botão
       if (brickContainerRef.current) {
         const brickButton = brickContainerRef.current.querySelector(
           'button[type="submit"]'
         ) as HTMLButtonElement;
 
         if (brickButton) {
-          brickButton.click(); // Dispara o submit interno do Brick
+          brickButton.click();
         } else {
-          // Fallback: Tenta achar qualquer botão dentro do form se o seletor específico falhar
           const genericButton =
             brickContainerRef.current.querySelector("form button");
           if (genericButton instanceof HTMLElement) {
@@ -96,27 +93,11 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
   const onPaymentBrickSubmit = async ({ formData }: any) => {
     setLoading(true);
     try {
-      const token = await firebaseUser?.getIdToken();
-
-      const payload = {
-        ...formData,
-        db_plan_id: selectedPlan?.plan_id,
-        cycle: "annually",
-      };
-
-      const response = await fetch(
-        "https://dealory.io/api/process_payment.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+      const result = await apiClient.processPayment(
+        formData,
+        String(selectedPlan?.plan_id),
+        "annually"
       );
-
-      const result = await response.json();
 
       if (result.status === "approved") {
         navigate("/onboard/sucesso");
@@ -145,10 +126,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
     ? "Processando..."
     : isMonthly
     ? "Ir para Pagamento Seguro"
-    : `Pagar ${new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(selectedPlan.price)}`;
+    : `Pagar ${formatMoney(selectedPlan.price)}`;
 
   const paymentInitialization = {
     amount: Number(selectedPlan.price),
@@ -166,24 +144,28 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
     visual: {
       style: { theme: "default" },
       hideFormTitle: true,
-      // CORREÇÃO AQUI: Deve ser FALSE para o botão existir no DOM
       hidePaymentButton: false,
     },
   };
 
-  // Verifica se o botão deve estar desabilitado
-  // Se for mensal, habilita. Se for anual, depende do Brick estar pronto.
   const isButtonDisabled = loading || (!isMonthly && !isBrickReady);
 
   return (
     <>
-      <div className="w-full max-w-md mx-auto pb-32 px-4">
+      <div className="w-full max-w-md mx-auto pb-40 px-4">
         <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
           Resumo do Pedido
         </h2>
 
         {/* Card Resumo */}
-        <div className="bg-white p-5 rounded-2xl mb-6 shadow-sm border border-gray-100 flex justify-between items-center">
+        <div className="bg-white p-5 rounded-2xl mb-6 shadow-sm border border-gray-100 flex justify-between items-center relative overflow-hidden">
+          {/* Badge para Anual */}
+          {!isMonthly && (
+            <div className="absolute top-0 right-0 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
+              12x SEM JUROS
+            </div>
+          )}
+
           <div>
             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">
               Plano Selecionado
@@ -195,21 +177,34 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
               {isMonthly ? "Cobrança mensal" : "Pagamento único anual"}
             </p>
           </div>
+
           <div className="text-right">
-            <p className="text-indigo-600 font-bold text-xl">
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(selectedPlan.price)}
-            </p>
-            <p className="text-xs text-gray-400">
-              {isMonthly ? "/mês" : "/ano"}
-            </p>
+            {isMonthly ? (
+              // Visualização Mensal
+              <>
+                <p className="text-indigo-600 font-bold text-xl">
+                  {formatMoney(selectedPlan.price)}
+                </p>
+                <p className="text-xs text-gray-400">/mês</p>
+              </>
+            ) : (
+              // Visualização Anual (Parcelada)
+              <div className="flex flex-col items-end">
+                <p className="text-indigo-600 font-bold text-xl flex items-center gap-1">
+                  <span className="text-sm font-medium text-indigo-400">
+                    12x
+                  </span>
+                  {formatMoney(Number(selectedPlan.price) / 12)}
+                </p>
+                <p className="text-xs text-gray-500">
+                  ou {formatMoney(selectedPlan.price)} à vista
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {isMonthly ? (
-          // Fluxo Mensal
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center space-y-4">
             <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
               <LuLock className="w-6 h-6" />
@@ -223,14 +218,12 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             </div>
           </div>
         ) : (
-          // Fluxo Anual (Brick)
           <div
             ref={brickContainerRef}
             className={`relative transition-opacity duration-300 ${
               loading ? "opacity-50 pointer-events-none" : "opacity-100"
             }`}
           >
-            {/* Spinner enquanto o Brick carrega */}
             {!isBrickReady && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 h-40">
                 <LuLoader2 className="w-8 h-8 animate-spin text-indigo-600" />
@@ -242,7 +235,17 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
               <span>Processado por Mercado Pago</span>
             </div>
 
-            {/* CSS hack para esconder o botão nativo do MP sem removê-lo do DOM */}
+            {/* Aviso visual extra para parcelamento */}
+            <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center gap-3">
+              <div className="bg-white p-2 rounded-full shadow-sm text-indigo-600">
+                <LuCreditCard className="w-4 h-4" />
+              </div>
+              <p className="text-xs text-gray-600 leading-tight">
+                Selecione <strong>Cartão de Crédito</strong> abaixo para
+                habilitar o parcelamento em até 12x.
+              </p>
+            </div>
+
             <style>{`
               #payment-brick-container form button[type="submit"] {
                 visibility: hidden !important;
@@ -264,7 +267,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
                 initialization={paymentInitialization}
                 customization={paymentCustomization}
                 onSubmit={onPaymentBrickSubmit}
-                onReady={() => setIsBrickReady(true)} // Habilita o botão quando pronto
+                onReady={() => setIsBrickReady(true)}
                 onError={(err) => console.error("Erro Brick", err)}
               />
             </div>
@@ -272,8 +275,8 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
         )}
       </div>
 
-      {/* Botão Fixo */}
-      <div className="fixed bottom-0 left-0 w-full p-4 bg-white/90 backdrop-blur-md border-t border-gray-200 z-50">
+      {/* Botão Fixo com Aviso de Termos */}
+      <div className="fixed bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50">
         <div className="max-w-md mx-auto">
           <motion.button
             className={`w-full bg-gray-900 text-white font-bold text-lg rounded-xl py-4 shadow-lg flex items-center justify-center gap-2 transition-all ${
@@ -290,7 +293,20 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             {buttonText}
           </motion.button>
 
-          <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
+          {/* Texto de Concordância com Termos */}
+          <p className="text-center text-xs text-gray-500 mt-3 mb-1 leading-tight">
+            Ao realizar a compra, você concorda com nossos{" "}
+            <Link
+              to="/termos"
+              target="_blank"
+              className="text-indigo-600 underline hover:text-indigo-800 font-medium"
+            >
+              Termos de Uso
+            </Link>
+            .
+          </p>
+
+          <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1">
             <LuLock className="w-3 h-3" /> Ambiente criptografado.
           </p>
         </div>

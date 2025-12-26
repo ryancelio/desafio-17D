@@ -81,7 +81,7 @@ export default function ActiveUserCheckRoute() {
         </p>
         <div className="mt-6 flex flex-col gap-3">
           <button
-            onClick={() => navigate("/upgrade")} // Exemplo de link
+            onClick={() => navigate("/assinatura/renovar")} // Exemplo de link
             className="rounded-lg bg-[#FCC3D2] px-6 py-2 font-semibold text-white hover:bg-[#faacc1] transition-colors"
           >
             Renovar Assinatura

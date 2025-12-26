@@ -415,7 +415,7 @@ export default function DietPlansPage() {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        onUpgrade={() => navigate("/assinatura/mudar")}
+        onUpgrade={() => navigate("/assinatura")}
       />
     </>
   );

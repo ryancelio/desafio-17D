@@ -11,6 +11,7 @@ import {
   LuArrowLeft,
 } from "react-icons/lu";
 import { toast } from "sonner";
+import apiClient from "../../../api/apiClient";
 
 // Use sua Public Key correta (mesma do onboarding)
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
@@ -45,26 +46,11 @@ export default function CheckoutPage() {
   const handleMonthlyRedirect = async () => {
     setLoading(true);
     try {
-      if (!firebaseUser) throw new Error("Usuário não autenticado.");
-      const token = await firebaseUser.getIdToken();
-
-      // Usa o mesmo endpoint de criação, pois a lógica backend deve lidar com update ou create
-      const response = await fetch(
-        "https://dealory.io/api/create_subscription_redirect.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            plan_id: selectedPlan?.plan_id,
-            cycle: "monthly",
-          }),
-        }
+      const data = await apiClient.createSubscriptionRedirect(
+        selectedPlan?.plan_id,
+        "monthly"
       );
 
-      const data = await response.json();
       if (data.init_point) {
         window.location.href = data.init_point;
       } else {
@@ -113,28 +99,13 @@ export default function CheckoutPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onPaymentBrickSubmit = async ({ formData }: any) => {
     setLoading(true);
+
     try {
-      const token = await firebaseUser?.getIdToken();
-
-      const payload = {
-        ...formData,
-        db_plan_id: selectedPlan?.plan_id,
-        cycle: "annually",
-      };
-
-      const response = await fetch(
-        "https://dealory.io/api/process_payment.php",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+      const result = await apiClient.processPayment(
+        formData,
+        selectedPlan?.plan_id,
+        "annually"
       );
-
-      const result = await response.json();
 
       if (result.status === "approved") {
         await refetchProfile(); // Atualiza status global
