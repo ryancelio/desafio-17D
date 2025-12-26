@@ -8,7 +8,7 @@ import {
   Copy,
   //   ExternalLink
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import type { PendingLead } from "../../types/admin";
 import { getPendingLeads } from "./shared/AdminApi";
 
@@ -92,8 +92,6 @@ export default function SalesRecoveryPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <Toaster richColors position="top-right" />
-
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
           Recuperação de Vendas

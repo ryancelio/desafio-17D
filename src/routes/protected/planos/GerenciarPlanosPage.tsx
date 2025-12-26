@@ -13,6 +13,7 @@ import {
   Check,
   AlertCircle,
   RefreshCcw,
+  ChevronLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Plan } from "../../../types/api-types";
@@ -55,7 +56,7 @@ export default function SubscriptionPage() {
   const displayPlanName =
     (isActive || isExpired || isCancelled) && sub?.plan_name
       ? sub.plan_name
-      : "Plano Gratuito";
+      : "Nenhum Plano Ativo";
 
   const formattedDate = sub?.expires_at
     ? new Date(sub.expires_at).toLocaleDateString("pt-BR")
@@ -133,9 +134,21 @@ export default function SubscriptionPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white px-6 py-6 border-b border-gray-200 sticky top-0 z-50">
-        <h1 className="text-2xl font-bold text-gray-900">Assinatura</h1>
-        <p className="text-gray-500 text-sm">Gerencie seu plano e cobranças.</p>
+      <div className="bg-white/90 backdrop-blur-md flex items-center gap-3 px-4 py-3 border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <button
+          onClick={() => navigate("/perfil")}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95 transition-all"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 leading-tight">
+            Assinatura
+          </h1>
+          <p className="text-xs text-gray-500">
+            Gerencie seu plano e cobranças.
+          </p>
+        </div>
       </div>
 
       <div className="max-w-4xl mx-auto p-6 space-y-8">

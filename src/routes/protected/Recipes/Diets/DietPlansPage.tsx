@@ -17,7 +17,7 @@ import {
   Salad,
   PlusCircle, // Importado novo ícone
 } from "lucide-react";
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
 
 import apiClient, { isApiError } from "../../../../api/apiClient";
 import type {
@@ -247,8 +247,6 @@ export default function DietPlansPage() {
 
   return (
     <>
-      <Toaster richColors position="top-center" />
-
       <div className="space-y-6 p-4 md:p-8 max-w-7xl mx-auto pb-24">
         {/* HEADER & CRÉDITOS */}
         <div className="flex flex-col gap-4">

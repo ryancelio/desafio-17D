@@ -24,7 +24,6 @@ import { FaPersonRunning } from "react-icons/fa6";
 import apiClient from "../../api/apiClient";
 import { IoReload } from "react-icons/io5";
 import type { Notification } from "../../types/models";
-import { Toaster } from "sonner";
 import RenewalBanner from "./components/RenewalBanner";
 
 // ---------------- Navigation Config ----------------
@@ -330,15 +329,9 @@ export default function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative w-full">
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto scroll-smooth w-full pt-16 pb-24 px-4 md:pt-8 md:pb-8 md:px-8"
+          className="flex-1 overflow-y-auto scroll-smooth w-full pt-16 pb-24 md:pt-8 md:pb-8"
         >
           <RenewalBanner />
-
-          <Toaster
-            richColors
-            swipeDirections={["left", "right"]}
-            position="top-center"
-          />
           <Outlet />
         </main>
       </div>

@@ -14,9 +14,11 @@ import NotFoundPage from "./routes/NotFoundPage.tsx";
 import AdminRoutes from "./routes/Separators/AdminRoutes.tsx";
 import LoggedUserRoutes from "./routes/Separators/LoggedUserRoutes.tsx";
 import PublicRoutes from "./routes/Separators/PublicRoutes.tsx";
+import { Toaster } from "sonner";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <Toaster richColors position="top-right" />
     <BrowserRouter>
       <Routes>
         {/* ========================================================= */}

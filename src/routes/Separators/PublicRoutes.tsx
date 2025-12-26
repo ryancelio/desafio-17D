@@ -3,7 +3,12 @@ import { Route } from "react-router";
 import OnboardingProvider from "../../context/OnboardingContext";
 import RootRedirector from "../../hooks/UserRedirect";
 import LoginPage2 from "../LoginPage2";
-import OnboardingWizard from "../NEW-Onboarding/OnboardingWizard";
+// import OnboardingWizard from "../NEW-Onboarding/OnboardingWizard";
+
+const OnboardingWizard = React.lazy(
+  () => import("../NEW-Onboarding/OnboardingWizard")
+);
+
 import { Sucesso } from "../NEW-Onboarding/Steps/Sucesso";
 import SignUpPage from "../SignUpPage";
 import UserCreationRoute from "../UserCreationRoute";
