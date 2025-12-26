@@ -33,18 +33,10 @@ export const Sucesso: React.FC = () => {
       //   return;
       // }
 
-      if (!preapprovalId || preapprovalId === "") {
+      if (!preapprovalId && !paymentId) {
         setStatus("error");
         setMessage(
-          "ID de pré-aprovação ausente. Não foi possível validar o pagamento."
-        );
-        return;
-      }
-
-      if (!paymentId || paymentId === "") {
-        setStatus("error");
-        setMessage(
-          "ID de pagamento ausente. Não foi possível validar o pagamento."
+          "Identificador do pagamento não encontrado. Não foi possível validar."
         );
         return;
       }
@@ -52,7 +44,10 @@ export const Sucesso: React.FC = () => {
       if (!firebaseUser) return;
 
       try {
-        const data = await apiClient.confirmStatus(preapprovalId, paymentId);
+        const data = await apiClient.confirmPayment(
+          preapprovalId || "",
+          paymentId || ""
+        );
 
         if (data.status === "active" || data.status === "approved") {
           setStatus("success");

@@ -398,10 +398,20 @@ async function processPayment(
 }
 
 async function confirmStatus(preaprovalId: string, paymentId: string) {
-  const response = await axiosInstance.post("/confirm_status.php", {
+  const response = await axiosInstance.post("/check_payment_status.php", {
     preapproval_id: preaprovalId,
     payment_id: paymentId,
   });
+  return response.data;
+}
+
+async function confirmPayment(preapprovalId: string, paymentId: string) {
+  const payload = {
+    preapproval_id: preapprovalId,
+    payment_id: paymentId,
+  };
+
+  const response = await axiosInstance.post("/confirm_payment.php", payload);
   return response.data;
 }
 
@@ -533,6 +543,7 @@ const apiClient = {
   createSubscriptionRedirect,
   processPayment,
   confirmStatus,
+  confirmPayment,
   requestWorkoutPlan,
 };
 

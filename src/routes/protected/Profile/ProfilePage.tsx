@@ -438,7 +438,7 @@ export default function ProfilePage() {
     );
 
   const planData = {
-    nome: userProfile.subscription.plan_name || "Gratuito",
+    nome: userProfile.subscription.plan_name || "Nao Ativo",
     status: userProfile.subscription.status || "ativo",
     renovacao: userProfile.subscription.expires_at,
   };

@@ -142,6 +142,9 @@ const OnboardingWizard: React.FC = () => {
 
     const response = await apiClient.completeOnboarding(payload);
 
+    console.log(payload);
+    console.log(response);
+
     if (!response.success) {
       throw new Error(response.message || "Falha ao salvar dados no sistema.");
     }
@@ -238,6 +241,31 @@ const OnboardingWizard: React.FC = () => {
         setStep((s) => s + 1);
       }
       return;
+    }
+
+    // CASO NOVO: Sincronizar dados para usuário existente ANTES do pagamento
+    // Se o usuário começou o fluxo já logado, sincroniza os dados coletados antes de ir para os planos.
+    if (
+      CurrentStepComponent === SocialProofStep &&
+      startedAuthenticated.current
+    ) {
+      setOnboardLoading(true);
+      setError(null);
+      try {
+        await syncWithBackend();
+        await refetchProfile(); // Atualiza o contexto global com os novos dados
+        setStep((s) => s + 1); // Avança para o próximo passo (PlanosStep)
+      } catch (err: any) {
+        console.error("Erro ao sincronizar dados:", err);
+        setError(err.message || "Erro ao salvar suas informações.");
+        buttonControls.start({
+          x: [0, -8, 8, -8, 0],
+          transition: { duration: 0.4 },
+        });
+      } finally {
+        setOnboardLoading(false);
+      }
+      return; // Importante para não continuar a execução
     }
 
     // CASO 2: Finalizar (Se for o último passo e não precisa pagar)
