@@ -5,24 +5,32 @@ import { motion } from "framer-motion";
 const PesoAlvoStep: React.FC<StepProps> = ({
   onboardingData,
   updateOnboardingData,
+  setStepvalid,
 }) => {
   //   const [targetWeight, setTargetWeight] = useState(70);
 
-  const { personal } = onboardingData;
+  const { personal, measurements } = onboardingData;
   const [pesoPerder, setPesoPerder] = useState(0);
 
+  // Ao carregar, se o peso alvo não estiver definido, inicializa com o peso atual
   useEffect(() => {
-    if (onboardingData.personal.peso_alvo_kg) {
-      setPesoPerder(
-        onboardingData.personal.peso_alvo_kg -
-          Number(onboardingData.measurements.peso_kg)
-      );
+    if (!personal.peso_alvo_kg) {
+      const currentWeight = Number(measurements.peso_kg);
+      if (currentWeight > 0) {
+        updateOnboardingData({
+          personal: { ...personal, peso_alvo_kg: currentWeight },
+        });
+      }
     }
-  }, [
-    onboardingData.personal.peso_alvo_kg,
-    onboardingData.measurements.peso_kg,
-    setPesoPerder,
-  ]);
+    setStepvalid(true); // Este passo é sempre válido
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Executa apenas uma vez na montagem
+
+  useEffect(() => {
+    if (personal.peso_alvo_kg) {
+      setPesoPerder(personal.peso_alvo_kg - Number(measurements.peso_kg));
+    }
+  }, [personal.peso_alvo_kg, measurements.peso_kg]);
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}

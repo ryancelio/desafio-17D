@@ -95,7 +95,7 @@ const OnboardingWizard: React.FC = () => {
       steps.push(PlanosStep, Checkout);
     }
 
-    // stepComponentsRef.current = [SocialProofStep];
+    // stepComponentsRef.current = [MedidasStep, PesoAlvoStep];
     stepComponentsRef.current = steps;
   }
 

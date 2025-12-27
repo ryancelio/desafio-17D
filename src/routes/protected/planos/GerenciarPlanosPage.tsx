@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Plan } from "../../../types/api-types";
+import { toast } from "sonner";
 
 export default function SubscriptionPage() {
   const { userProfile, refetchProfile, loading: authLoading } = useAuth();
@@ -69,10 +70,10 @@ export default function SubscriptionPage() {
       await apiClient.cancelSubscription();
       await refetchProfile();
       setShowCancelModal(false);
-      alert("Assinatura cancelada com sucesso.");
+      toast.success("Assinatura cancelada com sucesso.");
     } catch (error: any) {
       console.error(error);
-      alert(
+      toast.error(
         "Erro ao cancelar: " +
           (error.response?.data?.error || "Tente novamente.")
       );
