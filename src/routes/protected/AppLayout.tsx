@@ -329,7 +329,7 @@ export default function AppLayout() {
       <div className="flex flex-1 flex-col overflow-hidden relative w-full">
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto scroll-smooth w-full pt-16 pb-24 md:pt-8 md:pb-8"
+          className="flex-1 overflow-y-auto scroll-smooth w-full pt-16  md:pt-8 md:pb-8"
         >
           <RenewalBanner />
           <Outlet />

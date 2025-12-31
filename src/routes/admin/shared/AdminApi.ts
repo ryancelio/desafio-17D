@@ -6,6 +6,7 @@ import type {
   ExerciseTaxonomy,
   Prescription,
   DietRequest,
+  RecipeTaxonomy,
 } from "../../../types/models";
 import type {
   ExerciseMetadataResponse,
@@ -171,6 +172,47 @@ const manageRecipes = {
   delete: async (id: number): Promise<AdminResponse> => {
     const response = await axiosInstance.delete<AdminResponse>(
       "/recipes_manage.php",
+      {
+        params: { id },
+      }
+    );
+    return response.data;
+  },
+};
+
+export const ManageRecipeTaxonomies = {
+  // GET: Lista todas as tags
+  get: async (): Promise<RecipeTaxonomy[]> => {
+    const response = await axiosInstance.get<RecipeTaxonomy[]>(
+      "/admin/recipe_taxonomies_manage.php"
+    );
+    return response.data;
+  },
+
+  // POST: Cria uma nova tag
+  post: async (data: RecipeTaxonomy): Promise<AdminResponse> => {
+    const response = await axiosInstance.post<AdminResponse>(
+      "/admin/recipe_taxonomies_manage.php",
+      data
+    );
+    return response.data;
+  },
+
+  // PUT: Atualiza uma tag existente
+  // Nota: Como o PHP usa POST para update (verificando o ID), apontamos para POST ou ajustamos o PHP.
+  // Baseado no PHP anterior, ele espera um POST com ID.
+  update: async (data: RecipeTaxonomy): Promise<AdminResponse> => {
+    const response = await axiosInstance.post<AdminResponse>(
+      "/admin/recipe_taxonomies_manage.php",
+      data
+    );
+    return response.data;
+  },
+
+  // DELETE: Remove uma tag
+  delete: async (id: number): Promise<AdminResponse> => {
+    const response = await axiosInstance.delete<AdminResponse>(
+      "/admin/recipe_taxonomies_manage.php",
       {
         params: { id },
       }

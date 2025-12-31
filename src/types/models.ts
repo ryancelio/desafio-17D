@@ -192,6 +192,13 @@ export interface ExerciseTaxonomy {
   ordem: number;
   is_active: boolean;
 }
+export interface RecipeTaxonomy {
+  id?: number;
+  label: string;
+  value: string;
+  ordem?: number;
+  is_active?: boolean;
+}
 
 export type Notification = {
   id: number | string;

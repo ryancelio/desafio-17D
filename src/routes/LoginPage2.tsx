@@ -7,31 +7,34 @@ import {
   FacebookAuthProvider,
 } from "firebase/auth";
 import { auth } from "../firebase";
-import { Link, useNavigate } from "react-router"; // 👈 CORRIGIDO
-import { FaGoogle, FaFacebookF, FaLock } from "react-icons/fa6";
-import apiClient, { isApiError } from "../api/apiClient"; // 👈 ATUALIZADO
+import { Link, useNavigate } from "react-router";
+import {
+  FaGoogle,
+  FaFacebookF,
+  FaLock,
+  FaEnvelope,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa6";
+import apiClient, { isApiError } from "../api/apiClient";
 import { FirebaseError } from "firebase/app";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Função auxiliar para processar a sincronização pós-login
   const processLoginSuccess = async (userDisplayName?: string | null) => {
     try {
-      // Sincroniza com o backend PHP
       await apiClient.syncUser({
         nome: userDisplayName || email.split("@")[0] || "Usuário",
       });
       navigate("/dashboard");
     } catch (err) {
       console.error("Erro na sincronização:", err);
-      // Mesmo que o sync falhe, o usuário logou no Firebase.
-      // Decisão de negócio: Bloquear ou deixar entrar?
-      // Geralmente deixamos entrar e o Dashboard tenta carregar/syncar novamente.
       navigate("/dashboard");
     }
   };
@@ -48,14 +51,11 @@ export default function LoginPage() {
     }
 
     try {
-      // 1. Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-
-      // 2. Sync Backend
       await processLoginSuccess(userCredential.user.displayName);
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
@@ -97,7 +97,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
         if (err.code === "auth/popup-closed-by-user") {
-          setError(null); // Usuário fechou a janela, não é erro crítico
+          setError(null);
         } else {
           setError(`Erro ao entrar com ${providerName}.`);
         }
@@ -111,12 +111,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#fcc3d2] to-[#a8f3dc] transition-colors">
+    <div className="min-h-dvh flex items-center justify-center bg-linear-to-br from-[#fcc3d2] to-[#a8f3dc] transition-colors p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md bg-white/80  backdrop-blur-md p-8 rounded-2xl shadow-2xl  border border-white/40"
+        className="w-full max-w-md bg-white/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-white/50"
       >
         <motion.div
           initial={{ scale: 0.8 }}
@@ -129,10 +129,10 @@ export default function LoginPage() {
               <FaLock className="text-white text-xl" />
             </div>
           </div>
-          <h1 className="text-2xl font-semibold text-gray-800 ">
+          <h1 className="text-2xl font-semibold text-gray-800">
             Bem-vindo de volta
           </h1>
-          <p className="text-sm text-gray-600  mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             Entre com sua conta para continuar
           </p>
         </motion.div>
@@ -152,28 +152,53 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700">
               Email
             </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#fcc3d2] focus:ring-2 focus:ring-[#ffafc1] focus:outline-none text-gray-800"
-              placeholder="seu@email.com"
-            />
+            <div className="relative mt-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <FaEnvelope />
+              </div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#ffafc1] focus:ring-4 focus:ring-[#ffafc1]/20 transition-all outline-none text-gray-800 placeholder-gray-400"
+                placeholder="seu@email.com"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 ">
+            <label className="block text-sm font-medium text-gray-700">
               Senha
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full mt-1 p-2 rounded-lg border border-[#a8f3dc] focus:ring-2 focus:ring-[#8de6c8] focus:outline-none text-gray-800"
-              placeholder="••••••••"
-            />
+            <div className="relative mt-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <FaLock />
+              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#8de6c8] focus:ring-4 focus:ring-[#8de6c8]/20 transition-all outline-none text-gray-800 placeholder-gray-400"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            <div className="flex justify-end mt-1">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-gray-500 hover:text-[#ff7da2] transition-colors font-medium"
+              >
+                Esqueceu a senha?
+              </Link>
+            </div>
           </div>
 
           <motion.button
@@ -181,7 +206,7 @@ export default function LoginPage() {
             whileHover={{ scale: 1.02 }}
             type="submit"
             disabled={loading}
-            className="w-full py-2 mt-2 bg-linear-to-r from-[#ffafc1] to-[#9eeed0] hover:opacity-90 transition-all text-white font-semibold rounded-lg shadow-md disabled:opacity-70 cursor-pointer"
+            className="w-full py-3.5 mt-2 bg-linear-to-r from-[#ffafc1] to-[#9eeed0] hover:opacity-90 active:scale-[0.98] transition-all text-white font-bold text-lg rounded-xl shadow-lg shadow-[#ffafc1]/30 disabled:opacity-70 cursor-pointer"
           >
             {loading ? "Entrando..." : "Entrar"}
           </motion.button>
@@ -197,10 +222,7 @@ export default function LoginPage() {
           <motion.button
             whileHover={{ scale: 1.03 }}
             onClick={() => handleSocialLogin("google")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg border-gray-300 hover:bg-[#fef3f6]
-              cursor-pointer transition-all text-gray-700
-              hover:border-[#ffafc1]
-              `}
+            className="flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all text-gray-700 font-medium shadow-sm hover:shadow-md"
           >
             <FaGoogle className="text-[#ea4335]" /> Google
           </motion.button>
@@ -208,10 +230,7 @@ export default function LoginPage() {
           <motion.button
             whileHover={{ scale: 1.03 }}
             onClick={() => handleSocialLogin("facebook")}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 border rounded-lg border-gray-300 hover:bg-[#f2faff]
-              cursor-pointer transition-all text-gray-700
-              hover:border-[#70f1cb]
-              `}
+            className="flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all text-gray-700 font-medium shadow-sm hover:shadow-md"
           >
             <FaFacebookF className="text-[#1877f2]" /> Facebook
           </motion.button>

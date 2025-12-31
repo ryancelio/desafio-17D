@@ -35,6 +35,10 @@ import apiClient from "../../api/apiClient";
 import TelefoneStep from "./Steps/TelefoneStep";
 import LocalTreinoStep from "./Steps/LocalTreinoStep";
 import SocialProofStep from "./Steps/SocialProofStep";
+import FeaturesStep from "./Steps/FeaturesStep";
+import FeaturesDetailedStep from "./Steps/FeaturesDetailedStep";
+import PreferenciasStep from "./Steps/PreferenciaStep";
+import { toast } from "sonner";
 
 export interface StepProps {
   onboardingData: OnboardingState;
@@ -65,7 +69,7 @@ const OnboardingWizard: React.FC = () => {
   const startedAuthenticated = useRef(!!firebaseUser);
   const startedActive = useRef(userProfile?.subscription?.has_access ?? false);
 
-  const stepComponentsRef = useRef<React.FC<any>[]>([]);
+  const stepComponentsRef = useRef<React.FC<StepProps>[]>([]);
 
   if (stepComponentsRef.current.length === 0) {
     // Array base de steps
@@ -80,6 +84,7 @@ const OnboardingWizard: React.FC = () => {
       LocalTreinoStep,
       DiasTreinoStep,
       FotosProgressoStep,
+      PreferenciasStep,
     ];
 
     // Adiciona Auth se não começou logado
@@ -88,14 +93,20 @@ const OnboardingWizard: React.FC = () => {
     }
 
     // Steps de transição
-    steps.push(GerandoPlanoStep, DashboardPreviewStep, SocialProofStep);
+    steps.push(
+      GerandoPlanoStep,
+      DashboardPreviewStep,
+      SocialProofStep,
+      FeaturesStep,
+      FeaturesDetailedStep
+    );
 
     // Adiciona Pagamento se não começou ativo
     if (!startedActive.current) {
       steps.push(PlanosStep, Checkout);
     }
 
-    // stepComponentsRef.current = [MedidasStep, PesoAlvoStep];
+    // stepComponentsRef.current = [PlanosStep, Checkout];
     stepComponentsRef.current = steps;
   }
 
@@ -122,9 +133,9 @@ const OnboardingWizard: React.FC = () => {
         photoUrls = await apiClient.uploadProgressPhotos(
           onboardingData.fotosProgresso
         );
-        console.log("Fotos enviadas com sucesso:", photoUrls);
       } catch (uploadError) {
-        console.error("Erro no upload das fotos:", uploadError);
+        toast.error("Falha ao enviar fotos");
+        console.error("Erro ao enviar fotos:", uploadError);
         // Opcional: throw new Error("Falha ao enviar fotos"); se quiser bloquear o processo
       }
     }
@@ -237,8 +248,20 @@ const OnboardingWizard: React.FC = () => {
     if (CurrentStepComponent === SenhaStep) {
       const success = await handleCreateAccount();
       if (success) {
-        // Só avança se o retorno for true (conta criada + mysql sync ok)
-        setStep((s) => s + 1);
+        // Remove passos de auth já concluídos para evitar retorno
+        const authSteps = [NomeStep, EmailStep, TelefoneStep, SenhaStep];
+        const newSteps = stepComponentsRef.current.filter(
+          (comp) => !authSteps.includes(comp as any)
+        );
+        stepComponentsRef.current = newSteps;
+
+        // Ajusta o índice para o próximo passo (GerandoPlanoStep) no novo array
+        const nextIndex = newSteps.indexOf(GerandoPlanoStep);
+        if (nextIndex !== -1) {
+          setStep(nextIndex);
+        } else {
+          setStep((s) => s + 1);
+        }
       }
       return;
     }
@@ -333,6 +356,10 @@ const OnboardingWizard: React.FC = () => {
         <div className="grow w-full h-2 bg-gray-200 rounded-full overflow-hidden">
           <motion.div
             className="h-2 bg-gray-900 rounded-full"
+            role="progressbar"
+            aria-valuenow={((step + 1) / stepComponents.length) * 100}
+            aria-valuemin={0}
+            aria-valuemax={100}
             initial={false}
             animate={{
               width: `${((step + 1) / stepComponents.length) * 100}%`,

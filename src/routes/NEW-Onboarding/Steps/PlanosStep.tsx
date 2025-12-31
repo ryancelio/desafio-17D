@@ -6,6 +6,8 @@ import {
   LuLoaderCircle as LuLoader2,
   LuSparkles,
   LuTriangleAlert,
+  LuTimer,
+  LuShieldCheck,
 } from "react-icons/lu";
 import apiClient from "../../../api/apiClient"; // Ajuste o caminho conforme sua estrutura
 import type { Plan } from "../../../types/api-types";
@@ -26,6 +28,20 @@ export const PlanosStep: React.FC<StepProps> = ({
     null
   );
 
+  // --- Timer para Oferta Limitada ---
+  const [timeLeft, setTimeLeft] = useState({ m: 60, s: 0 });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.s > 0) return { ...prev, s: prev.s - 1 };
+        if (prev.m > 0) return { m: prev.m - 1, s: 59 };
+        return { m: 15, s: 0 }; // Reinicia o loop
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // --- Carregar Planos via API Client ---
   useEffect(() => {
     const fetchPlans = async () => {
@@ -35,7 +51,15 @@ export const PlanosStep: React.FC<StepProps> = ({
         const data = await apiClient.getPlans(true);
 
         if (Array.isArray(data)) {
-          setPlans(data);
+          // Ordena para que o plano destaque (Completo ou is_featured) fique em primeiro
+          const sortedData = data.sort((a, b) => {
+            const isAFeatured = a.name === "Completo" || a.is_featured;
+            const isBFeatured = b.name === "Completo" || b.is_featured;
+            if (isAFeatured && !isBFeatured) return -1;
+            if (!isAFeatured && isBFeatured) return 1;
+            return 0;
+          });
+          setPlans(sortedData);
         } else {
           throw new Error("Formato de dados inválido.");
         }
@@ -188,6 +212,9 @@ export const PlanosStep: React.FC<StepProps> = ({
             const displayPrice =
               faturamento === "monthly" ? monthlyPrice : annualPricePerMonth;
 
+            // Simula preço original (80% maior) para mostrar promoção
+            const originalPrice = displayPrice * 1.8;
+
             // Evita divisão por zero
             const economyPct =
               monthlyPrice > 0
@@ -217,10 +244,22 @@ export const PlanosStep: React.FC<StepProps> = ({
               >
                 {/* Badge de Recomendado (Lógica baseada no nome ou flag is_featured) */}
                 {(plan.name === "Completo" || plan.is_featured) && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-600 to-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm z-10">
+                  <div className="absolute top-7 right-0 bg-gradient-to-bl from-indigo-600 to-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm z-10">
                     <div className="flex items-center gap-1">
                       <LuSparkles className="w-3 h-3" /> RECOMENDADO
                     </div>
+                  </div>
+                )}
+
+                {/* Timer Promocional no Plano Destaque */}
+                {(plan.name === "Completo" || plan.is_featured) && (
+                  <div className="bg-red-50 border-b border-red-100 py-1.5 flex justify-center items-center gap-1.5 text-red-600 text-[10px] font-bold">
+                    <LuTimer className="w-3 h-3" />
+                    <span>
+                      OFERTA POR TEMPO LIMITADO:{" "}
+                      {String(timeLeft.m).padStart(2, "0")}:
+                      {String(timeLeft.s).padStart(2, "0")}
+                    </span>
                   </div>
                 )}
 
@@ -263,6 +302,9 @@ export const PlanosStep: React.FC<StepProps> = ({
                   </div>
 
                   <div className="flex flex-col justify-center items-start sm:items-end border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-5 mt-2 sm:mt-0">
+                    <span className="text-xs text-gray-400 line-through font-medium mb-0.5">
+                      De {formatCurrency(originalPrice)}
+                    </span>
                     <div className="flex items-baseline gap-1">
                       <span className="text-sm font-semibold text-gray-400">
                         R$
@@ -307,6 +349,25 @@ export const PlanosStep: React.FC<StepProps> = ({
             );
           })}
         </AnimatePresence>
+      </div>
+
+      {/* BLOCO DE GARANTIA (TRUST SIGNAL) */}
+      <div className="mx-4 mt-6 bg-white border border-green-100 rounded-2xl p-4 shadow-sm flex items-start gap-4 relative overflow-hidden">
+        <div className="absolute right-0 top-0 p-2 opacity-5">
+          <LuShieldCheck size={80} />
+        </div>
+        <div className="bg-green-100 text-green-700 p-3 rounded-full shrink-0 z-10">
+          <LuShieldCheck className="w-6 h-6" />
+        </div>
+        <div className="z-10">
+          <h4 className="font-bold text-gray-900 text-sm">
+            Garantia de 7 Dias
+          </h4>
+          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+            Teste nossa metodologia sem riscos. Se não se adaptar, devolvemos
+            100% do seu dinheiro. Sem letras miúdas.
+          </p>
+        </div>
       </div>
 
       <div className="mt-8 text-center px-6">

@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
-// import { type Recipe } from "../../api/apiClient"; // Ajuste o caminho conforme sua estrutura
-
 import {
   LuLoaderCircle as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
@@ -24,31 +22,32 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import useDebounce from "../../hooks/debouce"; // Ajuste o caminho
-import type { Recipe } from "../../types/models";
-import { manageRecipes } from "./shared/AdminApi";
+import useDebounce from "../../hooks/debouce";
+import type { Recipe, RecipeTaxonomy } from "../../types/models";
+import { manageRecipes } from "./shared/AdminApi"; // Sua API de receitas
+import { ManageRecipeTaxonomies } from "./shared/AdminApi"; // <--- NOVA IMPORTAÇÃO
 import { toast } from "sonner";
 
-// --- Tags Disponíveis ---
-const allAvailableTags = [
-  "sem_gluten",
-  "vegano",
-  "alto_proteina",
-  "baixo_carboidrato",
-  "rapido",
-  "almoco",
-  "vegetariano",
-  "contem_amendoim",
+// --- Dados de Fallback (Caso a API falhe) ---
+const fallbackTags: RecipeTaxonomy[] = [
+  { id: 1, label: "Sem Glúten", value: "sem_gluten" },
+  { id: 2, label: "Vegano", value: "vegano" },
+  { id: 3, label: "Alto em Proteína", value: "alto_proteina" },
+  { id: 4, label: "Low Carb", value: "baixo_carboidrato" },
+  { id: 5, label: "Rápido", value: "rapido" },
+  { id: 6, label: "Almoço", value: "almoco" },
+  { id: 7, label: "Vegetariano", value: "vegetariano" },
+  { id: 8, label: "Contém Amendoim", value: "contem_amendoim" },
 ];
+
 type TagState = "off" | "include" | "exclude";
 
-// --- Subcomponentes Auxiliares ---
-
+// --- Subcomponente de Botão de Tag ---
 const TagButton: React.FC<{
-  tag: string;
+  label: string;
   state: TagState;
   onClick: () => void;
-}> = ({ tag, state, onClick }) => {
+}> = ({ label, state, onClick }) => {
   const stateConfig = {
     off: {
       Icon: LuBan,
@@ -71,7 +70,7 @@ const TagButton: React.FC<{
       className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-all ${config.className}`}
     >
       <config.Icon className="h-4 w-4" />
-      <span>{tag}</span>
+      <span>{label}</span>
     </button>
   );
 };
@@ -91,7 +90,6 @@ const AdminRecipeCard: React.FC<{
     whileHover={{ y: -4 }}
     className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-md border border-gray-100 group"
   >
-    {/* Área clicável para abrir detalhes */}
     <div className="cursor-pointer" onClick={onClick}>
       <div className="relative">
         <img
@@ -132,7 +130,6 @@ const AdminRecipeCard: React.FC<{
       </div>
     </div>
 
-    {/* BARRA DE AÇÕES DO ADMIN */}
     <div className="flex border-t border-gray-200 divide-x divide-gray-200">
       <button
         onClick={(e) => {
@@ -157,7 +154,6 @@ const AdminRecipeCard: React.FC<{
 );
 
 // --- MODAL (Visualização Rápida) ---
-// Mantido igual ao original para conferência, mas simplificado aqui
 function RecipeModal({
   recipe,
   onClose,
@@ -240,69 +236,82 @@ export default function AdminRecipesPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
-  // Filtros
+  // Estados de Filtro e Tags
   const [searchText, setSearchText] = useState("");
   const [maxCalories, setMaxCalories] = useState(2000);
   const [tagFilters, setTagFilters] = useState<Record<string, TagState>>({});
   const [areFiltersVisible, setAreFiltersVisible] = useState(false);
 
+  // Tipagem vinda da nova API
+  const [availableTags, setAvailableTags] = useState<RecipeTaxonomy[]>([]);
+
   const debouncedSearchText = useDebounce(searchText, 500);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // --- BUSCAR RECEITAS ---
-  const fetchRecipes = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await manageRecipes.get();
-
-      const allRecipes: Recipe[] = data;
-
-      // 2. Filtragem Client-Side
-      // Como o endpoint admin retorna tudo, filtramos aqui para a UI responder rápido
-      const filteredRecipes = allRecipes.filter((recipe) => {
-        // A. Filtro de Texto (Título ou Descrição)
-        if (debouncedSearchText.trim()) {
-          const term = debouncedSearchText.toLowerCase();
-          const matchTitle = recipe.titulo.toLowerCase().includes(term);
-          const matchDesc = recipe.descricao_curta
-            ?.toLowerCase()
-            .includes(term);
-          if (!matchTitle && !matchDesc) return false;
-        }
-
-        // B. Filtro de Calorias
-        if (recipe.calorias_kcal && recipe.calorias_kcal > maxCalories) {
-          return false;
-        }
-
-        // C. Filtro de Tags (Include/Exclude)
-        const recipeTags = recipe.tags || [];
-        for (const tag in tagFilters) {
-          const state = tagFilters[tag];
-          if (state === "include" && !recipeTags.includes(tag)) return false;
-          if (state === "exclude" && recipeTags.includes(tag)) return false;
-        }
-
-        return true;
-      });
-
-      setRecipes(filteredRecipes);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err.message || "Falha ao carregar as receitas.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-      setIsInitialLoad(false);
-    }
-  };
-
+  // --- CARREGAR DADOS ---
   useEffect(() => {
-    fetchRecipes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchText, maxCalories, tagFilters]);
-  // --- ACTIONS ---
+    const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // 1. Buscar Receitas (API existente)
+        const recipesData = await manageRecipes.get();
+        setRecipes(recipesData);
+
+        // 2. Buscar Tags Disponíveis (NOVA API)
+        try {
+          const tagsData = await ManageRecipeTaxonomies.get();
+          if (Array.isArray(tagsData)) {
+            setAvailableTags(tagsData);
+          } else {
+            throw new Error("Formato inválido de tags");
+          }
+        } catch (tagErr) {
+          console.warn(
+            "Falha ao carregar tags via API Admin, usando fallback",
+            tagErr
+          );
+          setAvailableTags(fallbackTags);
+        }
+      } catch (err: any) {
+        setError(err.message || "Falha ao carregar dados.");
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+        setIsInitialLoad(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // --- FILTRAGEM NO CLIENTE ---
+  const filteredRecipes = recipes.filter((recipe) => {
+    // A. Texto
+    if (debouncedSearchText.trim()) {
+      const term = debouncedSearchText.toLowerCase();
+      const matchTitle = recipe.titulo.toLowerCase().includes(term);
+      const matchDesc = recipe.descricao_curta?.toLowerCase().includes(term);
+      if (!matchTitle && !matchDesc) return false;
+    }
+
+    // B. Calorias
+    if (recipe.calorias_kcal && recipe.calorias_kcal > maxCalories) {
+      return false;
+    }
+
+    // C. Tags
+    const recipeTags = recipe.tags || [];
+    for (const tagValue in tagFilters) {
+      const state = tagFilters[tagValue];
+      if (state === "include" && !recipeTags.includes(tagValue)) return false;
+      if (state === "exclude" && recipeTags.includes(tagValue)) return false;
+    }
+
+    return true;
+  });
+
+  // --- AÇÕES ---
 
   const handleEdit = (id: number) => {
     navigate(`/admin/receitas/editar/${id}`);
@@ -313,40 +322,31 @@ export default function AdminRecipesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (
-      !window.confirm(
-        "Tem certeza que deseja excluir esta receita? Esta ação não pode ser desfeita."
-      )
-    ) {
-      return;
-    }
+    if (!window.confirm("Tem certeza que deseja excluir esta receita?")) return;
 
-    // Otimistic Update (Remove da UI antes de confirmar)
     const previousRecipes = [...recipes];
     setRecipes((prev) => prev.filter((r) => r.recipe_id !== id));
 
     try {
       const res = await manageRecipes.delete(id);
-
       if (!res.success) throw new Error("Erro ao deletar");
-
-      toast.success("Receita excluída com sucesso.");
+      toast.success("Receita excluída.");
     } catch {
-      toast.error("Erro ao excluir receita. Tente novamente.");
-      setRecipes(previousRecipes); // Reverte em caso de erro
+      toast.error("Erro ao excluir. Tente novamente.");
+      setRecipes(previousRecipes);
     }
   };
 
-  const handleTagClick = (tag: string) => {
+  const handleTagClick = (tagValue: string) => {
     setTagFilters((prev) => {
-      const currentState = prev[tag] || "off";
+      const currentState = prev[tagValue] || "off";
       const nextState: TagState =
         currentState === "off"
           ? "include"
           : currentState === "include"
           ? "exclude"
           : "off";
-      return { ...prev, [tag]: nextState };
+      return { ...prev, [tagValue]: nextState };
     });
   };
 
@@ -372,7 +372,7 @@ export default function AdminRecipesPage() {
                 Gerenciar Receitas
               </h1>
               <p className="text-sm text-gray-500">
-                {recipes.length} receitas cadastradas
+                {filteredRecipes.length} receitas encontradas
               </p>
             </div>
           </div>
@@ -442,15 +442,16 @@ export default function AdminRecipesPage() {
                 </div>
                 <div>
                   <span className="block text-sm font-medium text-gray-700 mb-2">
-                    Tags
+                    Tags (Carregadas do Banco)
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {allAvailableTags.map((tag) => (
+                    {/* Renderização das tags carregadas da API */}
+                    {availableTags.map((tag) => (
                       <TagButton
-                        key={tag}
-                        tag={tag}
-                        state={tagFilters[tag] || "off"}
-                        onClick={() => handleTagClick(tag)}
+                        key={tag.id}
+                        label={tag.label}
+                        state={tagFilters[tag.value] || "off"}
+                        onClick={() => handleTagClick(tag.value)}
                       />
                     ))}
                   </div>
@@ -468,7 +469,7 @@ export default function AdminRecipesPage() {
             <LuAlertTriangle className="mx-auto h-8 w-8 mb-2" />
             {error}
           </div>
-        ) : recipes.length === 0 ? (
+        ) : filteredRecipes.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <LuSoup className="mx-auto h-12 w-12 opacity-20 mb-3" />
             <p>Nenhuma receita encontrada com estes filtros.</p>
@@ -476,7 +477,7 @@ export default function AdminRecipesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <AnimatePresence>
-              {recipes.map((recipe) => (
+              {filteredRecipes.map((recipe) => (
                 <AdminRecipeCard
                   key={recipe.recipe_id}
                   recipe={recipe}

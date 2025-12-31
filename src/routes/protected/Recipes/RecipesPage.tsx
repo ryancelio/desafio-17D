@@ -1,23 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import apiClient, {
-  isApiError,
-  // type Recipe,
-  // type RecipeFilters,
-} from "../../../api/apiClient";
+import apiClient, { isApiError } from "../../../api/apiClient";
 import {
   LuLoaderCircle as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
   LuTimer,
   LuFlame,
   LuX,
-  LuBeef, // Ícone para Proteína
-  LuLeafyGreen, // Ícone para Carboidratos
-  LuDroplet, // Ícone para Gordura
+  LuBeef,
+  LuLeafyGreen,
+  LuDroplet,
   LuSoup,
-  LuCirclePlus as LuPlusCircle, // Para incluir tags
-  LuCircleMinus as LuMinusCircle, // Para excluir tags
+  LuCirclePlus as LuPlusCircle,
+  LuCircleMinus as LuMinusCircle,
   LuBan,
-  LuSearch, //
+  LuSearch,
   LuSlidersHorizontal,
 } from "react-icons/lu";
 import {
@@ -30,39 +26,47 @@ import useDebounce from "../../../hooks/debouce";
 import type { Recipe } from "../../../types/models";
 import type { RecipeFilters } from "../../../types/api-types";
 
-// --- 2. Tags Disponíveis (Hardcoded por simplicidade) ---
-// Em um app maior, isso poderia vir de uma API
-const allAvailableTags = [
-  "sem_gluten",
-  "vegano",
-  "alto_proteina",
-  "baixo_carboidrato",
-  "rapido",
-  "almoco",
-  "vegetariano",
-  "contem_amendoim", // <-- Exemplo de exclusão
+// --- Definição da Interface para as Tags ---
+interface RecipeTag {
+  id: number;
+  label: string;
+  value: string;
+}
+
+// --- Dados de Fallback (Caso a API falhe) ---
+const fallbackTags: RecipeTag[] = [
+  { id: 1, label: "Sem Glúten", value: "sem_gluten" },
+  { id: 2, label: "Vegano", value: "vegano" },
+  { id: 3, label: "Alto em Proteína", value: "alto_proteina" },
+  { id: 4, label: "Low Carb", value: "baixo_carboidrato" },
+  { id: 5, label: "Rápido", value: "rapido" },
+  { id: 6, label: "Almoço", value: "almoco" },
+  { id: 7, label: "Vegetariano", value: "vegetariano" },
+  { id: 8, label: "Contém Amendoim", value: "contem_amendoim" },
 ];
+
 type TagState = "off" | "include" | "exclude";
 
+// --- Componente do Botão de Tag Atualizado ---
 const TagButton: React.FC<{
-  tag: string;
+  label: string; // Texto visível (ex: "Sem Glúten")
   state: TagState;
   onClick: () => void;
-}> = ({ tag, state, onClick }) => {
+}> = ({ label, state, onClick }) => {
   const stateConfig = {
     off: {
       Icon: LuBan,
-      label: "Ignorar",
+      configLabel: "Ignorar",
       className: "bg-gray-200 text-gray-600 hover:bg-gray-300",
     },
     include: {
       Icon: LuPlusCircle,
-      label: "Incluir",
+      configLabel: "Incluir",
       className: "bg-green-100 text-green-700 hover:bg-green-200",
     },
     exclude: {
       Icon: LuMinusCircle,
-      label: "Excluir",
+      configLabel: "Excluir",
       className: "bg-red-100 text-red-700 hover:bg-red-200",
     },
   };
@@ -71,11 +75,11 @@ const TagButton: React.FC<{
   return (
     <button
       onClick={onClick}
-      title={`${config.label} ${tag}`}
+      title={`${config.configLabel} ${label}`}
       className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-all ${config.className}`}
     >
       <config.Icon className="h-4 w-4" />
-      <span>{tag}</span>
+      <span>{label}</span>
     </button>
   );
 };
@@ -87,7 +91,7 @@ const RecipeCard: React.FC<{ recipe: Recipe; onClick: () => void }> = ({
   onClick,
 }) => (
   <motion.div
-    layoutId={`recipe-card-${recipe.recipe_id}`} // Para animação (opcional)
+    layoutId={`recipe-card-${recipe.recipe_id}`}
     whileHover={{ scale: 1.03 }}
     transition={{ type: "spring", stiffness: 300, damping: 20 }}
     onClick={onClick}
@@ -101,7 +105,6 @@ const RecipeCard: React.FC<{ recipe: Recipe; onClick: () => void }> = ({
       alt={recipe.titulo}
       className="aspect-video w-full object-cover"
       onError={(e) => {
-        // Fallback em caso de imagem quebrada
         e.currentTarget.src =
           "https://placehold.co/600x400/FCC3D2/333?text=Receita";
       }}
@@ -139,9 +142,9 @@ function RecipeModal({
 
   const imageHeight = useTransform(
     scrollY,
-    [0, 200], // Mapeia os primeiros 200px de scroll
-    ["min(300px, 40vh)", "100px"], // De (300px ou 40% da tela) para 100px
-    { clamp: true } // Impede que o valor saia desse intervalo
+    [0, 200],
+    ["min(300px, 40vh)", "100px"],
+    { clamp: true }
   );
 
   return (
@@ -150,16 +153,16 @@ function RecipeModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose} // Fecha ao clicar no fundo
+      onClick={onClose}
     >
       <motion.div
-        layoutId={`recipe-card-${recipe.recipe_id}`} // Para animação (opcional)
+        layoutId={`recipe-card-${recipe.recipe_id}`}
         initial={{ scale: 0.9, opacity: 0.5 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()} // Impede de fechar ao clicar no modal
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -168,11 +171,7 @@ function RecipeModal({
           <LuX className="h-5 w-5" />
         </button>
 
-        {/* Imagem do Header */}
-        <motion.div
-          style={{ height: imageHeight }} // Aplica a altura animada
-          className="w-full shrink-0" // Impede que o 'flex-col' comprima a imagem
-        >
+        <motion.div style={{ height: imageHeight }} className="w-full shrink-0">
           <img
             src={
               recipe.url_imagem ||
@@ -187,12 +186,10 @@ function RecipeModal({
           />
         </motion.div>
 
-        {/* Área de Scroll */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-6">
           <h1 className="text-3xl font-bold text-gray-900">{recipe.titulo}</h1>
           <p className="mt-2 text-gray-600">{recipe.descricao_curta}</p>
 
-          {/* Stats */}
           <div className="my-6 flex items-center gap-6 border-y border-gray-200 py-4">
             <div className="flex items-center gap-2 text-gray-700">
               <LuTimer className="h-5 w-5 text-[#A8F3DC]" />
@@ -208,7 +205,6 @@ function RecipeModal({
             </div>
           </div>
 
-          {/* Macros (se existirem) */}
           {recipe.macros && (
             <div className="mb-6 grid grid-cols-3 gap-4 text-center">
               <div className="rounded-lg bg-blue-100 p-3">
@@ -235,7 +231,6 @@ function RecipeModal({
             </div>
           )}
 
-          {/* Ingredientes */}
           {recipe.ingredientes && recipe.ingredientes.length > 0 && (
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
@@ -249,7 +244,6 @@ function RecipeModal({
             </div>
           )}
 
-          {/* Preparo */}
           {recipe.preparo && recipe.preparo.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">
@@ -276,9 +270,12 @@ export default function RecipesPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
+  // Estado alterado para armazenar objetos RecipeTag completos
+  const [availableTags, setAvailableTags] = useState<RecipeTag[]>([]);
+
   // --- 4a. Estados de Filtro ---
   const [searchText, setSearchText] = useState("");
-  const [maxCalories, setMaxCalories] = useState(1000); // Max inicial
+  const [maxCalories, setMaxCalories] = useState(1000);
   const [tagFilters, setTagFilters] = useState<Record<string, TagState>>({});
 
   const [areFiltersVisible, setAreFiltersVisible] = useState(false);
@@ -286,8 +283,8 @@ export default function RecipesPage() {
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Efeito de busca de receitas
   useEffect(() => {
-    // Transforma o estado 'tagFilters' em 'include/exclude' para a API
     const filters: RecipeFilters = {
       includeTags: [],
       excludeTags: [],
@@ -299,16 +296,17 @@ export default function RecipesPage() {
     if (maxCalories < 1000) {
       filters.maxCalories = maxCalories;
     }
-    for (const tag in tagFilters) {
-      if (tagFilters[tag] === "include") {
-        filters.includeTags?.push(tag);
-      } else if (tagFilters[tag] === "exclude") {
-        filters.excludeTags?.push(tag);
+    // Mapeia o objeto tagFilters para arrays de include/exclude baseados na CHAVE (value)
+    for (const tagValue in tagFilters) {
+      if (tagFilters[tagValue] === "include") {
+        filters.includeTags?.push(tagValue);
+      } else if (tagFilters[tagValue] === "exclude") {
+        filters.excludeTags?.push(tagValue);
       }
     }
 
     const fetchRecipes = async () => {
-      setIsLoading(true); // Sempre ativa o loading ao buscar
+      setIsLoading(true);
       setError(null);
       try {
         const recipesData = await apiClient.getRecipes(filters);
@@ -322,26 +320,53 @@ export default function RecipesPage() {
         console.error(err);
       } finally {
         setIsLoading(false);
-        setIsInitialLoad(false); // <-- DESATIVA a carga inicial
+        setIsInitialLoad(false);
       }
     };
 
     fetchRecipes();
   }, [debouncedSearchText, maxCalories, tagFilters]);
 
+  // Efeito de busca de tags (Executa apenas uma vez)
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        // Substitua 'YOUR_API_URL' pela URL base real da sua API
+        const response = await fetch(
+          "http://localhost:8000/api/get_recipe_taxonomies.php"
+        );
+        if (!response.ok) throw new Error("Falha ao buscar tags");
+
+        const data: RecipeTag[] = await response.json();
+
+        // Verifica se os dados vieram no formato esperado
+        if (Array.isArray(data)) {
+          setAvailableTags(data);
+        } else {
+          throw new Error("Formato de tags inválido");
+        }
+      } catch (error) {
+        console.error("Erro ao buscar tags, usando fallback:", error);
+        setAvailableTags(fallbackTags);
+      }
+    };
+
+    fetchTags();
+  }, []);
+
   // Handler para o clique nas tags
-  const handleTagClick = (tag: string) => {
+  // Recebe o VALUE da tag (ex: 'sem_gluten')
+  const handleTagClick = (tagValue: string) => {
     setTagFilters((prev) => {
-      const currentState = prev[tag] || "off";
+      const currentState = prev[tagValue] || "off";
       let nextState: TagState;
       if (currentState === "off") nextState = "include";
       else if (currentState === "include") nextState = "exclude";
-      else nextState = "off"; // exclude -> off
-      return { ...prev, [tag]: nextState };
+      else nextState = "off";
+      return { ...prev, [tagValue]: nextState };
     });
   };
 
-  // Mostra o spinner de tela cheia APENAS na carga inicial
   if (isInitialLoad && isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -362,7 +387,7 @@ export default function RecipesPage() {
 
   return (
     <div className="p-4">
-      {/* 2. NOVO HEADER DE FILTRO (STICKY) */}
+      {/* Header Sticky */}
       <div
         className="sticky -top-4 md:-top-8 z-10 
                    bg-white/90 backdrop-blur-md shadow-md border-b border-gray-200/60 
@@ -402,7 +427,7 @@ export default function RecipesPage() {
               </button>
             </div>
 
-            {/* Painel de Filtros Avançados (Colapsável) */}
+            {/* Painel de Filtros Avançados */}
             <AnimatePresence>
               {areFiltersVisible && (
                 <motion.div
@@ -438,18 +463,18 @@ export default function RecipesPage() {
                       />
                     </div>
 
-                    {/* Filtro de Tags */}
+                    {/* Filtro de Tags (Labels Amigáveis) */}
                     <div className="space-y-2">
                       <label className="font-medium text-gray-700 text-sm">
                         Filtros (Incluir / Excluir)
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        {allAvailableTags.map((tag) => (
+                        {availableTags.map((tag) => (
                           <TagButton
-                            key={tag}
-                            tag={tag}
-                            state={tagFilters[tag] || "off"}
-                            onClick={() => handleTagClick(tag)}
+                            key={tag.id}
+                            label={tag.label} // Usa o Label bonito (ex: Sem Glúten)
+                            state={tagFilters[tag.value] || "off"} // Estado baseado no Value (ex: sem_gluten)
+                            onClick={() => handleTagClick(tag.value)} // Clica enviando o Value
                           />
                         ))}
                       </div>
@@ -462,7 +487,6 @@ export default function RecipesPage() {
         </div>
       </div>
 
-      {/* 4. CONTEÚDO DA PÁGINA (com padding-top) */}
       <div className="pt-6">
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -487,7 +511,6 @@ export default function RecipesPage() {
         )}
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {selectedRecipe && (
           <RecipeModal

@@ -11,20 +11,12 @@ import {
   LuClock,
   LuFlame,
   LuCheck,
+  LuX,
 } from "react-icons/lu";
 import { manageRecipes } from "./shared/AdminApi";
-
-// Tags disponíveis (mesmas da listagem para consistência)
-const AVAILABLE_TAGS = [
-  "sem_gluten",
-  "vegano",
-  "alto_proteina",
-  "baixo_carboidrato",
-  "rapido",
-  "almoco",
-  "vegetariano",
-  "contem_amendoim",
-];
+import { ManageRecipeTaxonomies } from "./shared/AdminApi"; // Ajuste o caminho se necessário
+import { toast } from "sonner";
+import type { RecipeTaxonomy } from "../../types/models";
 
 // Estado inicial do formulário
 const initialFormState = {
@@ -38,8 +30,8 @@ const initialFormState = {
     carboidratos_g: 0,
     gorduras_g: 0,
   },
-  ingredientes: [""], // Começa com um campo vazio
-  preparo: [""], // Começa com um campo vazio
+  ingredientes: [""],
+  preparo: [""],
   tags: [] as string[],
 };
 
@@ -53,12 +45,27 @@ export default function AdminRecipeEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- CARREGAR DADOS (SE FOR EDIÇÃO) ---
+  // Estados para gerenciamento de Tags
+  const [availableTags, setAvailableTags] = useState<RecipeTaxonomy[]>([]);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
+
+  // --- CARREGAR DADOS ---
   useEffect(() => {
-    if (isEditMode) {
-      const loadRecipe = async () => {
-        setIsLoading(true);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Carregar Tags do Banco
         try {
+          const tagsData = await ManageRecipeTaxonomies.get();
+          setAvailableTags(tagsData);
+        } catch (tagErr) {
+          console.error("Erro ao carregar tags", tagErr);
+          toast.error("Não foi possível carregar as tags disponíveis.");
+        }
+
+        // 2. Carregar Receita (se for edição)
+        if (isEditMode) {
           const recipe = await manageRecipes.getById(Number(id));
           if (recipe) {
             setForm({
@@ -85,19 +92,18 @@ export default function AdminRecipeEditor() {
           } else {
             setError("Receita não encontrada.");
           }
-        } catch (err) {
-          console.error(err);
-          setError("Erro ao carregar dados da receita.");
-        } finally {
-          setIsLoading(false);
         }
-      };
-      loadRecipe();
-    }
+      } catch (err) {
+        console.error(err);
+        setError("Erro ao carregar dados.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
   }, [id, isEditMode]);
 
   // --- HANDLERS GENÉRICOS ---
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -110,9 +116,8 @@ export default function AdminRecipeEditor() {
     setForm((prev) => ({ ...prev, [name]: parseInt(value) || 0 }));
   };
 
-  // --- HANDLERS DE MACROS ---
   const handleMacroChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target; // nome ex: "proteinas_g"
+    const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
       macros: {
@@ -122,7 +127,7 @@ export default function AdminRecipeEditor() {
     }));
   };
 
-  // --- HANDLERS DE LISTAS DINÂMICAS (Ingredientes/Preparo) ---
+  // --- HANDLERS DE LISTAS ---
   const handleListChange = (
     field: "ingredientes" | "preparo",
     index: number,
@@ -145,28 +150,92 @@ export default function AdminRecipeEditor() {
     }
   };
 
-  // --- HANDLER DE TAGS ---
-  const toggleTag = (tag: string) => {
+  // --- GERENCIAMENTO DE TAGS ---
+
+  // Alternar tag na receita atual
+  const toggleTag = (tagValue: string) => {
     setForm((prev) => {
-      const tags = prev.tags.includes(tag)
-        ? prev.tags.filter((t) => t !== tag)
-        : [...prev.tags, tag];
+      const tags = prev.tags.includes(tagValue)
+        ? prev.tags.filter((t) => t !== tagValue)
+        : [...prev.tags, tagValue];
       return { ...prev, tags };
     });
   };
 
-  // --- SUBMIT ---
+  // Criar nova tag no banco de dados
+  const handleCreateTag = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTagInput.trim()) return;
+
+    setIsCreatingTag(true);
+    try {
+      // Gera um value "slugified" (ex: "Sem Glúten" -> "sem_gluten")
+      const label = newTagInput.trim();
+      const value = label
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^a-z0-9]/g, "_"); // Troca especiais por _
+
+      const res = await ManageRecipeTaxonomies.post({ label, value });
+
+      if (res.success && res.id) {
+        const newTag: RecipeTaxonomy = { id: res.id, label, value };
+        setAvailableTags((prev) => [...prev, newTag]);
+        setNewTagInput("");
+        // Já seleciona a tag criada para a receita
+        toggleTag(value);
+        toast.success("Tag criada e adicionada!");
+      } else {
+        throw new Error(res.message || "Erro ao criar");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar tag.");
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
+
+  // Excluir tag do banco de dados
+  const handleDeleteTagGlobal = async (id: number, label: string) => {
+    if (
+      !window.confirm(
+        `ATENÇÃO: Isso excluirá a tag "${label}" de TODAS as receitas do sistema. Deseja continuar?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await ManageRecipeTaxonomies.delete(id);
+      if (res.success) {
+        setAvailableTags((prev) => prev.filter((t) => t.id !== id));
+        // Remove da receita atual se estiver selecionada
+        const deletedTagValue = availableTags.find((t) => t.id === id)?.value;
+        if (deletedTagValue) {
+          setForm((prev) => ({
+            ...prev,
+            tags: prev.tags.filter((t) => t !== deletedTagValue),
+          }));
+        }
+        toast.success("Tag excluída do sistema.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao excluir tag.");
+    }
+  };
+
+  // --- SUBMIT RECEITA ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
 
-    // Limpeza básica: remove itens vazios das listas
     const payload = {
       ...form,
       ingredientes: form.ingredientes.filter((i) => i.trim() !== ""),
       preparo: form.preparo.filter((i) => i.trim() !== ""),
-      // Se for edição, anexa o ID
       ...(isEditMode && { recipe_id: Number(id) }),
     };
 
@@ -175,15 +244,16 @@ export default function AdminRecipeEditor() {
         ? await manageRecipes.put(payload)
         : await manageRecipes.post(payload);
 
-      if (!data.success || (data as any).error) {
+      if (!data.success) {
         throw new Error((data as any).error || "Erro ao salvar receita.");
       }
 
-      alert("Receita salva com sucesso!");
-      navigate("/admin/receitas"); // Volta para listagem
+      toast.success(`Receita ${isEditMode ? "atualizada" : "criada"}!`);
+      navigate("/admin/receitas");
     } catch (err: any) {
       console.error(err);
       setError(err.message);
+      window.scrollTo(0, 0);
     } finally {
       setIsSaving(false);
     }
@@ -200,10 +270,10 @@ export default function AdminRecipeEditor() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* HEADER */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/admin/receitas")}
             className="p-2 hover:bg-gray-100 rounded-full text-gray-600"
           >
             <LuArrowLeft className="h-6 w-6" />
@@ -237,7 +307,7 @@ export default function AdminRecipeEditor() {
           onSubmit={handleSubmit}
           className="grid grid-cols-1 lg:grid-cols-3 gap-8"
         >
-          {/* COLUNA ESQUERDA: Informações Principais */}
+          {/* COLUNA ESQUERDA */}
           <div className="lg:col-span-2 space-y-6">
             {/* Bloco 1: Básico */}
             <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
@@ -382,14 +452,13 @@ export default function AdminRecipeEditor() {
             </section>
           </div>
 
-          {/* COLUNA DIREITA: Detalhes, Macros e Tags */}
+          {/* COLUNA DIREITA */}
           <div className="space-y-6">
-            {/* Stats */}
+            {/* Detalhes */}
             <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
               <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
                 Detalhes
               </h2>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
@@ -423,7 +492,6 @@ export default function AdminRecipeEditor() {
               <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
                 Macronutrientes
               </h2>
-
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium text-blue-700">
@@ -467,31 +535,73 @@ export default function AdminRecipeEditor() {
               </div>
             </section>
 
-            {/* Tags */}
+            {/* Tags (Gerenciador Completo) */}
             <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800 border-b pb-4 mb-4">
                 Tags
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {AVAILABLE_TAGS.map((tag) => {
-                  const isSelected = form.tags.includes(tag);
+
+              {/* Lista de Tags */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {availableTags.map((tag) => {
+                  const isSelected = form.tags.includes(tag.value);
                   return (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all flex items-center gap-1 ${
+                    <div
+                      key={tag.id}
+                      className={`group relative flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                         isSelected
                           ? "bg-indigo-100 text-indigo-700 border-indigo-200"
                           : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
                       }`}
                     >
-                      {isSelected && <LuCheck className="w-3 h-3" />}
-                      {tag}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleTag(tag.value)}
+                        className="flex items-center gap-1"
+                      >
+                        {isSelected && <LuCheck className="w-3 h-3" />}
+                        {tag.label}
+                      </button>
+
+                      {/* Botão de Excluir Tag (Global) - Aparece no Hover */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDeleteTagGlobal(tag.id!, tag.label)
+                        }
+                        className="ml-2 p-0.5 rounded-full hover:bg-red-200 text-red-400 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Excluir tag do sistema"
+                      >
+                        <LuX className="w-3 h-3" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+
+              {/* Criar Nova Tag */}
+              <form
+                onSubmit={handleCreateTag}
+                className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100"
+              >
+                <input
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  placeholder="Nova tag (ex: Low Carb)"
+                  className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isCreatingTag || !newTagInput.trim()}
+                  className="p-2 bg-gray-900 text-white rounded-lg hover:bg-black disabled:opacity-50"
+                >
+                  {isCreatingTag ? (
+                    <LuLoaderCircle className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LuPlus className="w-4 h-4" />
+                  )}
+                </button>
+              </form>
             </section>
           </div>
         </form>

@@ -447,7 +447,7 @@ export default function ProfilePage() {
   const localTreinoInfo = formatLocalTreino(userProfile.profile.local_treino);
 
   return (
-    <div className="pb-24 pt-2 md:pt-0 px-3 space-y-5">
+    <div className="min-h-dvh pb-24 pt-2 md:pt-0 px-3 space-y-5">
       {/* HEADER DE PERFIL */}
       <div className="relative rounded-3xl bg-white p-6 shadow-sm border border-gray-100 overflow-visible">
         <div className="flex flex-col md:flex-row items-center gap-6">

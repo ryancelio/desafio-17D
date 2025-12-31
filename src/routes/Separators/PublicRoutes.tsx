@@ -15,6 +15,7 @@ import UserCreationRoute from "../UserCreationRoute";
 import AboutPage from "../landing/AboutPage";
 import PlansPage from "../landing/PlansPage";
 import TermsPage from "../landing/TermsPage";
+import ForgotPasswordPage from "../ForgotPasswordPage";
 
 export default function PublicRoutes() {
   return (
@@ -37,6 +38,14 @@ export default function PublicRoutes() {
         element={
           <UserCreationRoute>
             <LoginPage2 />
+          </UserCreationRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <UserCreationRoute>
+            <ForgotPasswordPage />
           </UserCreationRoute>
         }
       />
