@@ -129,7 +129,7 @@ export default function RequestWorkoutPage() {
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-indigo-100 rounded-full text-indigo-600">
+            <div className="p-3 bg-pasPink/20 rounded-full text-gray-900">
               <Dumbbell className="w-6 h-6" />
             </div>
             <div>
@@ -158,7 +158,7 @@ export default function RequestWorkoutPage() {
                 {!loadingCredits && (
                   <span
                     className={`text-xs font-bold ${
-                      maxAllowed === 0 ? "text-red-500" : "text-indigo-600"
+                      maxAllowed === 0 ? "text-red-500" : "text-gray-800"
                     }`}
                   >
                     Disponíveis: {maxAllowed}
@@ -195,7 +195,7 @@ export default function RequestWorkoutPage() {
                           {...register("qtd_fichas", { required: true })}
                           className="peer sr-only"
                         />
-                        <div className="w-12 h-12 flex items-center justify-center rounded-xl border-2 border-gray-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 font-bold transition-all hover:bg-gray-50">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-xl border-2 border-gray-200 peer-checked:border-pasPink peer-checked:bg-pasPink/20 peer-checked:text-gray-900 font-bold transition-all hover:bg-gray-50">
                           {num}
                         </div>
                         {isDisabled && (
@@ -229,15 +229,15 @@ export default function RequestWorkoutPage() {
               <textarea
                 {...register("observacoes")}
                 rows={4}
-                placeholder="Ex: Estou com dores no joelho, prefiro treinos curtos de 30min..."
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="Ex: Dores no joelho, prefiro treinos curtos..."
+                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pasPink outline-none"
               ></textarea>
             </div>
 
             <button
               type="submit"
               disabled={status === "loading" || maxAllowed === 0}
-              className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full bg-pasPink text-gray-900 font-bold py-3 rounded-xl hover:bg-pasPink/90 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {status === "loading" ? (
                 <Loader2 className="animate-spin" />

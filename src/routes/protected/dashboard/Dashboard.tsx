@@ -47,10 +47,10 @@ const formatDate = () => {
 
 // --- Subcomponentes ---
 const cardColorVariants: Record<string, { bg: string; text: string }> = {
-  blue: { bg: "bg-blue-100", text: "text-blue-600" },
-  green: { bg: "bg-green-100", text: "text-green-600" },
-  pink: { bg: "bg-pink-100", text: "text-pink-600" },
-  purple: { bg: "bg-purple-100", text: "text-purple-600" },
+  blue: { bg: "bg-pasPink", text: "text-gray-800" },
+  green: { bg: "bg-pasGreen", text: "text-gray-800" },
+  pink: { bg: "bg-pasPink", text: "text-gray-800" },
+  purple: { bg: "bg-pasGreen", text: "text-gray-800" },
 };
 
 const QuickActionCard: React.FC<{
@@ -87,7 +87,7 @@ const NextWorkoutCard: React.FC<{
     </div>
 
     <div className="relative z-10">
-      <div className="flex items-center gap-2 mb-2 text-indigo-300">
+      <div className="flex items-center gap-2 mb-2 text-pasGreen">
         <Dumbbell className="w-4 h-4" />
         <span className="text-xs font-bold uppercase tracking-wider">
           Próximo Treino
@@ -102,7 +102,7 @@ const NextWorkoutCard: React.FC<{
       <button
         onClick={onClick}
         disabled={isLoading}
-        className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 shadow-indigo-500/20 shadow-lg"
+        className="flex items-center gap-2 bg-pasPink hover:bg-pasPink/90 text-gray-900 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 shadow-pasPink/20 shadow-lg"
       >
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -260,7 +260,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-300" />
+        <Loader2 className="w-10 h-10 animate-spin text-pasPink" />
       </div>
     );
   }
@@ -281,8 +281,7 @@ export default function Dashboard() {
             <Calendar className="w-4 h-4" /> {formatDate()}
           </p>
           <h1 className="text-3xl font-bold text-gray-900 mt-1">
-            {getGreeting()},{" "}
-            <span className="text-indigo-600">{firstName}</span>.
+            {getGreeting()}, <span className="text-pasPink">{firstName}</span>.
           </h1>
           <p className="text-gray-500 mt-1">
             Vamos focar no objetivo:{" "}
@@ -306,7 +305,7 @@ export default function Dashboard() {
           />
 
           {/* Componente de Gráfico Separado */}
-          <div className="h-80 w-full">
+          <div className="h-96 w-full">
             <WeightEvolutionChart
               weightHistory={weightHistory}
               pesoAlvo={pesoAlvo}
@@ -361,7 +360,7 @@ export default function Dashboard() {
               <h3 className="font-bold text-gray-800">Balança</h3>
               <button
                 onClick={() => setEditPesoAlvoModalOpen(true)}
-                className="text-gray-400 hover:text-indigo-600"
+                className="text-gray-400 hover:text-pasPink"
               >
                 <LuPencil className="w-4 h-4" />
               </button>
@@ -377,9 +376,9 @@ export default function Dashboard() {
 
             <div className="flex items-center justify-between py-2 border-b border-gray-50">
               <span className="text-sm text-gray-500">Meta</span>
-              <span className="text-xl font-bold text-indigo-600">
+              <span className="text-xl font-bold text-pasPink">
                 {pesoAlvo?.toFixed(1)}{" "}
-                <span className="text-xs font-normal text-indigo-300">kg</span>
+                <span className="text-xs font-normal text-gray-400">kg</span>
               </span>
             </div>
 

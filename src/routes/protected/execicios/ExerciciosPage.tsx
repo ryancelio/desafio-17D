@@ -75,12 +75,12 @@ const ExerciseCard: React.FC<{ exercise: Exercise; onClick: () => void }> = ({
       {/* Badge de Categoria */}
       <div className="absolute top-2 right-2">
         {exercise.categoria === "calistenia" && (
-          <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full border border-green-200 shadow-sm flex items-center gap-1">
+          <span className="bg-pasGreen text-gray-800 text-[10px] font-bold px-2 py-1 rounded-full border border-pasGreen/50 shadow-sm flex items-center gap-1">
             <LuHome className="w-3 h-3" /> Casa
           </span>
         )}
         {exercise.categoria === "academia" && (
-          <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-full border border-indigo-200 shadow-sm flex items-center gap-1">
+          <span className="bg-pasPink text-gray-800 text-[10px] font-bold px-2 py-1 rounded-full border border-pasPink/50 shadow-sm flex items-center gap-1">
             <LuBuilding2 className="w-3 h-3" /> Gym
           </span>
         )}
@@ -179,9 +179,9 @@ function ExerciseModal({
               <span
                 className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide border ${
                   exercise.categoria === "calistenia"
-                    ? "bg-green-50 text-green-700 border-green-200"
+                    ? "bg-pasGreen text-gray-800 border-pasGreen"
                     : exercise.categoria === "academia"
-                    ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                    ? "bg-pasPink text-gray-800 border-pasPink"
                     : "bg-gray-50 text-gray-600 border-gray-200"
                 }`}
               >
@@ -346,7 +346,7 @@ export default function ExercisesPage() {
         <aside className="w-full md:w-1/3 lg:w-1/4 md:sticky md:top-6 z-10 shrink-0">
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100 space-y-5">
             <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-md shadow-indigo-200">
+              <div className="bg-pasPink p-2 rounded-xl text-gray-900 shadow-md shadow-pasPink/20">
                 <LuDumbbell className="h-6 w-6" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -365,7 +365,7 @@ export default function ExercisesPage() {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`relative flex flex-col items-center justify-center py-2 rounded-lg text-xs font-bold transition-all ${
                       isActive
-                        ? "text-indigo-700"
+                        ? "text-gray-900"
                         : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
@@ -397,7 +397,7 @@ export default function ExercisesPage() {
                   placeholder="Buscar exercício..."
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-pasPink/50 focus:border-pasPink transition-all"
                 />
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
@@ -406,7 +406,7 @@ export default function ExercisesPage() {
                 onClick={() => setShowFilters(!showFilters)}
                 className={`w-full p-3 rounded-xl border transition-all flex items-center justify-between ${
                   showFilters || hasActiveFilters
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-700"
+                    ? "bg-pasPink/20 border-pasPink text-gray-900"
                     : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
                 }`}
               >
@@ -417,7 +417,7 @@ export default function ExercisesPage() {
                   </span>
                 </div>
                 {hasActiveFilters && (
-                  <span className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-pasPink text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {selectedMuscles.length + selectedTags.length}
                   </span>
                 )}
@@ -488,7 +488,7 @@ export default function ExercisesPage() {
                                 onClick={() => handleTagToggle(item.value)}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize border ${
                                   isActive
-                                    ? "bg-indigo-100 text-indigo-700 border-indigo-200"
+                                    ? "bg-pasPink text-gray-900 border-pasPink"
                                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
                                 }`}
                               >
@@ -539,7 +539,7 @@ export default function ExercisesPage() {
                   setSelectedTags([]);
                   setSelectedCategory("all");
                 }}
-                className="mt-4 text-sm font-bold text-indigo-600 hover:underline"
+                className="mt-4 text-sm font-bold text-gray-900 hover:text-pasPink hover:underline"
               >
                 Limpar todos os filtros
               </button>

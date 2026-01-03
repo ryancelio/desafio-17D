@@ -273,6 +273,7 @@ export default function AdminRecipesPage() {
           );
           setAvailableTags(fallbackTags);
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.message || "Falha ao carregar dados.");
         console.error(err);

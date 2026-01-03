@@ -15,7 +15,6 @@ import {
   Bell as LuBell,
   X as LuX,
   Utensils as LuUtensils,
-  Zap as LuZap,
   Plus as LuPlus,
 } from "lucide-react";
 
@@ -156,7 +155,7 @@ export default function AppLayout() {
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-        <LuLoader2 className="h-12 w-12 animate-spin text-[#FCC3D2]" />
+        <LuLoader2 className="h-12 w-12 animate-spin text-pasPink" />
       </div>
     );
   }
@@ -166,8 +165,8 @@ export default function AppLayout() {
       {/* MOBILE TOP BAR (Header Fixo) */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-16 bg-white/90 backdrop-blur-md border-b border-gray-200/60 flex items-center justify-between px-4 transition-all">
         <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 p-1.5 rounded-lg text-white shadow-sm">
-            <LuZap className="w-4 h-4 fill-current" />
+          <div className="p-1.5 rounded-lg grid items-center">
+            <img src="/icon_small.png" alt="Logo" className="w-9 h-9" />
           </div>
           <h1 className="text-lg font-bold text-gray-900 tracking-tight">
             {pageTitle}
@@ -233,14 +232,14 @@ export default function AppLayout() {
             <div
               key={n.id}
               className={`p-4 border-b border-gray-100 cursor-pointer ${
-                !n.is_read ? "bg-indigo-50/40" : "bg-white"
+                !n.is_read ? "bg-pasPink/20" : "bg-white"
               }`}
               onClick={() => !n.is_read && markAsRead(n.id)}
             >
               <div className="flex gap-3">
                 <div
                   className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
-                    !n.is_read ? "bg-indigo-500 shadow-sm" : "bg-transparent"
+                    !n.is_read ? "bg-pasPink shadow-sm" : "bg-transparent"
                   }`}
                 />
                 <div className="flex-1">
@@ -269,8 +268,8 @@ export default function AppLayout() {
         <nav className="flex flex-col gap-2 flex-1">
           <div className="mb-8 pl-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="bg-indigo-600 p-1.5 rounded-lg text-white">
-                <LuZap className="w-5 h-5 fill-current" />
+              <div className="p-1.5 rounded-lg">
+                <img src="/icon_big.png" alt="Logo" className="w-10 h-10" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 tracking-tight">
                 PowerSlim
@@ -292,7 +291,7 @@ export default function AppLayout() {
               to={item.href}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-gray-700 transition-all hover:bg-gray-200 hover:text-gray-900 ${
-                  isActive ? "bg-[#FCC3D2]/50 text-gray-900 font-medium" : ""
+                  isActive ? "bg-pasPink/50 text-gray-900 font-medium" : ""
                 }`
               }
             >
@@ -370,7 +369,7 @@ export default function AppLayout() {
                   <Link
                     to="/treinos"
                     onClick={() => setFabOpen(false)}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 shadow-lg text-white hover:bg-indigo-700 active:scale-95"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-pasPink shadow-lg text-gray-900 hover:bg-pasPink/90 active:scale-95"
                   >
                     <FaPersonRunning className="h-5 w-5" />
                   </Link>
@@ -390,7 +389,7 @@ export default function AppLayout() {
                   <Link
                     to="/dietas"
                     onClick={() => setFabOpen(false)}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 shadow-lg text-white hover:bg-emerald-600 active:scale-95"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-pasGreen shadow-lg text-gray-900 hover:bg-pasGreen/90 active:scale-95"
                   >
                     <LuUtensils className="h-5 w-5" />
                   </Link>
@@ -402,8 +401,8 @@ export default function AppLayout() {
           {/* Botão Principal (Gatilho) */}
           <button
             onClick={() => setFabOpen(!fabOpen)}
-            className={`flex h-14 w-14 items-center justify-center rounded-full shadow-xl text-white transition-all active:scale-90 z-50 ${
-              fabOpen ? "bg-gray-800 rotate-90" : "bg-gray-900"
+            className={`flex h-14 w-14 items-center justify-center rounded-full shadow-xl text-gray-900 transition-all active:scale-90 z-50 ${
+              fabOpen ? "bg-pasPink rotate-90" : "bg-pasPink"
             }`}
           >
             {fabOpen ? (
@@ -430,7 +429,7 @@ export default function AppLayout() {
               className={({ isActive }) =>
                 `flex flex-col items-center justify-center w-full py-2 ${
                   isActive
-                    ? "text-indigo-600"
+                    ? "text-gray-700"
                     : "text-gray-400 hover:text-gray-600"
                 }`
               }
@@ -439,7 +438,7 @@ export default function AppLayout() {
                 <>
                   <div
                     className={`p-1 rounded-xl transition-all duration-200 ${
-                      isActive ? "bg-indigo-50" : "bg-transparent"
+                      isActive ? "bg-pasPink" : "bg-transparent"
                     }`}
                   >
                     <Icon

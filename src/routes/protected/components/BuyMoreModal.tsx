@@ -25,22 +25,22 @@ const BuyMoreModal = ({
   const theme =
     type === "diet"
       ? {
-          iconBg: "bg-emerald-100",
-          iconColor: "text-emerald-600",
-          btnBorder: "border-emerald-100 hover:border-emerald-500",
-          btnBg: "bg-emerald-50",
-          textTitle: "text-emerald-900",
-          textSub: "text-emerald-600",
-          badgeIcon: "text-emerald-600",
+          iconBg: "bg-pasGreen/50",
+          iconColor: "text-gray-800",
+          btnBorder: "border-pasGreen/50 hover:border-pasGreen",
+          btnBg: "bg-pasGreen/20",
+          textTitle: "text-gray-900",
+          textSub: "text-gray-700",
+          badgeIcon: "text-gray-800",
         }
       : {
-          iconBg: "bg-indigo-100",
-          iconColor: "text-indigo-600",
-          btnBorder: "border-indigo-100 hover:border-indigo-500",
-          btnBg: "bg-indigo-50",
-          textTitle: "text-indigo-900",
-          textSub: "text-indigo-600",
-          badgeIcon: "text-indigo-600",
+          iconBg: "bg-pasPink/50",
+          iconColor: "text-gray-800",
+          btnBorder: "border-pasPink/50 hover:border-pasPink",
+          btnBg: "bg-pasPink/20",
+          textTitle: "text-gray-900",
+          textSub: "text-gray-700",
+          badgeIcon: "text-gray-800",
         };
 
   return (

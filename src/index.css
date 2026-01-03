@@ -1,9 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;700&display=swap");
 @import "tailwindcss";
 
+@theme {
+  --color-pasPink: #fcc3d2;
+  --color-pasGreen: #c2fced;
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: var(--color-pasGreen);
+  color: #2e2e2e;
 }

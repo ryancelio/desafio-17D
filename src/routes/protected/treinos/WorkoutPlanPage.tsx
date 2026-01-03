@@ -55,18 +55,22 @@ const PlanCard: React.FC<{ plan: WorkoutPlan }> = ({ plan }) => {
         layout
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ y: -4 }}
-        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-indigo-100 transition-all relative"
+        whileHover={{
+          y: -4,
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }}
+        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-pasPink/50 transition-all relative"
       >
         <div className="p-5">
           <div className="flex justify-between items-start mb-3">
             {plan.criada_por === "ADMIN" ? (
-              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-gray-800 bg-pasPink border border-pasPink/50 px-2 py-1 rounded-full">
                 <Crown className="h-3 w-3" />
                 Pro
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-gray-800 bg-pasGreen border border-pasGreen/50 px-2 py-1 rounded-full">
                 <User className="h-3 w-3" />
                 Pessoal
               </span>
@@ -76,7 +80,7 @@ const PlanCard: React.FC<{ plan: WorkoutPlan }> = ({ plan }) => {
             </span>
           </div>
 
-          <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+          <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-pasPink transition-colors">
             {plan.nome}
           </h3>
         </div>
@@ -88,7 +92,7 @@ const PlanCard: React.FC<{ plan: WorkoutPlan }> = ({ plan }) => {
                 key={ex.plan_exercise_id}
                 className="flex items-center gap-2 text-sm text-gray-600"
               >
-                <div className="h-1.5 w-1.5 rounded-full bg-indigo-400 shrink-0"></div>
+                <div className="h-1.5 w-1.5 rounded-full bg-pasPink shrink-0"></div>
                 <span className="truncate">{ex.nome_exercicio}</span>
               </li>
             ))}
@@ -128,17 +132,17 @@ const RequestCard: React.FC<{ req: WorkoutRequest }> = ({ req }) => {
     }
   > = {
     pendente: {
-      color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      color: "bg-gray-100 text-gray-600 border-gray-200",
       icon: Clock,
       label: "Aguardando",
     },
     em_analise: {
-      color: "bg-blue-50 text-blue-700 border-blue-200",
+      color: "bg-pasPink/20 text-gray-800 border-pasPink/30",
       icon: Loader2,
       label: "Em Análise",
     },
     concluido: {
-      color: "bg-green-50 text-green-700 border-green-200",
+      color: "bg-pasGreen text-gray-800 border-pasGreen/50",
       icon: CheckCircle2,
       label: "Concluído",
     },
@@ -262,7 +266,7 @@ export default function WorkoutPlansPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-300" />
+        <Loader2 className="h-10 w-10 animate-spin text-pasPink" />
       </div>
     );
   }
@@ -274,7 +278,7 @@ export default function WorkoutPlansPage() {
         <p className="text-gray-600">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="text-indigo-600 font-bold hover:underline"
+          className="text-pasPink font-bold hover:underline"
         >
           Tentar novamente
         </button>
@@ -290,7 +294,7 @@ export default function WorkoutPlansPage() {
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="h-6 w-6 text-indigo-600" />
+                <FileText className="h-6 w-6 text-pasPink" />
                 Treinos
               </h1>
               <p className="text-sm text-gray-500">
@@ -302,14 +306,14 @@ export default function WorkoutPlansPage() {
             {credits && hasAccess && (
               <div className="flex items-center gap-2">
                 {/* Bloco de info de créditos */}
-                <div className="flex flex-col items-end bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
-                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                <div className="flex flex-col items-end bg-pasPink/20 px-3 py-1.5 rounded-lg border border-pasPink/30">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                     Créditos
                   </span>
                   <span
                     className={`text-sm font-bold flex items-center gap-1 ${
                       credits.details.total_remaining > 0
-                        ? "text-indigo-700"
+                        ? "text-gray-900"
                         : "text-red-500"
                     }`}
                   >
@@ -320,8 +324,8 @@ export default function WorkoutPlansPage() {
 
                 {/* BOTÃO NOVO: Comprar Mais */}
                 <button
-                  onClick={() => navigate("/loja/creditos?type=workout")} // Ajuste para sua rota criada no router
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center"
+                  onClick={() => navigate("/loja/creditos?type=workout")}
+                  className="bg-pasPink hover:bg-pasPink/90 text-gray-900 p-2.5 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center"
                   title="Comprar mais créditos"
                 >
                   <PlusCircle className="w-5 h-5" />
@@ -368,7 +372,7 @@ export default function WorkoutPlansPage() {
               onClick={() => setActiveTab("plans")}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all ${
                 activeTab === "plans"
-                  ? "bg-white text-indigo-600 shadow-sm"
+                  ? "bg-white text-pasPink shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -379,7 +383,7 @@ export default function WorkoutPlansPage() {
               onClick={() => setActiveTab("requests")}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all ${
                 activeTab === "requests"
-                  ? "bg-white text-indigo-600 shadow-sm"
+                  ? "bg-white text-pasPink shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -428,7 +432,7 @@ export default function WorkoutPlansPage() {
                   </p>
                   <button
                     onClick={handleRequestClick}
-                    className="text-indigo-600 text-sm font-bold mt-2 hover:underline"
+                    className="text-pasPink text-sm font-bold mt-2 hover:underline"
                   >
                     Fazer primeiro pedido
                   </button>

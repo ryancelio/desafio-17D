@@ -33,13 +33,13 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
             className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
           >
             {/* Header com Gradiente */}
-            <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-6 text-center text-white">
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20 shadow-inner backdrop-blur-md">
-                <Lock className="h-8 w-8 text-white" />
+            <div className="bg-linear-to-r from-pasPink to-pasGreen p-6 text-center text-gray-900">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/30 shadow-inner backdrop-blur-md">
+                <Lock className="h-8 w-8 text-gray-900" />
               </div>
               <h3 className="text-2xl font-bold">Funcionalidade Premium</h3>
-              <p className="text-indigo-100 text-sm mt-1">
-                Disponível nos planos Treino e Completo
+              <p className="text-gray-800/80 text-sm mt-1">
+                Disponível nos planos com acesso a IA
               </p>
             </div>
 
@@ -52,15 +52,15 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
               <ul className="mb-8 space-y-3">
                 <li className="flex items-center gap-3 text-sm text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-pasGreen shrink-0" />
                   <span>Treinos montados por especialistas reais</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-pasGreen shrink-0" />
                   <span>Ajustes baseados no seu objetivo</span>
                 </li>
                 <li className="flex items-center gap-3 text-sm text-gray-700">
-                  <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-pasGreen shrink-0" />
                   <span>Suporte prioritário</span>
                 </li>
               </ul>
@@ -68,7 +68,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <div className="flex flex-col gap-3">
                 <button
                   onClick={onUpgrade}
-                  className="w-full rounded-xl bg-indigo-600 py-3.5 font-bold text-white shadow-lg transition-transform hover:bg-indigo-700 active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full rounded-xl bg-pasPink py-3.5 font-bold text-gray-900 shadow-lg transition-transform hover:bg-pasPink/90 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   <Sparkles /> Fazer Upgrade Agora
                 </button>
@@ -84,7 +84,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
             {/* Botão Fechar X */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/10 hover:bg-black/20 rounded-full p-1 transition-colors"
+              className="absolute top-4 right-4 text-gray-800/70 hover:text-gray-900 bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>

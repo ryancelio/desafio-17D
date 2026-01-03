@@ -163,7 +163,9 @@ export default function AdminRecipeEditor() {
   };
 
   // Criar nova tag no banco de dados
-  const handleCreateTag = async (e: React.FormEvent) => {
+  const handleCreateTag = async (
+    e: React.FormEvent | React.MouseEvent | React.KeyboardEvent
+  ) => {
     e.preventDefault();
     if (!newTagInput.trim()) return;
 
@@ -580,18 +582,22 @@ export default function AdminRecipeEditor() {
               </div>
 
               {/* Criar Nova Tag */}
-              <form
-                onSubmit={handleCreateTag}
-                className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100"
-              >
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
                 <input
                   value={newTagInput}
                   onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateTag(e);
+                    }
+                  }}
                   placeholder="Nova tag (ex: Low Carb)"
                   className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleCreateTag}
                   disabled={isCreatingTag || !newTagInput.trim()}
                   className="p-2 bg-gray-900 text-white rounded-lg hover:bg-black disabled:opacity-50"
                 >
@@ -601,7 +607,7 @@ export default function AdminRecipeEditor() {
                     <LuPlus className="w-4 h-4" />
                   )}
                 </button>
-              </form>
+              </div>
             </section>
           </div>
         </form>

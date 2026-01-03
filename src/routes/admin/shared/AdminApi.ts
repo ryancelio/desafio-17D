@@ -184,7 +184,7 @@ export const ManageRecipeTaxonomies = {
   // GET: Lista todas as tags
   get: async (): Promise<RecipeTaxonomy[]> => {
     const response = await axiosInstance.get<RecipeTaxonomy[]>(
-      "/admin/recipe_taxonomies_manage.php"
+      "/recipe_taxonomies_manage.php"
     );
     return response.data;
   },
@@ -192,7 +192,7 @@ export const ManageRecipeTaxonomies = {
   // POST: Cria uma nova tag
   post: async (data: RecipeTaxonomy): Promise<AdminResponse> => {
     const response = await axiosInstance.post<AdminResponse>(
-      "/admin/recipe_taxonomies_manage.php",
+      "/recipe_taxonomies_manage.php",
       data
     );
     return response.data;
@@ -203,7 +203,7 @@ export const ManageRecipeTaxonomies = {
   // Baseado no PHP anterior, ele espera um POST com ID.
   update: async (data: RecipeTaxonomy): Promise<AdminResponse> => {
     const response = await axiosInstance.post<AdminResponse>(
-      "/admin/recipe_taxonomies_manage.php",
+      "/recipe_taxonomies_manage.php",
       data
     );
     return response.data;
@@ -212,7 +212,7 @@ export const ManageRecipeTaxonomies = {
   // DELETE: Remove uma tag
   delete: async (id: number): Promise<AdminResponse> => {
     const response = await axiosInstance.delete<AdminResponse>(
-      "/admin/recipe_taxonomies_manage.php",
+      "/recipe_taxonomies_manage.php",
       {
         params: { id },
       }

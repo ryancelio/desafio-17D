@@ -57,17 +57,20 @@ const TagButton: React.FC<{
     off: {
       Icon: LuBan,
       configLabel: "Ignorar",
-      className: "bg-gray-200 text-gray-600 hover:bg-gray-300",
+      className:
+        "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700",
     },
     include: {
       Icon: LuPlusCircle,
       configLabel: "Incluir",
-      className: "bg-green-100 text-green-700 hover:bg-green-200",
+      className:
+        "bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 hover:border-green-300",
     },
     exclude: {
       Icon: LuMinusCircle,
       configLabel: "Excluir",
-      className: "bg-red-100 text-red-700 hover:bg-red-200",
+      className:
+        "bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300",
     },
   };
   const config = stateConfig[state];
@@ -76,7 +79,7 @@ const TagButton: React.FC<{
     <button
       onClick={onClick}
       title={`${config.configLabel} ${label}`}
-      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium transition-all ${config.className}`}
+      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all shadow-sm active:scale-95 ${config.className}`}
     >
       <config.Icon className="h-4 w-4" />
       <span>{label}</span>
@@ -437,46 +440,71 @@ export default function RecipesPage() {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <div className="space-y-4 pt-2">
-                    {/* Filtro de Calorias */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-sm">
-                        <label
-                          htmlFor="calories"
-                          className="font-medium text-gray-700"
-                        >
-                          Calorias Máximas
-                        </label>
-                        <span className="font-bold text-gray-800">
-                          {maxCalories} kcal
-                        </span>
-                      </div>
-                      <input
-                        id="calories"
-                        type="range"
-                        min={100}
-                        max={1000}
-                        step={50}
-                        value={maxCalories}
-                        onChange={(e) => setMaxCalories(e.target.valueAsNumber)}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#FCC3D2]"
-                      />
-                    </div>
-
-                    {/* Filtro de Tags (Labels Amigáveis) */}
-                    <div className="space-y-2">
-                      <label className="font-medium text-gray-700 text-sm">
-                        Filtros (Incluir / Excluir)
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {availableTags.map((tag) => (
-                          <TagButton
-                            key={tag.id}
-                            label={tag.label} // Usa o Label bonito (ex: Sem Glúten)
-                            state={tagFilters[tag.value] || "off"} // Estado baseado no Value (ex: sem_gluten)
-                            onClick={() => handleTagClick(tag.value)} // Clica enviando o Value
+                  <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-5 shadow-inner">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+                      {/* Filtro de Calorias */}
+                      <div className="md:col-span-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <label
+                            htmlFor="calories"
+                            className="text-sm font-bold text-gray-700 flex items-center gap-2"
+                          >
+                            <LuFlame className="text-orange-500 h-4 w-4" />
+                            Calorias Máximas
+                          </label>
+                          <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                            {maxCalories} kcal
+                          </span>
+                        </div>
+                        <div className="relative pt-1">
+                          <input
+                            id="calories"
+                            type="range"
+                            min={100}
+                            max={1000}
+                            step={50}
+                            value={maxCalories}
+                            onChange={(e) =>
+                              setMaxCalories(e.target.valueAsNumber)
+                            }
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-600 transition-all"
                           />
-                        ))}
+                          <div className="flex justify-between text-[10px] text-gray-400 font-medium mt-1 px-0.5">
+                            <span>100</span>
+                            <span>500</span>
+                            <span>1000</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Separador Mobile */}
+                      <div className="h-px bg-gray-200 md:hidden" />
+
+                      {/* Filtro de Tags */}
+                      <div className="md:col-span-8 space-y-3">
+                        <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                          <LuSlidersHorizontal className="text-gray-500 h-4 w-4" />
+                          Preferências Alimentares
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {availableTags.map((tag) => (
+                            <TagButton
+                              key={tag.id}
+                              label={tag.label}
+                              state={tagFilters[tag.value] || "off"}
+                              onClick={() => handleTagClick(tag.value)}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-gray-400 flex items-center gap-1 pt-1">
+                          <LuPlusCircle className="h-3 w-3 text-green-600" />{" "}
+                          Incluir
+                          <span className="mx-1 opacity-30">|</span>
+                          <LuMinusCircle className="h-3 w-3 text-red-600" />{" "}
+                          Excluir
+                          <span className="mx-1 opacity-30">|</span>
+                          <LuBan className="h-3 w-3 text-gray-400" /> Ignorar
+                        </p>
                       </div>
                     </div>
                   </div>

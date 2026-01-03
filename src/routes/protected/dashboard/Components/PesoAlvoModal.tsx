@@ -88,13 +88,13 @@ const PesoAlvoModal: React.FC<{
                 step="0.1"
                 value={novoPesoAlvo}
                 onChange={(e) => setNovoPesoAlvo(e.target.value)}
-                className="mt-1 w-full p-3 bg-gray-100 rounded-lg border-2 border-transparent focus:border-indigo-500 focus:bg-white focus:ring-0 transition"
+                className="mt-1 w-full p-3 bg-gray-100 rounded-lg border-2 border-transparent focus:border-pasPink focus:bg-white focus:ring-0 transition"
               />
             </motion.div>
             <motion.div variants={itemVariants} className="pt-2">
               <button
                 type="submit"
-                className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300"
+                className="w-full bg-pasPink text-gray-900 font-bold py-3.5 rounded-lg hover:bg-pasPink/90 focus:outline-none focus:ring-4 focus:ring-pasPink/30 transition-all duration-300"
               >
                 Salvar Meta
               </button>

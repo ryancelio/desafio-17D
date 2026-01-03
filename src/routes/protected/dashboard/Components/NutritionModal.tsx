@@ -169,7 +169,7 @@ const AddNutritionModal: React.FC<AddNutritionModalProps> = ({
                       onChange={(e) =>
                         handleInputChange("agua_l", e.target.value, activeTab)
                       }
-                      className="mt-1 w-full p-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+                      className="mt-1 w-full p-3 bg-white border border-gray-200 rounded-xl focus:border-pasPink focus:ring-1 focus:ring-pasPink outline-none transition"
                     />
                   </div>
                 </div>
@@ -337,7 +337,7 @@ const AddNutritionModal: React.FC<AddNutritionModalProps> = ({
                 className={`w-full font-bold py-4 rounded-xl text-white transition-all shadow-lg active:scale-95 ${
                   activeTab === "add"
                     ? "bg-gray-900 hover:bg-black"
-                    : "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-pasPink text-gray-900 hover:bg-pasPink/90"
                 }`}
               >
                 {activeTab === "add" ? "Adicionar ao Dia" : "Salvar Alterações"}
