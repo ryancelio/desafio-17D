@@ -55,7 +55,7 @@ const getPageTitle = (pathname: string) => {
 // ---------------- Component ----------------
 
 export default function AppLayout() {
-  const { userProfile, loading } = useAuth();
+  const { userProfile, loading, firebaseUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -63,6 +63,7 @@ export default function AppLayout() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   // FAB State (Speed Dial)
   const [fabOpen, setFabOpen] = useState(false);
@@ -79,6 +80,10 @@ export default function AppLayout() {
   useEffect(() => {
     setFabOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [firebaseUser]);
 
   const handleLogout = async () => {
     try {
@@ -305,8 +310,19 @@ export default function AppLayout() {
             className="flex grow cursor-pointer hover:bg-gray-50 p-2 rounded-xl items-center transition-colors group"
             onClick={() => navigate("/perfil")}
           >
-            <div className="bg-gray-100 p-2 rounded-full text-gray-500 group-hover:bg-white group-hover:shadow-sm">
-              <LuUser className="w-5 h-5" />
+            <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200 group-hover:border-gray-300 transition-colors relative flex items-center justify-center">
+              {firebaseUser && !avatarError ? (
+                <img
+                  src={`/api/get_avatar.php?uid=${firebaseUser.uid}`}
+                  alt={userProfile?.nome}
+                  className="h-full w-full object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div className="text-gray-500">
+                  <LuUser className="w-5 h-5" />
+                </div>
+              )}
             </div>
             <div className="px-3 overflow-hidden">
               <p className="text-sm font-bold text-gray-700 truncate">
@@ -441,10 +457,32 @@ export default function AppLayout() {
                       isActive ? "bg-pasPink" : "bg-transparent"
                     }`}
                   >
-                    <Icon
-                      className={`h-6 w-6 ${isActive ? "fill-current" : ""}`}
-                      strokeWidth={isActive ? 2.5 : 2}
-                    />
+                    {item.name === "Perfil" && firebaseUser ? (
+                      <>
+                        <img
+                          src={`/api/get_avatar.php?uid=${firebaseUser.uid}`}
+                          alt="Perfil"
+                          className="h-6 w-6 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
+                          }}
+                        />
+                        <Icon
+                          className={`h-6 w-6 hidden ${
+                            isActive ? "fill-current" : ""
+                          }`}
+                          strokeWidth={isActive ? 2.5 : 2}
+                        />
+                      </>
+                    ) : (
+                      <Icon
+                        className={`h-6 w-6 ${isActive ? "fill-current" : ""}`}
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
+                    )}
                   </div>
                   <span className="text-[10px] font-medium mt-0.5">
                     {item.name}

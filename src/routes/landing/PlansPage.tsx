@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  LuZap,
+  // LuZap,
   LuCheck,
   LuX,
   LuCircleHelp,
@@ -12,6 +12,7 @@ import {
   LuLoaderCircle,
 } from "react-icons/lu";
 import apiClient from "../../api/apiClient";
+import LandingLayout from "./LandingLayout";
 import type { Plan } from "../../types/api-types";
 
 // --- COMPONENTES AUXILIARES ---
@@ -28,7 +29,7 @@ const FaqItem: React.FC<{ question: string; answer: string }> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full py-4 text-left focus:outline-none group"
       >
-        <span className="font-semibold text-gray-700 group-hover:text-indigo-600 transition-colors">
+        <span className="font-semibold text-gray-700 group-hover:text-pasPink transition-colors">
           {question}
         </span>
         <span
@@ -79,35 +80,7 @@ export default function PlansPage() {
   //   const activePlans = plans.filter((p) => p.is_active);
 
   return (
-    <div className="min-h-screen bg-white font-sans">
-      {/* NAVBAR */}
-      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-              <LuZap className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">
-              Power Slim
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition-colors hidden sm:block"
-            >
-              Já sou aluno
-            </Link>
-            <button
-              onClick={() => navigate("/onboard")}
-              className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-black transition-all"
-            >
-              Começar Agora
-            </button>
-          </div>
-        </div>
-      </nav>
-
+    <LandingLayout>
       {/* HERO & PRICING */}
       <section className="pt-32 pb-20 px-6 bg-gray-50">
         <div className="max-w-7xl mx-auto">
@@ -136,7 +109,7 @@ export default function PlansPage() {
                     billingCycle === "monthly" ? "annual" : "monthly"
                   )
                 }
-                className="relative w-16 h-8 bg-indigo-600 rounded-full p-1 transition-colors hover:bg-indigo-700 focus:outline-none"
+                className="relative w-16 h-8 bg-pasPink rounded-full p-1 transition-colors hover:bg-pasPink/90 focus:outline-none"
               >
                 <motion.div
                   layout
@@ -153,7 +126,7 @@ export default function PlansPage() {
                 }`}
               >
                 Anual
-                <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide">
+                <span className="bg-pasGreen text-gray-800 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wide">
                   Economize ~17%
                 </span>
               </span>
@@ -163,7 +136,7 @@ export default function PlansPage() {
           {/* Grid de Planos */}
           {loading ? (
             <div className="flex justify-center py-20">
-              <LuLoaderCircle className="w-10 h-10 animate-spin text-indigo-600" />
+              <LuLoaderCircle className="w-10 h-10 animate-spin text-pasPink" />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
@@ -184,12 +157,12 @@ export default function PlansPage() {
                     transition={{ delay: idx * 0.1 }}
                     className={`relative p-8 rounded-3xl border-2 flex flex-col h-full transition-transform hover:-translate-y-1 duration-300 ${
                       isFeatured
-                        ? "bg-white border-indigo-600 shadow-2xl z-10 scale-105 md:scale-110"
+                        ? "bg-white border-pasPink shadow-2xl z-10 scale-105 md:scale-110"
                         : "bg-white border-gray-100 shadow-xl"
                     }`}
                   >
                     {isFeatured && billingCycle === "annual" && (
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-pasPink text-gray-900 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
                         Mais Escolhido
                       </div>
                     )}
@@ -235,7 +208,7 @@ export default function PlansPage() {
                             <div
                               className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
                                 isFeatured
-                                  ? "bg-indigo-100 text-indigo-600"
+                                  ? "bg-pasPink/20 text-gray-900"
                                   : "bg-gray-100 text-gray-500"
                               }`}
                             >
@@ -253,7 +226,7 @@ export default function PlansPage() {
                       onClick={() => navigate("/onboard")}
                       className={`w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
                         isFeatured
-                          ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+                          ? "bg-pasPink text-gray-900 hover:bg-pasPink/90 shadow-lg shadow-pasPink/20"
                           : "bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200"
                       }`}
                     >
@@ -274,7 +247,7 @@ export default function PlansPage() {
       <section className="py-16 bg-white px-6">
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
           <div className="p-6">
-            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 bg-pasGreen text-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <LuShieldCheck className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-gray-900 mb-2">Pagamento Seguro</h3>
@@ -284,7 +257,7 @@ export default function PlansPage() {
             </p>
           </div>
           <div className="p-6">
-            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 bg-pasPink/20 text-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <LuStar className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-gray-900 mb-2">Qualidade Premium</h3>
@@ -293,7 +266,7 @@ export default function PlansPage() {
             </p>
           </div>
           <div className="p-6">
-            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 bg-pasPink/20 text-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <LuCircleHelp className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-gray-900 mb-2">Suporte Dedicado</h3>
@@ -339,22 +312,6 @@ export default function PlansPage() {
           </div>
         </div>
       </section>
-
-      {/* FOOTER */}
-      <footer className="bg-gray-900 text-gray-400 py-12 px-6 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="bg-gray-800 p-2 rounded-lg text-white">
-              <LuZap className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold text-white">Power Slim</span>
-          </div>
-          <p className="text-xs opacity-50">
-            &copy; {new Date().getFullYear()} Power Slim. Todos os direitos
-            reservados.
-          </p>
-        </div>
-      </footer>
-    </div>
+    </LandingLayout>
   );
 }

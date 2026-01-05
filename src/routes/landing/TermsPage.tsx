@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  LuZap,
+  // LuZap,
   LuFileText,
   LuShieldAlert,
   LuCreditCard,
-  LuUndo2, // Voltar
+  // LuUndo2, // Voltar
   LuChevronRight,
   LuScale,
 } from "react-icons/lu";
+import LandingLayout from "./LandingLayout";
 
 // --- DADOS DOS TERMOS ---
 const termsSections = [
@@ -202,7 +202,6 @@ const termsSections = [
 ];
 
 export default function TermsPage() {
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState(termsSections[0].id);
 
   const scrollToSection = (id: string) => {
@@ -214,30 +213,10 @@ export default function TermsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-600">
-      {/* HEADER */}
-      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-              <LuZap className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">
-              Power Slim
-            </span>
-          </Link>
-          <button
-            onClick={() => navigate(-1)}
-            className="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition-colors flex items-center gap-1"
-          >
-            <LuUndo2 className="w-4 h-4" /> Voltar
-          </button>
-        </div>
-      </nav>
-
+    <LandingLayout>
       <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center justify-center p-3 bg-indigo-50 text-indigo-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center p-3 bg-pasPink/20 text-gray-900 rounded-2xl mb-4">
             <LuFileText className="w-8 h-8" />
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4">
@@ -266,7 +245,7 @@ export default function TermsPage() {
                       onClick={() => scrollToSection(section.id)}
                       className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group ${
                         activeSection === section.id
-                          ? "bg-indigo-600 text-white shadow-md"
+                          ? "bg-pasPink text-gray-900 shadow-md"
                           : "text-gray-600 hover:bg-gray-200"
                       }`}
                     >
@@ -296,7 +275,7 @@ export default function TermsPage() {
               >
                 <div className="flex items-center gap-3 mb-4">
                   {section.icon && (
-                    <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <div className="p-2 bg-pasPink/20 text-gray-900 rounded-lg">
                       <section.icon className="w-5 h-5" />
                     </div>
                   )}
@@ -304,7 +283,7 @@ export default function TermsPage() {
                     {section.title}
                   </h2>
                 </div>
-                <div className="prose prose-indigo text-gray-600 max-w-none leading-relaxed">
+                <div className="prose prose-gray text-gray-600 max-w-none leading-relaxed">
                   {section.content}
                 </div>
                 <div className="h-px w-full bg-gray-100 mt-12" />
@@ -320,7 +299,7 @@ export default function TermsPage() {
               </p>
               <a
                 href="mailto:suporte@powerslim.pro" // Substitua pelo email real
-                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors"
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-gray-900 bg-pasPink hover:bg-pasPink/90 transition-colors"
               >
                 Entrar em Contato
               </a>
@@ -328,24 +307,6 @@ export default function TermsPage() {
           </div>
         </div>
       </div>
-
-      {/* FOOTER SIMPLIFICADO */}
-      <footer className="bg-gray-900 text-gray-400 py-8 px-6 border-t border-gray-800 mt-20">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="text-sm">
-            &copy; {new Date().getFullYear()} Power Slim. Todos os direitos
-            reservados.
-          </span>
-          <div className="flex gap-6 text-sm">
-            <Link to="/" className="hover:text-white">
-              Home
-            </Link>
-            <Link to="/login" className="hover:text-white">
-              Login
-            </Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </LandingLayout>
   );
 }
