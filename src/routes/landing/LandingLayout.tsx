@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router";
 import { FaWhatsapp } from "react-icons/fa";
 
-const WHATSAPP_NUMBER = "5511999999999";
+const WHATSAPP_NUMBER = "5531991778410";
 const WHATSAPP_MESSAGE = "Olá! Gostaria de tirar dúvidas sobre o Power Slim.";
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
   WHATSAPP_MESSAGE

@@ -33,10 +33,17 @@ import type {
   DailyConsumptionResponse,
   ExerciseMetadataResponse,
   Plan,
+  UploadProgressPhotosResponse,
+  UploadProfilePhotoResponse,
+  RequestWorkoutResponse,
+  CreateSubscriptionRedirectResponse,
+  ProcessPaymentResponse,
+  CheckPaymentStatusResponse,
+  GetCreditPackagesResponse,
+  RequestForm,
 } from "../types/api-types";
 
 import type { OnboardingState } from "../types/onboarding.schema";
-import type { RequestForm } from "../routes/protected/treinos/RequestWorkoutPage";
 
 // --- 2. CONFIGURAÇÃO DO AXIOS ---
 
@@ -78,8 +85,10 @@ async function syncUser(data: SyncUserRequest): Promise<ApiResponse> {
   return response.data;
 }
 
-async function syncUserPreferences(preferences: UserPreference[]) {
-  const res = await axiosInstance.post("/sync_preferences.php", {
+async function syncUserPreferences(
+  preferences: UserPreference[]
+): Promise<ApiResponse> {
+  const res = await axiosInstance.post<ApiResponse>("/sync_preferences.php", {
     preferences,
   });
   return res.data;
@@ -94,8 +103,8 @@ async function getPlans(isPublic = false): Promise<Plan[]> {
   }
 }
 
-async function cancelSubscription() {
-  const res = await axiosInstance.post("/cancel_subscription.php");
+async function cancelSubscription(): Promise<ApiResponse> {
+  const res = await axiosInstance.post<ApiResponse>("/cancel_subscription.php");
   return res.data;
 }
 
@@ -230,8 +239,10 @@ async function markNotificationRead(id: number): Promise<ApiResponse> {
   return res.data;
 }
 
-async function checkPaymentStatus(paymentId: number | string) {
-  const response = await axiosInstance.get(
+async function checkPaymentStatus(
+  paymentId: number | string
+): Promise<CheckPaymentStatusResponse> {
+  const response = await axiosInstance.get<CheckPaymentStatusResponse>(
     `/check_payment_status.php?id=${paymentId}`
   );
   return response.data; // Retorna { status: 'approved' | 'pending' | ... }
@@ -370,58 +381,68 @@ async function getMeasurementDetails(
 async function createSubscriptionRedirect(
   plan_id: string,
   cycle: "monthly" | "yearly"
-): Promise<{ error?: string; init_point?: string }> {
-  const response = await axiosInstance.post<{
-    success: boolean;
-    redirect_url?: string;
-    error?: string;
-  }>("/create_subscription_redirect.php", { plan_id, cycle });
+): Promise<CreateSubscriptionRedirectResponse> {
+  const response = await axiosInstance.post<CreateSubscriptionRedirectResponse>(
+    "/create_subscription_redirect.php",
+    { plan_id, cycle }
+  );
 
   return response.data;
 }
 async function processPayment(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any,
   db_plan_id: string,
   cycle: string
-): Promise<{
-  error?: string;
-  status?: string;
-  id?: string | number;
-  message?: string;
-}> {
-  const response = await axiosInstance.post("/process_payment.php", {
-    ...payload,
-    db_plan_id,
-    cycle,
-  });
+): Promise<ProcessPaymentResponse> {
+  const response = await axiosInstance.post<ProcessPaymentResponse>(
+    "/process_payment.php",
+    {
+      ...payload,
+      db_plan_id,
+      cycle,
+    }
+  );
   return response.data;
 }
 
-async function confirmStatus(preaprovalId: string, paymentId: string) {
-  const response = await axiosInstance.post("/check_payment_status.php", {
-    preapproval_id: preaprovalId,
-    payment_id: paymentId,
-  });
+async function confirmStatus(
+  preaprovalId: string,
+  paymentId: string
+): Promise<CheckPaymentStatusResponse> {
+  const response = await axiosInstance.post<CheckPaymentStatusResponse>(
+    "/check_payment_status.php",
+    {
+      preapproval_id: preaprovalId,
+      payment_id: paymentId,
+    }
+  );
   return response.data;
 }
 
-async function confirmPayment(preapprovalId: string, paymentId: string) {
+async function confirmPayment(
+  preapprovalId: string,
+  paymentId: string
+): Promise<ProcessPaymentResponse> {
   const payload = {
     preapproval_id: preapprovalId,
     payment_id: paymentId,
   };
 
-  const response = await axiosInstance.post("/confirm_payment.php", payload);
+  const response = await axiosInstance.post<ProcessPaymentResponse>(
+    "/confirm_payment.php",
+    payload
+  );
   return response.data;
 }
 
 async function requestWorkoutPlan(
   data: RequestForm
-): Promise<{ message?: string; error?: string }> {
-  const response = await axiosInstance.post<{
-    message?: string;
-    error?: string;
-  }>("/request_workout.php", data);
+): Promise<RequestWorkoutResponse> {
+  const response = await axiosInstance.post<RequestWorkoutResponse>(
+    "/request_workout.php",
+    data
+  );
   return response.data;
 }
 
@@ -442,16 +463,18 @@ async function purchaseCredits(payload: {
   payer: { email: string };
   package_id: string;
   credits_amount: number;
-}) {
-  const response = await axiosInstance.post(
+}): Promise<ProcessPaymentResponse> {
+  const response = await axiosInstance.post<ProcessPaymentResponse>(
     "/process_credit_payment.php",
     payload
   );
   return response.data;
 }
 
-async function getCreditPackages(type: "workout" | "diet" = "workout") {
-  const response = await axiosInstance.get(
+async function getCreditPackages(
+  type: "workout" | "diet" = "workout"
+): Promise<GetCreditPackagesResponse> {
+  const response = await axiosInstance.get<GetCreditPackagesResponse>(
     "/get_credit_packages.php?type=" + type
   );
   return response.data;
@@ -466,7 +489,7 @@ async function uploadProgressPhotos(files: File[]): Promise<string[]> {
   });
 
   // O Axios detecta FormData e define o header 'multipart/form-data' automaticamente
-  const response = await axiosInstance.post<{ urls: string[] }>(
+  const response = await axiosInstance.post<UploadProgressPhotosResponse>(
     "/upload_progress_photos.php",
     formData
   );
@@ -476,11 +499,11 @@ async function uploadProgressPhotos(files: File[]): Promise<string[]> {
 
 export async function uploadProfilePhoto(
   file: File
-): Promise<{ success: boolean; file: string }> {
+): Promise<UploadProfilePhotoResponse> {
   const formData = new FormData();
   formData.append("photo", file);
 
-  const response = await axiosInstance.post(
+  const response = await axiosInstance.post<UploadProfilePhotoResponse>(
     "/upload_profile_photo.php",
     formData,
     {

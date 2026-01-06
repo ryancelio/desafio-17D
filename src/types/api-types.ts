@@ -169,6 +169,40 @@ export interface Plan {
 // --- LOJA ---
 export type GetCreditPackagesResponse = CreditPackage[];
 
+export interface UploadProgressPhotosResponse {
+  urls: string[];
+}
+
+export interface UploadProfilePhotoResponse {
+  success: boolean;
+  file: string;
+}
+
+export interface RequestWorkoutResponse {
+  message?: string;
+  error?: string;
+  success?: boolean;
+}
+
+export interface CreateSubscriptionRedirectResponse {
+  success: boolean;
+  redirect_url?: string;
+  init_point?: string;
+  error?: string;
+}
+
+export interface ProcessPaymentResponse {
+  error?: string;
+  status?: string;
+  id?: string | number;
+  message?: string;
+}
+
+export interface CheckPaymentStatusResponse {
+  status: string;
+  detail?: string;
+}
+
 // --- ADMIN PAYLOADS (Para AdminApi.ts) ---
 
 export interface DietMealItemPayload {
@@ -194,4 +228,9 @@ export interface SaveDietPayload {
   };
   meals: DietMealPayload[];
   request_id?: string | number | null; // Aceita string vinda da URL
+}
+
+export interface RequestForm {
+  qtd_fichas: number;
+  observacoes: string;
 }

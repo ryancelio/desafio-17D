@@ -13,11 +13,7 @@ import { LuArrowLeft } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import BuyMoreModal from "../components/BuyMoreModal";
 import apiClient from "../../../api/apiClient";
-
-export type RequestForm = {
-  qtd_fichas: number;
-  observacoes: string;
-};
+import type { RequestForm } from "../../../types/api-types";
 
 export default function RequestWorkoutPage() {
   const [status, setStatus] = useState<
