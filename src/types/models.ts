@@ -267,3 +267,19 @@ export interface CreditPackage {
   best_value: boolean;
   created_at: string;
 }
+
+export interface UserStreakModel {
+  user_uid: string;
+
+  // Nutrição
+  nutrition_current_streak: number;
+  nutrition_max_streak: number;
+  nutrition_last_date: string | null; // MySQL DATE retorna string 'YYYY-MM-DD'
+
+  // Treino
+  workout_current_streak: number;
+  workout_max_streak: number;
+  workout_last_date: string | null;
+
+  updated_at: string; // MySQL TIMESTAMP
+}

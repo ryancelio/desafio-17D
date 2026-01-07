@@ -10,6 +10,9 @@ import {
   Plus,
   Target,
   Flame,
+  AlertCircle,
+  Clock,
+  Trophy,
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
 import { useNavigate } from "react-router";
@@ -20,14 +23,14 @@ import DailyMonitoringCard from "./Components/DailyMonitoringCard";
 import WeightEvolutionChart from "./Components/WeightEvolutionChart"; // <--- Importado
 import type {
   DailyConsumption,
-  // UserProfile,
   WeightHistoryEntry,
-  WorkoutPlan,
 } from "../../../types/models";
 import { useAuth } from "../../../context/AuthContext";
 import type {
   AddConsumptionRequest,
   DailyConsumptionResponse,
+  GetUserStreaksResponse,
+  StreakData,
 } from "../../../types/api-types";
 
 // --- Helpers ---
@@ -118,77 +121,92 @@ const NextWorkoutCard: React.FC<{
 );
 
 const StreaksCard: React.FC<{
-  nutritionMet: boolean;
-  workoutStatus: { status: string; label: string };
-}> = ({ nutritionMet, workoutStatus }) => {
+  nutrition: StreakData;
+  workout: StreakData;
+}> = ({ nutrition, workout }) => {
+  // Helper para definir cores e ícones baseados no status
+  const getStatusConfig = (status: StreakData["status"]) => {
+    switch (status) {
+      case "completed_today":
+        return {
+          color: "text-orange-500",
+          bgColor: "bg-orange-50",
+          borderColor: "border-orange-100",
+          icon: Flame,
+          label: "Em chamas!",
+          desc: "Meta de hoje batida",
+        };
+      case "pending_today":
+        return {
+          color: "text-blue-500",
+          bgColor: "bg-blue-50",
+          borderColor: "border-blue-100",
+          icon: Clock,
+          label: "Mantenha o foco",
+          desc: "Complete hoje para continuar",
+        };
+      case "broken":
+      default:
+        return {
+          color: "text-gray-400",
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-100",
+          icon: AlertCircle,
+          label: "Recomeçar",
+          desc: "A sequência foi interrompida",
+        };
+    }
+  };
+
+  const renderItem = (title: string, data: StreakData) => {
+    const config = getStatusConfig(data.status);
+    const Icon = config.icon;
+
+    return (
+      <div
+        className={`flex-1 flex flex-col justify-between p-4 rounded-xl border ${config.bgColor} ${config.borderColor} transition-all`}
+      >
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-sm font-bold text-gray-700">{title}</span>
+          <div
+            className={`p-1.5 rounded-full bg-white shadow-sm ${config.color}`}
+          >
+            <Icon className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-end gap-1.5">
+            <span className={`text-3xl font-bold leading-none ${config.color}`}>
+              {data.current}
+            </span>
+            <span className="text-xs font-medium text-gray-500 mb-1">dias</span>
+          </div>
+          <p className="text-[10px] text-gray-500 mt-1 font-medium">
+            {config.desc}
+          </p>
+        </div>
+
+        {/* Recorde */}
+        <div className="mt-3 pt-3 border-t border-black/5 flex items-center gap-1.5 text-xs text-gray-500">
+          <Trophy className="w-3 h-3" />
+          <span>
+            Recorde: <strong>{data.max}</strong>
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
       <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
         <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-        Ofensiva Diária
+        Ofensiva (Streaks)
       </h3>
-      <div className="space-y-4">
-        {/* Nutrition Item */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-2 rounded-full ${
-                nutritionMet
-                  ? "bg-green-100 text-green-600"
-                  : "bg-gray-100 text-gray-400"
-              }`}
-            >
-              <Utensils className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-700">Dieta</p>
-              <p className="text-xs text-gray-500">
-                {nutritionMet ? "Meta batida!" : "Em andamento"}
-              </p>
-            </div>
-          </div>
-          <span
-            className={`text-sm font-bold ${
-              nutritionMet ? "text-orange-500" : "text-gray-400"
-            }`}
-          >
-            {nutritionMet ? "🔥" : "—"}
-          </span>
-        </div>
-
-        {/* Workout Item */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-2 rounded-full ${
-                workoutStatus.status === "completed"
-                  ? "bg-green-100 text-green-600"
-                  : workoutStatus.status === "rest"
-                  ? "bg-blue-100 text-blue-600"
-                  : "bg-gray-100 text-gray-400"
-              }`}
-            >
-              <Dumbbell className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-700">Treino</p>
-              <p className="text-xs text-gray-500">{workoutStatus.label}</p>
-            </div>
-          </div>
-          <span
-            className={`text-sm font-bold ${
-              workoutStatus.status === "completed"
-                ? "text-orange-500"
-                : "text-gray-400"
-            }`}
-          >
-            {workoutStatus.status === "completed"
-              ? "🔥"
-              : workoutStatus.status === "rest"
-              ? "💤"
-              : "—"}
-          </span>
-        </div>
+      <div className="flex gap-4">
+        {renderItem("Dieta", nutrition)}
+        {renderItem("Treino", workout)}
       </div>
     </div>
   );
@@ -203,7 +221,10 @@ export default function Dashboard() {
   const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
   const [nutritionData, setNutritionData] =
     useState<DailyConsumptionResponse | null>(null);
-  const [workouts, setWorkouts] = useState<WorkoutPlan[]>([]);
+  const [streaks, setStreaks] = useState<GetUserStreaksResponse>({
+    nutrition: { current: 0, max: 0, last_date: null, status: "inactive" },
+    workout: { current: 0, max: 0, last_date: null, status: "inactive" },
+  });
 
   // Estados de UI
   const [isLoading, setIsLoading] = useState(true);
@@ -218,17 +239,31 @@ export default function Dashboard() {
       setIsLoading(true);
       setError(null);
       try {
-        const [historyData, nutritionResponse, workoutsData] =
-          await Promise.all([
+        const [historyData, nutritionResponse, streaksData] = await Promise.all(
+          [
             apiClient.getWeightHistory(),
             apiClient.getDailyConsumption(),
-            apiClient.getUserWorkouts().catch(() => []),
-          ]);
+            apiClient.getUserStreaks().catch(() => ({
+              // Fallback caso a API falhe ou ainda não exista
+              nutrition: {
+                current: 0,
+                max: 0,
+                last_date: null,
+                status: "inactive" as const,
+              },
+              workout: {
+                current: 0,
+                max: 0,
+                last_date: null,
+                status: "inactive" as const,
+              },
+            })),
+          ]
+        );
 
         setWeightHistory(historyData);
-        // setDailyConsumption(consumptionData);
         setNutritionData(nutritionResponse); // Salva o objeto completo (consumed + targets)
-        setWorkouts(workoutsData);
+        setStreaks(streaksData);
       } catch (err) {
         if (isApiError(err)) {
           setError(err.response?.data.error || "Erro");
@@ -256,24 +291,18 @@ export default function Dashboard() {
     return { pesoAtual, pesoAlvo, diferenca };
   }, [profile?.profile.peso_alvo, weightHistory]);
 
-  // const nutritionTargets = useMemo(() => {
-  //   const aguaRecomendadaL = pesoAtual ? (pesoAtual * 35) / 1000 : 2.5;
-  //   return {
-  //     aguaRecomendadaL,
-  //     metaProteinas: 140,
-  //     metaFibras: 30,
-  //     metaCalorias: 2000,
-  //   };
-  // }, [pesoAtual]);
-
-  const currentConsumption = nutritionData?.consumed || {
-    agua_l: 0,
-    proteinas_g: 0,
-    fibras_g: 0,
-    calorias_kcal: 0,
-    carboidratos_g: 0,
-    gorduras_g: 0,
-  };
+  const currentConsumption = useMemo(() => {
+    return (
+      nutritionData?.consumed || {
+        agua_l: 0,
+        proteinas_g: 0,
+        fibras_g: 0,
+        calorias_kcal: 0,
+        carboidratos_g: 0,
+        gorduras_g: 0,
+      }
+    );
+  }, [nutritionData]);
 
   const currentTargets: DailyConsumptionResponse["targets"] =
     nutritionData?.targets || {
@@ -284,63 +313,43 @@ export default function Dashboard() {
       carboidratos_g: 30,
       gorduras_g: 30,
     };
-  const mappedTargets = {
-    aguaRecomendadaL: currentTargets.agua_l,
-    metaProteinas: currentTargets.proteinas_g,
-    metaFibras: currentTargets.fibras_g,
-    metaCalorias: currentTargets.calorias_kcal,
-  };
+  const mappedTargets = useMemo(() => {
+    // Valores padrão de fallback caso a API não retorne
+    const targets = nutritionData?.targets || {
+      agua_l: 2.5,
+      proteinas_g: 140,
+      fibras_g: 30,
+      calorias_kcal: 2000,
+      carboidratos_g: 150, // Fallback
+      gorduras_g: 60, // Fallback
+    };
+
+    return {
+      aguaRecomendadaL: targets.agua_l,
+      metaProteinas: targets.proteinas_g,
+      metaFibras: targets.fibras_g,
+      metaCalorias: targets.calorias_kcal,
+      metaCarboidratos: targets.carboidratos_g,
+      metaGorduras: targets.gorduras_g,
+    };
+  }, [nutritionData]);
 
   const allGoalsMet = useMemo(() => {
     if (!nutritionData) return false;
+
+    // Regra:
+    // Nutrientes positivos (Água, Proteína, Fibra) -> TEM que bater (>=)
+    // Nutrientes de controle (Calorias, Carbs, Gordura) -> NÃO pode estourar (<=)
     return (
       currentConsumption.agua_l >= mappedTargets.aguaRecomendadaL &&
       currentConsumption.proteinas_g >= mappedTargets.metaProteinas &&
       currentConsumption.fibras_g >= mappedTargets.metaFibras &&
-      currentConsumption.calorias_kcal <= mappedTargets.metaCalorias // Calorias é <=
+      // Limites máximos
+      currentConsumption.calorias_kcal <= mappedTargets.metaCalorias &&
+      currentConsumption.carboidratos_g <= mappedTargets.metaCarboidratos &&
+      currentConsumption.gorduras_g <= mappedTargets.metaGorduras
     );
-  }, [
-    nutritionData,
-    currentConsumption.agua_l,
-    currentConsumption.proteinas_g,
-    currentConsumption.fibras_g,
-    currentConsumption.calorias_kcal,
-    mappedTargets.aguaRecomendadaL,
-    mappedTargets.metaProteinas,
-    mappedTargets.metaFibras,
-    mappedTargets.metaCalorias,
-  ]);
-
-  const workoutStreakStatus = useMemo(() => {
-    if (!profile?.profile.dias_treino)
-      return { status: "unknown", label: "N/A" };
-
-    const dayMap: Record<number, string> = {
-      0: "DOM",
-      1: "SEG",
-      2: "TER",
-      3: "QUA",
-      4: "QUI",
-      5: "SEX",
-      6: "SAB",
-    };
-    const today = new Date();
-    const todayKey = dayMap[today.getDay()];
-    const isTrainingDay = profile.profile.dias_treino.includes(todayKey as any);
-
-    const todayStr = today.toLocaleDateString("pt-BR");
-    const hasTrained = workouts.some((p) => {
-      if (!p.data_ultima_execucao) return false;
-      return (
-        new Date(p.data_ultima_execucao).toLocaleDateString("pt-BR") ===
-        todayStr
-      );
-    });
-
-    if (!isTrainingDay) return { status: "rest", label: "Descanso" };
-    if (hasTrained) return { status: "completed", label: "Concluído" };
-    return { status: "pending", label: "Pendente" };
-  }, [profile, workouts]);
+  }, [nutritionData, currentConsumption, mappedTargets]);
 
   const handleSaveNutrition = async (
     data: AddConsumptionRequest,
@@ -348,13 +357,24 @@ export default function Dashboard() {
   ) => {
     try {
       let newTotals: DailyConsumption;
+
+      // 1. Salva os dados de nutrição
       if (mode === "add") newTotals = await apiClient.addDailyConsumption(data);
       else newTotals = await apiClient.setDailyConsumption(data);
 
+      // 2. Atualiza o estado visual da nutrição (Gráfico/Card de Monitoramento)
       setNutritionData({
         consumed: newTotals,
-        targets: currentTargets,
+        targets: currentTargets, // Mantém os targets atuais
       });
+
+      try {
+        const updatedStreaks = await apiClient.getUserStreaks();
+        setStreaks(updatedStreaks);
+      } catch (streakErr) {
+        console.error("Erro ao atualizar streak visual:", streakErr);
+      }
+
       setNutritionModalOpen(false);
     } catch (err) {
       console.error(err);
@@ -437,8 +457,8 @@ export default function Dashboard() {
 
           {/* Streaks */}
           <StreaksCard
-            nutritionMet={allGoalsMet}
-            workoutStatus={workoutStreakStatus}
+            nutrition={streaks.nutrition}
+            workout={streaks.workout}
           />
 
           {/* Ações Rápidas */}

@@ -41,6 +41,7 @@ import type {
   CheckPaymentStatusResponse,
   GetCreditPackagesResponse,
   RequestForm,
+  GetUserStreaksResponse,
 } from "../types/api-types";
 
 import type { OnboardingState } from "../types/onboarding.schema";
@@ -155,6 +156,13 @@ async function completeOnboarding(payload: {
 
 async function getUserProfile(): Promise<UserProfile> {
   const response = await axiosInstance.get<UserProfile>("/users/get_user.php");
+  return response.data;
+}
+
+async function getUserStreaks(): Promise<GetUserStreaksResponse> {
+  const response = await axiosInstance.get<GetUserStreaksResponse>(
+    "/get_user_streaks.php"
+  );
   return response.data;
 }
 
@@ -331,7 +339,7 @@ async function completeWorkout(planId: number): Promise<ApiResponse> {
 
 async function getDailyConsumption(): Promise<DailyConsumptionResponse> {
   const response = await axiosInstance.get<DailyConsumptionResponse>(
-    "/get_daily_consumption.php"
+    "/nutrition/get_daily_consumption.php"
   );
   return response.data;
 }
@@ -340,7 +348,7 @@ async function addDailyConsumption(
   data: AddConsumptionRequest
 ): Promise<DailyConsumption> {
   const response = await axiosInstance.post<DailyConsumption>(
-    "/upsert_nutrition.php",
+    "/nutrition/upsert_nutrition.php",
     data
   );
   return response.data;
@@ -350,7 +358,7 @@ async function setDailyConsumption(
   data: AddConsumptionRequest
 ): Promise<DailyConsumption> {
   const response = await axiosInstance.post<DailyConsumption>(
-    "/set_nutrition.php",
+    "/nutrition/set_nutrition.php",
     data
   );
   return response.data;
@@ -568,6 +576,7 @@ const apiClient = {
   confirmStatus,
   confirmPayment,
   requestWorkoutPlan,
+  getUserStreaks,
 };
 
 export default apiClient;

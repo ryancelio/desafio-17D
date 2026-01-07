@@ -248,3 +248,28 @@ export interface RequestForm {
   qtd_fichas: number;
   observacoes: string;
 }
+
+/**
+ * Status visual da streak calculado pelo backend.
+ * - 'completed_today': Meta batida hoje (Fogo Laranja).
+ * - 'pending_today': Meta batida ontem, precisa bater hoje (Fogo Cinza/Azul).
+ * - 'broken': Não bateu ontem nem hoje (Fogo Apagado/Cinza).
+ * - 'inactive': Nunca começou (Sem dados).
+ */
+export type StreakStatus =
+  | "completed_today"
+  | "pending_today"
+  | "broken"
+  | "inactive";
+
+export interface StreakData {
+  current: number; // O valor visual (pode ser 0 se estiver broken)
+  max: number; // Recorde histórico
+  last_date: string | null; // Formato YYYY-MM-DD vindo do banco
+  status: StreakStatus; // O status derivado da comparação de datas
+}
+
+export interface GetUserStreaksResponse {
+  nutrition: StreakData;
+  workout: StreakData;
+}
