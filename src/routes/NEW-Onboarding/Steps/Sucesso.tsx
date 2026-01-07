@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router"; // Ou 'react-router' dependendo da versão
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -9,6 +9,13 @@ import {
 import { motion } from "framer-motion";
 import apiClient from "../../../api/apiClient";
 
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fbq: any;
+  }
+}
+
 export const Sucesso: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -18,6 +25,7 @@ export const Sucesso: React.FC = () => {
     "loading"
   );
   const [message, setMessage] = useState("Validando seu pagamento...");
+  const pixelTracked = useRef(false);
 
   useEffect(() => {
     const validatePayment = async () => {
@@ -27,11 +35,15 @@ export const Sucesso: React.FC = () => {
         searchParams.get("payment_id") || searchParams.get("collection_id"); // MP usa collection_id as vezes
 
       // Se não tiver ID nenhum, talvez o usuário chegou aqui por navegação direta
-      // if ((!preapprovalId || preapprovalId === "") && (!paymentId && preapprovalId === "")) {
-      //   setStatus("success"); // Assume sucesso se chegou aqui (fallback) ou redireciona
-      //   setMessage("Bem-vindo a bordo!");
-      //   return;
-      // }
+      if (
+        (!preapprovalId || preapprovalId === "") &&
+        !paymentId &&
+        preapprovalId === ""
+      ) {
+        setStatus("success"); // Assume sucesso se chegou aqui (fallback) ou redireciona
+        setMessage("Bem-vindo a bordo!");
+        return;
+      }
 
       if (!preapprovalId && !paymentId) {
         setStatus("error");
@@ -52,6 +64,25 @@ export const Sucesso: React.FC = () => {
         if (data.status === "active" || data.status === "approved") {
           setStatus("success");
           setMessage("Sua assinatura foi confirmada!");
+
+          if (!pixelTracked.current && typeof window.fbq !== "undefined") {
+            pixelTracked.current = true; // Marca como rastreado imediatamente
+
+            const plan = (await apiClient.getPlans()).filter(
+              (plan) => searchParams.get("plan_id") == String(plan.id)
+            )[0];
+
+            window.fbq("track", "Purchase", {
+              // Tente pegar o valor retornado pelo backend.
+
+              value: Number(plan.price_monthly),
+              currency: "BRL",
+              content_name: "Assinatura Confirmada",
+              content_ids: [preapprovalId || paymentId],
+              content_type: "product",
+              status: data.status,
+            });
+          }
         } else {
           // Pode ser pendente (boleto, processamento)
           setStatus("success"); // Mostramos sucesso mas avisamos que pode demorar

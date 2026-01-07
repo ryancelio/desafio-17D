@@ -10,7 +10,6 @@ import type {
   Objetivo,
   UserMeasurement,
   WorkoutRequest,
-  CreditPackage,
 } from "./models";
 
 export interface ApiResponse {
@@ -192,10 +191,25 @@ export interface CreateSubscriptionRedirectResponse {
 }
 
 export interface ProcessPaymentResponse {
+  pix_data: PixData;
   error?: string;
   status?: string;
   id?: string | number;
   message?: string;
+}
+
+export interface CreditPackage {
+  package_id: number;
+  name: string;
+  credits: number;
+  price: number;
+  best_value: boolean;
+  type: "workout" | "diet";
+}
+
+export interface PixData {
+  qr_code: string;
+  qr_code_base64: string;
 }
 
 export interface CheckPaymentStatusResponse {

@@ -9,6 +9,7 @@ import {
   Utensils,
   Plus,
   Target,
+  Flame,
 } from "lucide-react";
 import AddNutritionModal from "./Components/NutritionModal";
 import { useNavigate } from "react-router";
@@ -21,6 +22,7 @@ import type {
   DailyConsumption,
   // UserProfile,
   WeightHistoryEntry,
+  WorkoutPlan,
 } from "../../../types/models";
 import { useAuth } from "../../../context/AuthContext";
 import type {
@@ -115,6 +117,83 @@ const NextWorkoutCard: React.FC<{
   </div>
 );
 
+const StreaksCard: React.FC<{
+  nutritionMet: boolean;
+  workoutStatus: { status: string; label: string };
+}> = ({ nutritionMet, workoutStatus }) => {
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
+        Ofensiva Diária
+      </h3>
+      <div className="space-y-4">
+        {/* Nutrition Item */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-full ${
+                nutritionMet
+                  ? "bg-green-100 text-green-600"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              <Utensils className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-700">Dieta</p>
+              <p className="text-xs text-gray-500">
+                {nutritionMet ? "Meta batida!" : "Em andamento"}
+              </p>
+            </div>
+          </div>
+          <span
+            className={`text-sm font-bold ${
+              nutritionMet ? "text-orange-500" : "text-gray-400"
+            }`}
+          >
+            {nutritionMet ? "🔥" : "—"}
+          </span>
+        </div>
+
+        {/* Workout Item */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-full ${
+                workoutStatus.status === "completed"
+                  ? "bg-green-100 text-green-600"
+                  : workoutStatus.status === "rest"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              <Dumbbell className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-700">Treino</p>
+              <p className="text-xs text-gray-500">{workoutStatus.label}</p>
+            </div>
+          </div>
+          <span
+            className={`text-sm font-bold ${
+              workoutStatus.status === "completed"
+                ? "text-orange-500"
+                : "text-gray-400"
+            }`}
+          >
+            {workoutStatus.status === "completed"
+              ? "🔥"
+              : workoutStatus.status === "rest"
+              ? "💤"
+              : "—"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- Componente Principal ---
 
 export default function Dashboard() {
@@ -124,6 +203,7 @@ export default function Dashboard() {
   const [weightHistory, setWeightHistory] = useState<WeightHistoryEntry[]>([]);
   const [nutritionData, setNutritionData] =
     useState<DailyConsumptionResponse | null>(null);
+  const [workouts, setWorkouts] = useState<WorkoutPlan[]>([]);
 
   // Estados de UI
   const [isLoading, setIsLoading] = useState(true);
@@ -138,14 +218,17 @@ export default function Dashboard() {
       setIsLoading(true);
       setError(null);
       try {
-        const [historyData, nutritionResponse] = await Promise.all([
-          apiClient.getWeightHistory(),
-          apiClient.getDailyConsumption(),
-        ]);
+        const [historyData, nutritionResponse, workoutsData] =
+          await Promise.all([
+            apiClient.getWeightHistory(),
+            apiClient.getDailyConsumption(),
+            apiClient.getUserWorkouts().catch(() => []),
+          ]);
 
         setWeightHistory(historyData);
         // setDailyConsumption(consumptionData);
         setNutritionData(nutritionResponse); // Salva o objeto completo (consumed + targets)
+        setWorkouts(workoutsData);
       } catch (err) {
         if (isApiError(err)) {
           setError(err.response?.data.error || "Erro");
@@ -227,6 +310,37 @@ export default function Dashboard() {
     mappedTargets.metaFibras,
     mappedTargets.metaCalorias,
   ]);
+
+  const workoutStreakStatus = useMemo(() => {
+    if (!profile?.profile.dias_treino)
+      return { status: "unknown", label: "N/A" };
+
+    const dayMap: Record<number, string> = {
+      0: "DOM",
+      1: "SEG",
+      2: "TER",
+      3: "QUA",
+      4: "QUI",
+      5: "SEX",
+      6: "SAB",
+    };
+    const today = new Date();
+    const todayKey = dayMap[today.getDay()];
+    const isTrainingDay = profile.profile.dias_treino.includes(todayKey as any);
+
+    const todayStr = today.toLocaleDateString("pt-BR");
+    const hasTrained = workouts.some((p) => {
+      if (!p.data_ultima_execucao) return false;
+      return (
+        new Date(p.data_ultima_execucao).toLocaleDateString("pt-BR") ===
+        todayStr
+      );
+    });
+
+    if (!isTrainingDay) return { status: "rest", label: "Descanso" };
+    if (hasTrained) return { status: "completed", label: "Concluído" };
+    return { status: "pending", label: "Pendente" };
+  }, [profile, workouts]);
 
   const handleSaveNutrition = async (
     data: AddConsumptionRequest,
@@ -319,6 +433,12 @@ export default function Dashboard() {
           <NextWorkoutCard
             onClick={() => navigate("/treinos")}
             isLoading={false}
+          />
+
+          {/* Streaks */}
+          <StreaksCard
+            nutritionMet={allGoalsMet}
+            workoutStatus={workoutStreakStatus}
           />
 
           {/* Ações Rápidas */}

@@ -13,6 +13,15 @@ export default function LandingLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // 2. Função para disparar o evento de Contato
+  const handleWhatsAppClick = () => {
+    if (typeof window.fbq !== "undefined") {
+      window.fbq("track", "Contact", {
+        content_name: "WhatsApp Floating Button", // Identifica qual botão foi clicado
+      });
+      // console.log("Pixel Contact disparado!");
+    }
+  };
   const navigate = useNavigate();
 
   return (
@@ -21,6 +30,7 @@ export default function LandingLayout({
       <a
         href={WHATSAPP_LINK}
         target="_blank"
+        onClick={handleWhatsAppClick}
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-all duration-300 flex items-center justify-center group"
         aria-label="Falar no WhatsApp"

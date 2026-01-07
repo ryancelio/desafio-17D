@@ -18,23 +18,10 @@ import apiClient from "../../../api/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import { toast } from "sonner";
 import type { IPaymentBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/payment/type";
+import type { CreditPackage, PixData } from "../../../types/api-types";
 
 // Defina sua chave pública aqui
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST || "";
-
-interface CreditPackage {
-  package_id: number;
-  name: string;
-  credits: number;
-  price: number;
-  best_value: boolean;
-  type: "workout" | "diet";
-}
-
-interface PixData {
-  qr_code: string;
-  qr_code_base64: string;
-}
 
 export default function BuyCreditsPage() {
   const navigate = useNavigate();
@@ -54,7 +41,7 @@ export default function BuyCreditsPage() {
   // Estados para PIX
   const [showPixModal, setShowPixModal] = useState(false);
   const [pixData, setPixData] = useState<PixData | null>(null);
-  const [, setPaymentId] = useState<number | null>(null);
+  const [, setPaymentId] = useState<number | string | null | undefined>(null);
   const pollingRef = useRef<number | null>(null); // Corrigido tipagem para NodeJS.Timeout ou number
 
   // Inicializa MP apenas uma vez
@@ -90,11 +77,12 @@ export default function BuyCreditsPage() {
   }, [purchaseType]); // Recarrega se a URL mudar
 
   // Função de Polling
-  const startPolling = (id: number) => {
+  const startPolling = (id: number | undefined | string) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
 
     pollingRef.current = window.setInterval(async () => {
       try {
+        if (!id) return;
         const res = await apiClient.checkPaymentStatus(id);
         if (res.status === "approved") {
           if (pollingRef.current) clearInterval(pollingRef.current);

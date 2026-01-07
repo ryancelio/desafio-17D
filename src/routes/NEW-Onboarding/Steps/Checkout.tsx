@@ -19,6 +19,13 @@ import { toast } from "sonner";
 import apiClient from "../../../api/apiClient";
 import type { IStatusScreenBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/statusScreen/types";
 
+// 1. ADICIONE A TIPAGEM GLOBAL DO FACEBOOK PIXEL
+declare global {
+  interface Window {
+    fbq: any;
+  }
+}
+
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
 
 export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
@@ -47,6 +54,21 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
     }).format(Number(val));
   };
 
+  // 2. FUNÇÃO AUXILIAR PARA DISPARAR O PIXEL
+  const trackPurchaseEvent = (transactionId?: string) => {
+    if (typeof window.fbq !== "undefined" && selectedPlan) {
+      window.fbq("track", "Purchase", {
+        value: Number(selectedPlan.price), // Valor do plano
+        currency: "BRL",
+        content_name: selectedPlan.title, // Nome do plano
+        content_ids: [String(selectedPlan.plan_id)], // ID do produto
+        content_type: "product",
+        order_id: transactionId || "", // ID da transação (opcional mas recomendado)
+      });
+      console.log("Pixel Purchase Disparado!");
+    }
+  };
+
   // --- FLUXO MENSAL (REDIRECT) ---
   const handleMonthlyRedirect = async () => {
     setLoading(true);
@@ -57,6 +79,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       );
       if (data.init_point) {
         window.location.href = data.init_point;
+        window.fbq("track", "InitiateCheckout"); // Recomendado para redirect
       } else {
         throw new Error(data.error || "Erro ao gerar link de pagamento.");
       }
@@ -113,8 +136,8 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       // Independente se aprovou ou falhou, se temos um ID, mostramos a Status Screen
       // O backend DEVE retornar o ID do pagamento (result.id)
       if (result.id) {
+        trackPurchaseEvent(String(result.id));
         setPaymentId(String(result.id));
-        // Não navegamos mais aqui. Deixamos a Status Screen mostrar o resultado.
       } else {
         // Erro genérico sem ID do MP
         toast.error("Erro ao processar. Verifique os dados.");

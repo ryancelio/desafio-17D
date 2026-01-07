@@ -68,6 +68,19 @@ const OnboardingWizard: React.FC = () => {
   // Captura o estado inicial de autenticação e assinatura
   const startedAuthenticated = useRef(!!firebaseUser);
   const startedActive = useRef(userProfile?.subscription?.has_access ?? false);
+  const viewContentTracked = useRef(false);
+
+  useEffect(() => {
+    if (!viewContentTracked.current && typeof window.fbq !== "undefined") {
+      viewContentTracked.current = true;
+
+      window.fbq("track", "ViewContent", {
+        content_name: "Onboarding Start", // Nome legível para o Gerenciador de Anúncios
+        content_category: "Funnel", // Categoria para organização
+        content_type: "product", // Padrão do FB
+      });
+    }
+  }, []);
 
   const stepComponentsRef = useRef<React.FC<StepProps>[]>([]);
 
@@ -183,6 +196,13 @@ const OnboardingWizard: React.FC = () => {
       const user = userCredential.user;
 
       if (nome) await updateProfile(user, { displayName: nome });
+
+      if (typeof window.fbq !== "undefined") {
+        window.fbq("track", "CompleteRegistration", {
+          content_name: "Onboarding Signup", // Nome para identificar no gerenciador
+          status: "success",
+        });
+      }
 
       // 3. MySQL Sync
       await syncWithBackend();

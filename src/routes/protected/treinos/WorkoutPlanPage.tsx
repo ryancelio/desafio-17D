@@ -19,6 +19,7 @@ import {
   History,
   type LucideProps,
   PlusCircle,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +34,12 @@ import type {
 import type { AllCreditsResponse } from "../../../types/api-types";
 
 // --- Subcomponente: Card da Ficha (Visualização de Treino) ---
-const PlanCard: React.FC<{ plan: WorkoutPlan }> = ({ plan }) => {
+const PlanCard: React.FC<{
+  plan: WorkoutPlan;
+  isNext?: boolean;
+  isLast?: boolean;
+  nextDate?: Date | null;
+}> = ({ plan, isNext, isLast, nextDate }) => {
   const musculos = useMemo(() => {
     const muscleSet = new Set<string>();
     plan.exercises.forEach((ex) => {
@@ -49,18 +55,42 @@ const PlanCard: React.FC<{ plan: WorkoutPlan }> = ({ plan }) => {
       })
     : "Nunca";
 
+  // Formatação da data do próximo treino
+  const scheduledText = useMemo(() => {
+    if (!nextDate) return "Defina seus dias";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(nextDate);
+    d.setHours(0, 0, 0, 0);
+    const diff = (d.getTime() - today.getTime()) / 86400000;
+    if (diff === 0) return "Hoje";
+    if (diff === 1) return "Amanhã";
+    const s = d.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "numeric",
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, [nextDate]);
+
   return (
     <Link to={`/treinos/${plan.plan_id}`}>
       <motion.div
         layout
         initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        animate={{ opacity: 1, scale: isNext ? 1.02 : 1 }}
         whileHover={{
           y: -4,
+          scale: isNext ? 1.03 : 1.01,
           boxShadow:
             "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
         }}
-        className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:border-pasPink/50 transition-all relative"
+        className={`group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all relative ${
+          isNext
+            ? "border-2 border-pasPink ring-4 ring-pasPink/10 z-10"
+            : isLast
+            ? "border border-gray-300 bg-gray-50/30"
+            : "border border-gray-100 hover:border-pasPink/50"
+        }`}
       >
         <div className="p-5">
           <div className="flex justify-between items-start mb-3">
@@ -75,9 +105,25 @@ const PlanCard: React.FC<{ plan: WorkoutPlan }> = ({ plan }) => {
                 Pessoal
               </span>
             )}
-            <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-lg">
-              {ultimaExecucao}
-            </span>
+
+            {/* Badges de Status */}
+            {isNext ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-pasPink bg-pasPink/10 px-2 py-1 rounded-full animate-pulse">
+                <Calendar className="h-3 w-3" />
+                {scheduledText}
+              </span>
+            ) : isLast ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                <CheckCircle2 className="h-3 w-3" />
+                Último: {ultimaExecucao}
+              </span>
+            ) : (
+              <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-lg">
+                {plan.data_ultima_execucao
+                  ? `Último: ${ultimaExecucao}`
+                  : "Novo"}
+              </span>
+            )}
           </div>
 
           <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-pasPink transition-colors">
@@ -263,6 +309,77 @@ export default function WorkoutPlansPage() {
     navigate("/treinos/solicitar");
   };
 
+  // --- Lógica de Próximo/Último Treino ---
+  const { lastPlan, nextPlan, nextDate } = useMemo(() => {
+    if (!plans || plans.length === 0)
+      return { lastPlan: null, nextPlan: null, nextDate: null };
+
+    // 1. Último executado
+    const executed = plans.filter((p) => p.data_ultima_execucao);
+    executed.sort((a, b) => {
+      const dA = new Date(a.data_ultima_execucao!).getTime();
+      const dB = new Date(b.data_ultima_execucao!).getTime();
+      return dB - dA;
+    });
+    const last = executed[0] || null;
+
+    // 2. Próximo (Ciclo A -> B -> C -> A)
+    // Ordena por nome para garantir ordem consistente
+    const sorted = [...plans].sort((a, b) => a.nome.localeCompare(b.nome));
+    let next = sorted[0];
+
+    if (last) {
+      const idx = sorted.findIndex((p) => p.plan_id === last.plan_id);
+      if (idx !== -1) {
+        next = sorted[(idx + 1) % sorted.length];
+      }
+    }
+
+    // 3. Data do Próximo
+    let nDate: Date | null = null;
+    const diasTreino = userProfile?.profile?.dias_treino || [];
+    const dayMap: Record<string, number> = {
+      DOM: 0,
+      SEG: 1,
+      TER: 2,
+      QUA: 3,
+      QUI: 4,
+      SEX: 5,
+      SAB: 6,
+    };
+
+    if (diasTreino.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const searchDate = new Date(today);
+
+      // Se treinou hoje, começa a procurar a partir de amanhã
+      if (last && last.data_ultima_execucao) {
+        const lastDate = new Date(last.data_ultima_execucao);
+        lastDate.setHours(0, 0, 0, 0);
+        if (lastDate.getTime() === today.getTime()) {
+          searchDate.setDate(today.getDate() + 1);
+        }
+      }
+
+      // Procura nos próximos 14 dias
+      for (let i = 0; i < 14; i++) {
+        const current = new Date(searchDate);
+        current.setDate(searchDate.getDate() + i);
+        const dayNum = current.getDay();
+
+        // Verifica se o dia da semana está na lista do usuário
+        const isTrainingDay = diasTreino.some((d) => dayMap[d] === dayNum);
+        if (isTrainingDay) {
+          nDate = current;
+          break;
+        }
+      }
+    }
+
+    return { lastPlan: last, nextPlan: next, nextDate: nDate };
+  }, [plans, userProfile]);
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center min-h-[60vh]">
@@ -410,9 +527,19 @@ export default function WorkoutPlansPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {plans.map((plan) => (
-                    <PlanCard key={plan.plan_id} plan={plan} />
-                  ))}
+                  {plans.map((plan) => {
+                    const isNext = nextPlan?.plan_id === plan.plan_id;
+                    const isLast = lastPlan?.plan_id === plan.plan_id;
+                    return (
+                      <PlanCard
+                        key={plan.plan_id}
+                        plan={plan}
+                        isNext={isNext}
+                        isLast={isLast}
+                        nextDate={isNext ? nextDate : null}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </motion.div>

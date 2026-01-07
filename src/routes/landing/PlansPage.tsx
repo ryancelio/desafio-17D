@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import {
-  // LuZap,
   LuCheck,
   LuX,
   LuCircleHelp,
