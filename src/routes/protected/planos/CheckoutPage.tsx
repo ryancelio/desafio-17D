@@ -1,19 +1,32 @@
-import { initMercadoPago, Payment } from "@mercadopago/sdk-react";
-import type { IPaymentBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/payment/type";
+import { initMercadoPago, Payment, StatusScreen } from "@mercadopago/sdk-react";
+import type { IStatusScreenBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/statusScreen/types";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { useAuth } from "../../../context/AuthContext"; // Ajuste o caminho
+import { useAuth } from "../../../context/AuthContext";
 import { motion } from "framer-motion";
 import {
   LuShieldCheck,
   LuLock,
   LuLoader as LuLoader2,
   LuArrowLeft,
+  LuUser,
+  LuCreditCard,
+  LuBadgeCheck,
+  LuHeadset,
 } from "react-icons/lu";
 import { toast } from "sonner";
 import apiClient from "../../../api/apiClient";
 
-// Use sua Public Key correta (mesma do onboarding)
+// Função auxiliar de máscara
+const cpfMask = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+    .replace(/(-\d{2})\d+?$/, "$1");
+};
+
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
 
 export default function CheckoutPage() {
@@ -23,24 +36,42 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [isBrickReady, setIsBrickReady] = useState(false);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [cpf, setCpf] = useState("");
+
   const brickContainerRef = useRef<HTMLDivElement>(null);
 
-  // Recupera o plano selecionado vindo do state da navegação
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectedPlan = (location.state as any)?.selectedPlan;
 
-  // Validar se existe plano selecionado
   useEffect(() => {
     if (!selectedPlan) {
-      navigate("/assinatura"); // Volta se tentar acessar direto
+      navigate("/assinatura");
     }
+    initMercadoPago(PUBLIC_KEY, { locale: "pt-BR" });
   }, [selectedPlan, navigate]);
 
   const isMonthly = selectedPlan?.planType === "monthly";
 
-  useEffect(() => {
-    initMercadoPago(PUBLIC_KEY, { locale: "pt-BR" });
-  }, []);
+  // --- TRATAMENTO DE ERROS DE PROMOÇÃO ---
+  const handleCheckoutError = (error: any) => {
+    console.error(error);
+    const msg =
+      error.response?.data?.error || error.message || "Erro ao processar.";
+
+    // Se o erro for de escassez (409 Conflict vindo do PHP)
+    if (error.response?.status === 409 || msg.includes("esgotada")) {
+      toast.error("Promoção Esgotada!", {
+        description: "Infelizmente as vagas para este plano acabaram agora.",
+        duration: 5000,
+      });
+      // Opcional: Redirecionar após um tempo
+      setTimeout(() => navigate("/assinatura"), 3000);
+    } else {
+      toast.error(msg);
+    }
+    setLoading(false);
+  };
 
   // --- FLUXO MENSAL (REDIRECT) ---
   const handleMonthlyRedirect = async () => {
@@ -50,29 +81,32 @@ export default function CheckoutPage() {
         selectedPlan?.plan_id,
         "monthly"
       );
-
       if (data.init_point) {
         window.location.href = data.init_point;
       } else {
         throw new Error(data.error || "Erro ao gerar link de pagamento.");
       }
-    } catch (error: unknown) {
-      console.error(error);
-      if (error instanceof Error) {
-        toast.error("Erro ao conectar: " + error.message);
-      } else {
-        toast.error("Erro ao conectar: Falha na requisição");
-      }
-      setLoading(false);
+    } catch (error: any) {
+      handleCheckoutError(error);
     }
   };
 
-  // --- AÇÃO DO BOTÃO PERSONALIZADO ---
+  // --- AÇÃO DO BOTÃO FIXO ---
   const handleCustomSubmit = async () => {
+    if (paymentId) {
+      await refetchProfile();
+      navigate("/assinatura");
+      return;
+    }
+
     if (isMonthly) {
       await handleMonthlyRedirect();
     } else {
-      // Dispara o botão oculto do Brick
+      if (cpf.length < 14) {
+        toast.error("Por favor, preencha seu CPF corretamente.");
+        return;
+      }
+
       if (brickContainerRef.current) {
         const brickButton = brickContainerRef.current.querySelector(
           'button[type="submit"]'
@@ -81,86 +115,98 @@ export default function CheckoutPage() {
         if (brickButton) {
           brickButton.click();
         } else {
-          // Fallback
           const genericButton =
             brickContainerRef.current.querySelector("form button");
-          if (genericButton instanceof HTMLElement) {
-            genericButton.click();
-          } else {
-            console.error("Botão interno do Brick não encontrado.");
-            toast.error("Aguarde o carregamento completo do formulário.");
-          }
+          if (genericButton instanceof HTMLElement) genericButton.click();
         }
       }
     }
   };
 
-  // --- CALLBACK DO BRICK (ANUAL) ---
+  // --- CALLBACK DO BRICK ---
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onPaymentBrickSubmit = async ({ formData }: any) => {
+  const onPaymentBrickSubmit = async (param: any) => {
+    const { selectedPaymentMethod, formData } = param;
+
     setLoading(true);
 
     try {
-      const result = await apiClient.processPayment(
-        formData,
-        selectedPlan?.plan_id,
-        "annually"
-      );
+      let result;
+      const cpfFromBrick = formData.payer?.identification?.number;
+      const finalCpf = cpfFromBrick || cpf.replace(/\D/g, "");
 
-      if (result.status === "approved") {
-        await refetchProfile(); // Atualiza status global
-        toast.error("Pagamento aprovado! Seu plano foi atualizado.");
-        navigate("/assinatura"); // Volta para gestão
+      const methodId = formData.payment_method_id || formData.paymentMethodId;
+      const isPix =
+        selectedPaymentMethod === "bank_transfer" ||
+        selectedPaymentMethod === "pix" ||
+        methodId === "pix";
+
+      if (isPix) {
+        if (!finalCpf) {
+          toast.error("CPF é obrigatório para Pix.");
+          setLoading(false);
+          return;
+        }
+
+        result = await apiClient.processPixPayment({
+          db_plan_id: selectedPlan?.plan_id,
+          doc_number: finalCpf,
+          payment_method_id: "pix",
+          email: formData.payer.email || firebaseUser?.email,
+        });
       } else {
-        toast.error(
-          "Pagamento não aprovado: " +
-            (result.message || "Verifique os dados do cartão")
+        if (!formData.payer.identification && finalCpf) {
+          formData.payer.identification = { type: "CPF", number: finalCpf };
+        }
+
+        result = await apiClient.processPayment(
+          formData,
+          selectedPlan?.plan_id,
+          "annually"
         );
-        setLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao processar pagamento. Tente novamente.");
-      setLoading(false);
+
+      if (result.id) {
+        setPaymentId(String(result.id));
+        toast.success(isPix ? "QR Code gerado!" : "Pagamento processado!");
+      } else {
+        throw new Error("Resposta inválida do servidor.");
+      }
+    } catch (error: any) {
+      handleCheckoutError(error);
     }
   };
 
-  if (!selectedPlan) return null; // Ou loading
-
-  const buttonText = loading
-    ? "Processando..."
-    : isMonthly
-    ? "Ir para Pagamento Seguro"
-    : `Pagar ${new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(selectedPlan.price)}`;
-
-  const paymentInitialization = {
-    amount: Number(selectedPlan.price),
-    payer: {
-      email: firebaseUser?.email || "comprador@teste.com",
-    },
-  };
-
-  const paymentCustomization: IPaymentBrickCustomization = {
-    paymentMethods: {
-      creditCard: "all",
-      bankTransfer: "all",
-      maxInstallments: 12,
-    },
+  const statusScreenCustomization: IStatusScreenBrickCustomization = {
     visual: {
       style: { theme: "default" },
-      hideFormTitle: true,
-      hidePaymentButton: false, // Importante: mantemos no DOM mas escondemos via CSS
+      hideTransactionDate: false,
+      hideStatusDetails: false,
+    },
+    backUrls: {
+      error: window.location.href,
+      return: window.location.origin + "/assinatura",
     },
   };
 
-  const isButtonDisabled = loading || (!isMonthly && !isBrickReady);
+  if (!selectedPlan) return null;
+
+  let buttonText = "";
+  if (loading) buttonText = "Processando...";
+  else if (paymentId) buttonText = "Voltar para Assinatura";
+  else if (isMonthly) buttonText = "Ir para Pagamento Seguro";
+  else
+    buttonText = `Pagar ${new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(selectedPlan.price)}`;
+
+  const isButtonDisabled =
+    loading || (!isMonthly && (!isBrickReady || cpf.length < 14) && !paymentId);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header Simples */}
+      {/* HEADER */}
       <header className="bg-white p-4 border-b border-gray-200 sticky top-0 z-20 flex items-center gap-4">
         <button
           onClick={() => navigate(-1)}
@@ -172,38 +218,55 @@ export default function CheckoutPage() {
       </header>
 
       <main className="flex-1 w-full max-w-md mx-auto p-6 pb-32">
-        <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
-          Resumo do Pedido
-        </h2>
+        {!paymentId && (
+          <>
+            <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
+              Resumo do Pedido
+            </h2>
+            <div className="bg-white p-5 rounded-2xl mb-6 shadow-sm border border-gray-100 flex justify-between items-center relative overflow-hidden">
+              {/* Badge de Escassez (Opcional, apenas visual) */}
+              {selectedPlan?.max_limit && (
+                <div className="absolute top-0 right-0 bg-red-100 text-red-600 text-[9px] font-bold px-2 py-0.5 rounded-bl-lg">
+                  VAGAS LIMITADAS
+                </div>
+              )}
 
-        {/* Card Resumo */}
-        <div className="bg-white p-5 rounded-2xl mb-6 shadow-sm border border-gray-100 flex justify-between items-center">
-          <div>
-            <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">
-              Novo Plano
-            </p>
-            <p className="text-lg font-bold text-gray-900 leading-tight">
-              {selectedPlan.title}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              {isMonthly ? "Cobrança mensal" : "Pagamento único anual"}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-indigo-600 font-bold text-xl">
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(selectedPlan.price)}
-            </p>
-            <p className="text-xs text-gray-400">
-              {isMonthly ? "/mês" : "/ano"}
-            </p>
-          </div>
-        </div>
+              <div>
+                <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">
+                  Plano Selecionado
+                </p>
+                <p className="text-lg font-bold text-gray-900 leading-tight">
+                  {selectedPlan.title}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {isMonthly ? "Cobrança mensal" : "Anual (Cartão ou Pix)"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-indigo-600 font-bold text-xl">
+                  {new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(selectedPlan.price)}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {isMonthly ? "/mês" : "/ano"}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
 
-        {isMonthly ? (
-          // Fluxo Mensal
+        {paymentId ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <StatusScreen
+              initialization={{ paymentId: paymentId }}
+              customization={statusScreenCustomization}
+              onReady={() => setLoading(false)}
+              onError={(error) => console.error(error)}
+            />
+          </div>
+        ) : isMonthly ? (
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center space-y-4">
             <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
               <LuLock className="w-6 h-6" />
@@ -212,44 +275,85 @@ export default function CheckoutPage() {
               <h3 className="font-semibold text-blue-900">Checkout Seguro</h3>
               <p className="text-sm text-blue-700 mt-2">
                 Você será redirecionado para o ambiente protegido do Mercado
-                Pago para autorizar a assinatura.
+                Pago.
               </p>
             </div>
           </div>
         ) : (
-          // Fluxo Anual (Brick)
           <div
             ref={brickContainerRef}
-            className={`relative transition-opacity duration-300 ${
+            className={`relative transition-opacity duration-300 space-y-4 ${
               loading ? "opacity-50 pointer-events-none" : "opacity-100"
             }`}
           >
-            {/* Spinner Overlay */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                <LuUser className="text-gray-400" /> CPF do Titular
+              </label>
+              <input
+                type="tel"
+                value={cpf}
+                onChange={(e) => setCpf(cpfMask(e.target.value))}
+                placeholder="000.000.000-00"
+                maxLength={14}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 font-mono"
+              />
+              <p className="text-[10px] text-gray-500 mt-1">
+                Necessário para emissão do Pix ou Nota Fiscal.
+              </p>
+            </div>
+
             {!isBrickReady && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 h-40 rounded-xl">
                 <LuLoader2 className="w-8 h-8 animate-spin text-indigo-600" />
               </div>
             )}
 
-            <div className="flex items-center gap-2 mb-4 text-sm text-gray-500 justify-center">
+            <div className="flex items-center gap-2 mb-2 text-sm text-gray-500 justify-center">
               <LuShieldCheck className="w-4 h-4 text-green-500" />
               <span>Processado por Mercado Pago</span>
             </div>
 
-            {/* CSS Hack para esconder botão nativo */}
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center gap-3">
+              <div className="bg-white p-2 rounded-full shadow-sm text-indigo-600">
+                <LuCreditCard className="w-4 h-4" />
+              </div>
+              <p className="text-xs text-gray-600 leading-tight">
+                Para parcelar em <strong>12x</strong>, selecione Cartão de
+                Crédito.
+              </p>
+            </div>
+
             <style>{`
               #payment-brick-container form button[type="submit"] {
-                visibility: hidden !important;
-                position: absolute !important;
-                top: 0; left: 0; height: 0 !important; width: 0 !important;
-                opacity: 0 !important; pointer-events: none !important;
+                display: none !important;
               }
             `}</style>
 
             <div id="payment-brick-container">
               <Payment
-                initialization={paymentInitialization}
-                customization={paymentCustomization}
+                initialization={{
+                  amount: Number(selectedPlan.price),
+                  payer: {
+                    email: firebaseUser?.email || "comprador@teste.com",
+                    identification: {
+                      type: "CPF",
+                      number: cpf.replace(/\D/g, ""),
+                    },
+                  },
+                }}
+                customization={{
+                  paymentMethods: {
+                    creditCard: "all",
+                    bankTransfer: "all",
+                    maxInstallments: 12,
+                  },
+                  visual: {
+                    style: { theme: "default" },
+                    hideFormTitle: true,
+                    hidePaymentButton: false,
+                  },
+                }}
                 onSubmit={onPaymentBrickSubmit}
                 onReady={() => setIsBrickReady(true)}
                 onError={(err) => console.error("Erro Brick", err)}
@@ -257,9 +361,44 @@ export default function CheckoutPage() {
             </div>
           </div>
         )}
+
+        {/* RODAPÉ DE CONFIANÇA */}
+        {!paymentId && (
+          <div className="mt-8 grid grid-cols-3 gap-2">
+            <div className="flex flex-col items-center text-center gap-1">
+              <div className="text-green-600 bg-green-50 p-2 rounded-full">
+                <LuLock className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] font-bold text-gray-600">
+                Dados
+                <br />
+                Criptografados
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center gap-1">
+              <div className="text-indigo-600 bg-indigo-50 p-2 rounded-full">
+                <LuBadgeCheck className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] font-bold text-gray-600">
+                Garantia
+                <br />
+                Comprovada
+              </p>
+            </div>
+            <div className="flex flex-col items-center text-center gap-1">
+              <div className="text-blue-600 bg-blue-50 p-2 rounded-full">
+                <LuHeadset className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] font-bold text-gray-600">
+                Suporte
+                <br />
+                Humanizado
+              </p>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Botão Fixo de Ação */}
       <div className="fixed bottom-0 left-0 w-full p-4 bg-white/90 backdrop-blur-md border-t border-gray-200 z-50">
         <div className="max-w-md mx-auto">
           <motion.button
@@ -277,9 +416,11 @@ export default function CheckoutPage() {
             {buttonText}
           </motion.button>
 
-          <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
-            <LuLock className="w-3 h-3" /> Ambiente criptografado.
-          </p>
+          {!paymentId && (
+            <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
+              <LuLock className="w-3 h-3" /> Ambiente criptografado.
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { initMercadoPago, Payment, StatusScreen } from "@mercadopago/sdk-react"; // <--- Importe StatusScreen
-// import type { IPaymentBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/payment/type";
-// import type { IStat } from "@mercadopago/sdk-react/esm/bricks/payment/type"; // Tipagem
+import { initMercadoPago, Payment, StatusScreen } from "@mercadopago/sdk-react";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate } from "react-router";
 import { useAuth } from "../../../context/AuthContext";
 import type { StepProps } from "../OnboardingWizard";
 import { motion } from "framer-motion";
@@ -12,19 +10,23 @@ import {
   LuLock,
   LuLoader as LuLoader2,
   LuCreditCard,
-  LuHeadset,
   LuBadgeCheck,
+  LuHeadset,
+  LuUser,
 } from "react-icons/lu";
 import { toast } from "sonner";
 import apiClient from "../../../api/apiClient";
 import type { IStatusScreenBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/statusScreen/types";
 
-// 1. ADICIONE A TIPAGEM GLOBAL DO FACEBOOK PIXEL
-declare global {
-  interface Window {
-    fbq: any;
-  }
-}
+// Função simples de máscara de CPF
+const cpfMask = (value: string) => {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+    .replace(/(-\d{2})\d+?$/, "$1");
+};
 
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST;
 
@@ -34,9 +36,10 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
 
   const [loading, setLoading] = useState(false);
   const [isBrickReady, setIsBrickReady] = useState(false);
-
-  // Novo estado para controlar qual Brick exibir
   const [paymentId, setPaymentId] = useState<string | null>(null);
+
+  // 1. NOVO ESTADO PARA CPF
+  const [cpf, setCpf] = useState("");
 
   const brickContainerRef = useRef<HTMLDivElement>(null);
 
@@ -54,22 +57,39 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
     }).format(Number(val));
   };
 
-  // 2. FUNÇÃO AUXILIAR PARA DISPARAR O PIXEL
   const trackPurchaseEvent = (transactionId?: string) => {
     if (typeof window.fbq !== "undefined" && selectedPlan) {
       window.fbq("track", "Purchase", {
-        value: Number(selectedPlan.price), // Valor do plano
+        value: Number(selectedPlan.price),
         currency: "BRL",
-        content_name: selectedPlan.title, // Nome do plano
-        content_ids: [String(selectedPlan.plan_id)], // ID do produto
+        content_name: selectedPlan.title,
+        content_ids: [String(selectedPlan.plan_id)],
         content_type: "product",
-        order_id: transactionId || "", // ID da transação (opcional mas recomendado)
+        order_id: transactionId || "",
       });
-      console.log("Pixel Purchase Disparado!");
     }
   };
 
-  // --- FLUXO MENSAL (REDIRECT) ---
+  // --- TRATAMENTO DE ERROS DE PROMOÇÃO ---
+  const handleCheckoutError = (error: any) => {
+    console.error(error);
+    const msg =
+      error.response?.data?.error || error.message || "Erro ao processar.";
+
+    // Se o erro for de escassez (409 Conflict vindo do PHP)
+    if (error.response?.status === 409 || msg.includes("esgotada")) {
+      toast.error("Promoção Esgotada!", {
+        description: "Infelizmente as vagas para este plano acabaram agora.",
+        duration: 5000,
+      });
+      // Opcional: Redirecionar após um tempo
+      setTimeout(() => navigate("/assinatura"), 3000);
+    } else {
+      toast.error(msg);
+    }
+    setLoading(false);
+  };
+
   const handleMonthlyRedirect = async () => {
     setLoading(true);
     try {
@@ -79,25 +99,30 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       );
       if (data.init_point) {
         window.location.href = data.init_point;
-        window.fbq("track", "InitiateCheckout"); // Recomendado para redirect
+        window.fbq("track", "InitiateCheckout");
       } else {
         throw new Error(data.error || "Erro ao gerar link de pagamento.");
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error("Erro ao conectar: " + error.message);
-      setLoading(false);
+      // console.error(error);
+      // toast.error("Erro ao conectar: " + error.message);
+      // setLoading(false);
+      handleCheckoutError(error);
     }
   };
 
-  // --- AÇÃO DO BOTÃO PERSONALIZADO ---
   const handleCustomSubmit = async () => {
     if (isMonthly) {
       await handleMonthlyRedirect();
     } else {
-      // Se já temos um paymentId, o botão serve para resetar ou avançar
       if (paymentId) {
-        navigate("/dashboard"); // Ou onde desejar enviar após ver o status
+        navigate("/dashboard");
+        return;
+      }
+
+      // Validação Manual do CPF antes de submeter o Brick
+      if (!isMonthly && cpf.length < 14) {
+        toast.error("Por favor, preencha seu CPF corretamente.");
         return;
       }
 
@@ -113,55 +138,76 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             brickContainerRef.current.querySelector("form button");
           if (genericButton instanceof HTMLElement) {
             genericButton.click();
-          } else {
-            console.error("Botão interno do Brick não encontrado.");
-            toast.error("Aguarde o carregamento do formulário.");
           }
         }
       }
     }
   };
 
-  // --- CALLBACK DO PAYMENT BRICK (ANUAL) ---
   const onPaymentBrickSubmit = async ({ formData }: any) => {
     setLoading(true);
     try {
-      // Processa no backend
-      const result = await apiClient.processPayment(
-        formData,
-        String(selectedPlan?.plan_id),
-        "annually"
-      );
+      let result;
 
-      // Independente se aprovou ou falhou, se temos um ID, mostramos a Status Screen
-      // O backend DEVE retornar o ID do pagamento (result.id)
+      // 1. Lógica Híbrida de CPF
+      // Tenta pegar do formulário (Cartão geralmente tem).
+      // Se não tiver (caso do Pix), pega do nosso estado manual `cpf`.
+      const cpfFromBrick = formData.payer?.identification?.number;
+      const finalCpf = cpfFromBrick || cpf.replace(/\D/g, ""); // Remove pontuação do estado manual
+
+      if (formData.paymentMethodId === "pix") {
+        if (!finalCpf) {
+          toast.error("CPF é obrigatório para Pix.");
+          setLoading(false);
+          return;
+        }
+
+        result = await apiClient.processPixPayment({
+          db_plan_id: String(selectedPlan?.plan_id),
+          doc_number: finalCpf, // Envia o CPF manual ou do brick
+          payment_method_id: "pix",
+          email: formData.payer.email || firebaseUser?.email,
+        });
+      } else {
+        // Fluxo Cartão (Mantemos o formData original, mas garantindo identification se faltar)
+        if (!formData.payer.identification && finalCpf) {
+          formData.payer.identification = { type: "CPF", number: finalCpf };
+        }
+
+        result = await apiClient.processPayment(
+          formData,
+          String(selectedPlan?.plan_id),
+          "annually"
+        );
+      }
+
       if (result.id) {
         trackPurchaseEvent(String(result.id));
         setPaymentId(String(result.id));
+        toast.success("Pedido gerado com sucesso!");
       } else {
-        // Erro genérico sem ID do MP
-        toast.error("Erro ao processar. Verifique os dados.");
+        toast.error("Não foi possível gerar o pagamento.");
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro técnico ao processar pagamento.");
+    } catch (error: any) {
+      // console.error("Erro pagamento:", error);
+      // const msg =
+      //   error.response?.data?.message || error.message || "Erro ao processar.";
+      // toast.error(msg);
+      handleCheckoutError(error);
     } finally {
       setLoading(false);
     }
   };
 
-  // --- CONFIGURAÇÃO STATUS SCREEN ---
   const statusScreenCustomization: IStatusScreenBrickCustomization = {
     visual: {
-      style: {
-        theme: "default", // ou 'dark' / 'bootstrap'
-      },
+      style: { theme: "default" },
       hideTransactionDate: false,
       hideStatusDetails: false,
     },
     backUrls: {
-      error: window.location.href, // Volta para tentar de novo
-      return: window.location.origin + "/dashboard", // Botão "Ir para o site"
+      error: window.location.href,
+      return: window.location.origin + "/dashboard",
     },
   };
 
@@ -170,26 +216,24 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
       <div className="text-red-500 p-10">Erro: Nenhum plano selecionado.</div>
     );
 
-  // Lógica do Texto do Botão Fixo
   let buttonText = "";
   if (loading) buttonText = "Processando...";
-  else if (paymentId) buttonText = "Continuar"; // Quando está na tela de status
+  else if (paymentId) buttonText = "Continuar";
   else if (isMonthly) buttonText = "Ir para Pagamento Seguro";
   else buttonText = `Pagar ${formatMoney(selectedPlan.price)}`;
 
   const isButtonDisabled =
-    loading || (!isMonthly && !isBrickReady && !paymentId);
+    loading || (!isMonthly && (!isBrickReady || cpf.length < 14) && !paymentId);
 
   return (
     <>
       <div className="w-full max-w-md mx-auto pb-40 px-4">
-        {/* Se tiver paymentId, escondemos o resumo para dar foco ao status, ou mantemos. 
-            Geralmente a Status Screen é alta, então esconder o resumo fica mais limpo. */}
         {!paymentId && (
           <>
             <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
               Resumo do Pedido
             </h2>
+            {/* ... CARD DE RESUMO (MANTIDO IGUAL) ... */}
             <div className="bg-white p-5 rounded-2xl mb-6 shadow-sm border border-gray-100 flex justify-between items-center relative overflow-hidden">
               {!isMonthly && (
                 <div className="absolute top-0 right-0 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
@@ -233,9 +277,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
           </>
         )}
 
-        {/* LÓGICA DE EXIBIÇÃO DOS BRICKS */}
         {paymentId ? (
-          // --- STATUS SCREEN BRICK ---
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <StatusScreen
               initialization={{ paymentId: paymentId }}
@@ -245,8 +287,9 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             />
           </div>
         ) : isMonthly ? (
-          // --- MENSAL (REDIRECT) ---
+          // ... FLUXO MENSAL (MANTIDO IGUAL) ...
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center space-y-4">
+            {/* Conteúdo Mensal */}
             <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
               <LuLock className="w-6 h-6" />
             </div>
@@ -259,42 +302,55 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             </div>
           </div>
         ) : (
-          // --- PAYMENT BRICK ---
           <div
             ref={brickContainerRef}
-            className={`relative transition-opacity duration-300 ${
+            className={`relative transition-opacity duration-300 space-y-4 ${
               loading ? "opacity-50 pointer-events-none" : "opacity-100"
             }`}
           >
+            {/* 2. INPUT DE CPF MANUAL (ACIMA DO BRICK) */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                <LuUser className="text-gray-400" /> CPF do Titular
+              </label>
+              <input
+                type="tel"
+                value={cpf}
+                onChange={(e) => setCpf(cpfMask(e.target.value))}
+                placeholder="000.000.000-00"
+                maxLength={14}
+                className="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-3 font-mono"
+              />
+              <p className="text-[10px] text-gray-500 mt-1">
+                Necessário para emissão do Pix ou Nota Fiscal.
+              </p>
+            </div>
+
             {!isBrickReady && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 h-40">
                 <LuLoader2 className="w-8 h-8 animate-spin text-indigo-600" />
               </div>
             )}
 
-            <div className="flex items-center gap-2 mb-4 text-sm text-gray-500 justify-center">
+            <div className="flex items-center gap-2 mb-2 text-sm text-gray-500 justify-center">
               <LuShieldCheck className="w-4 h-4 text-green-500" />
               <span>Processado por Mercado Pago</span>
             </div>
 
-            <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center gap-3">
+            {/* AVISO SOBRE CARTÃO */}
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-center gap-3">
               <div className="bg-white p-2 rounded-full shadow-sm text-indigo-600">
                 <LuCreditCard className="w-4 h-4" />
               </div>
               <p className="text-xs text-gray-600 leading-tight">
-                Selecione <strong>Cartão de Crédito</strong> abaixo para
-                habilitar o parcelamento em até 12x.
+                Para parcelar em <strong>12x</strong>, selecione Cartão de
+                Crédito.
               </p>
             </div>
 
-            {/* CSS para esconder botão nativo do brick */}
             <style>{`
               #payment-brick-container form button[type="submit"] {
-                visibility: hidden !important;
-                position: absolute !important;
-                top: 0; left: 0; height: 0 !important; width: 0 !important;
-                padding: 0 !important; margin: 0 !important; border: 0 !important;
-                opacity: 0 !important; pointer-events: none !important;
+                display: none !important;
               }
             `}</style>
 
@@ -304,6 +360,11 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
                   amount: Number(selectedPlan.price),
                   payer: {
                     email: firebaseUser?.email || "comprador@teste.com",
+                    // Passamos o CPF aqui também para tentar pré-preencher caso o Brick decida mostrar
+                    identification: {
+                      type: "CPF",
+                      number: cpf.replace(/\D/g, ""),
+                    },
                   },
                 }}
                 customization={{
@@ -326,9 +387,10 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
           </div>
         )}
 
-        {/* GRID DE CONFIANÇA (TRUST BADGES) */}
+        {/* --- RODAPÉ DE CONFIANÇA (MANTIDO) --- */}
         {!paymentId && (
           <div className="mt-8 grid grid-cols-3 gap-2">
+            {/* ... ícones de confiança ... */}
             <div className="flex flex-col items-center text-center gap-1">
               <div className="text-green-600 bg-green-50 p-2 rounded-full">
                 <LuLock className="w-4 h-4" />
@@ -363,8 +425,6 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
         )}
       </div>
 
-      {/* Botão Fixo com Aviso de Termos */}
-      {/* Se quiser esconder esse botão quando o Status Screen aparecer, adicione condição !paymentId */}
       <div className="fixed bottom-0 left-0 w-full p-4 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50">
         <div className="max-w-md mx-auto">
           <motion.button
@@ -382,23 +442,12 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
             {buttonText}
           </motion.button>
 
+          {/* ... Textos legais (mantidos) ... */}
           {!paymentId && (
             <p className="text-center text-xs text-gray-500 mt-3 mb-1 leading-tight">
-              Ao realizar a compra, você concorda com nossos{" "}
-              <Link
-                to="/termos"
-                target="_blank"
-                className="text-indigo-600 underline hover:text-indigo-800 font-medium"
-              >
-                Termos de Uso
-              </Link>
-              .
+              Ao realizar a compra, você concorda com nossos Termos de Uso.
             </p>
           )}
-
-          <p className="text-center text-[10px] text-gray-400 flex items-center justify-center gap-1 mt-1">
-            <LuLock className="w-3 h-3" /> Ambiente criptografado.
-          </p>
         </div>
       </div>
     </>

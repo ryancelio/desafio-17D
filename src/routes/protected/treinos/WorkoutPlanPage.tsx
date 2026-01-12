@@ -3,47 +3,59 @@ import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2,
-  TriangleAlert,
-  FileText,
   User,
   Crown,
-  Dumbbell,
   Plus,
   Sparkles,
   Lock,
   Ticket,
-  Clock,
   CheckCircle2,
-  XCircle,
-  ChevronRight,
-  History,
-  type LucideProps,
+  Archive,
+  CalendarDays,
   PlusCircle,
-  Calendar,
+  Dumbbell,
+  PlayCircle, // Novo ícone para indicar ação
 } from "lucide-react";
-import { toast } from "sonner";
-
-import apiClient, { isApiError } from "../../../api/apiClient";
+import apiClient from "../../../api/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import UpgradeModal from "../dashboard/Components/UpgradeModal";
-import type {
-  WorkoutPlan,
-  WorkoutRequest,
-  WorkoutRequestStatus,
-} from "../../../types/models";
+import type { DiaSemana, WorkoutPlan } from "../../../types/models";
 import type { AllCreditsResponse } from "../../../types/api-types";
 
-// --- Subcomponente: Card da Ficha (Visualização de Treino) ---
+// --- Mapeamento de Dias ---
+const DAYS_MAP = [
+  { key: "DOM", label: "Dom", full: "Domingo" },
+  { key: "SEG", label: "Seg", full: "Segunda-feira" },
+  { key: "TER", label: "Ter", full: "Terça-feira" },
+  { key: "QUA", label: "Qua", full: "Quarta-feira" },
+  { key: "QUI", label: "Qui", full: "Quinta-feira" },
+  { key: "SEX", label: "Sex", full: "Sexta-feira" },
+  { key: "SAB", label: "Sáb", full: "Sábado" },
+];
+
+// --- Helper para verificar se é hoje ---
+const isSameDay = (dateString?: string | null) => {
+  if (!dateString) return false;
+  const d = new Date(dateString);
+  const today = new Date();
+  return (
+    d.getDate() === today.getDate() &&
+    d.getMonth() === today.getMonth() &&
+    d.getFullYear() === today.getFullYear()
+  );
+};
+
+// --- Subcomponente: Card da Ficha ---
 const PlanCard: React.FC<{
   plan: WorkoutPlan;
-  isNext?: boolean;
-  isLast?: boolean;
-  nextDate?: Date | null;
-}> = ({ plan, isNext, isLast, nextDate }) => {
+  isTodayPending: boolean; // Indica se é o treino de hoje pendente
+  isTodayDone: boolean; // Indica se é o treino de hoje concluído
+}> = ({ plan, isTodayPending, isTodayDone }) => {
+  // Gera resumo de músculos
   const musculos = useMemo(() => {
     const muscleSet = new Set<string>();
-    plan.exercises.forEach((ex) => {
-      ex.musculos_trabalhados?.forEach((m) => muscleSet.add(m));
+    plan.exercises?.forEach((ex) => {
+      ex.musculos_trabalhados?.forEach((m: string) => muscleSet.add(m));
     });
     return Array.from(muscleSet).slice(0, 3);
   }, [plan.exercises]);
@@ -55,73 +67,48 @@ const PlanCard: React.FC<{
       })
     : "Nunca";
 
-  // Formatação da data do próximo treino
-  const scheduledText = useMemo(() => {
-    if (!nextDate) return "Defina seus dias";
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const d = new Date(nextDate);
-    d.setHours(0, 0, 0, 0);
-    const diff = (d.getTime() - today.getTime()) / 86400000;
-    if (diff === 0) return "Hoje";
-    if (diff === 1) return "Amanhã";
-    const s = d.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      day: "numeric",
-    });
-    return s.charAt(0).toUpperCase() + s.slice(1);
-  }, [nextDate]);
+  // Define estilos baseados no status do dia
+  let containerClasses = "border-gray-100 hover:border-pasPink/30";
+  if (isTodayPending) {
+    containerClasses = "border-pasPink ring-4 ring-pasPink/10 z-10 shadow-lg"; // Destaque Rosa
+  } else if (isTodayDone) {
+    containerClasses = "border-green-200 bg-green-50/30"; // Destaque Verde (Concluído)
+  }
 
   return (
-    <Link to={`/treinos/${plan.plan_id}`}>
+    <Link to={`/treinos/${plan.plan_id}`} className="block h-full">
       <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: isNext ? 1.02 : 1 }}
-        whileHover={{
-          y: -4,
-          scale: isNext ? 1.03 : 1.01,
-          boxShadow:
-            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-        }}
-        className={`group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all relative ${
-          isNext
-            ? "border-2 border-pasPink ring-4 ring-pasPink/10 z-10"
-            : isLast
-            ? "border border-gray-300 bg-gray-50/30"
-            : "border border-gray-100 hover:border-pasPink/50"
-        }`}
+        whileHover={{ y: -4, scale: 1.01 }}
+        className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all border relative ${containerClasses}`}
       >
         <div className="p-5">
           <div className="flex justify-between items-start mb-3">
-            {plan.criada_por === "ADMIN" ? (
-              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-gray-800 bg-pasPink border border-pasPink/50 px-2 py-1 rounded-full">
-                <Crown className="h-3 w-3" />
-                Pro
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-gray-800 bg-pasGreen border border-pasGreen/50 px-2 py-1 rounded-full">
-                <User className="h-3 w-3" />
-                Pessoal
+            <div className="flex gap-2">
+              {plan.criada_por === "ADMIN" ? (
+                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-gray-800 bg-pasPink border border-pasPink/50 px-2 py-1 rounded-full">
+                  <Crown className="h-3 w-3" /> Pro
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-gray-800 bg-pasGreen border border-pasGreen/50 px-2 py-1 rounded-full">
+                  <User className="h-3 w-3" /> Pessoal
+                </span>
+              )}
+            </div>
+
+            {/* Badges de Status do Dia */}
+            {isTodayPending && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-pasPink bg-pasPink/10 px-2 py-1 rounded-full animate-pulse">
+                <PlayCircle className="h-3 w-3" /> Para Hoje
               </span>
             )}
-
-            {/* Badges de Status */}
-            {isNext ? (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-pasPink bg-pasPink/10 px-2 py-1 rounded-full animate-pulse">
-                <Calendar className="h-3 w-3" />
-                {scheduledText}
+            {isTodayDone && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                <CheckCircle2 className="h-3 w-3" /> Feito Hoje
               </span>
-            ) : isLast ? (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                <CheckCircle2 className="h-3 w-3" />
+            )}
+            {!isTodayPending && !isTodayDone && plan.data_ultima_execucao && (
+              <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">
                 Último: {ultimaExecucao}
-              </span>
-            ) : (
-              <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-lg">
-                {plan.data_ultima_execucao
-                  ? `Último: ${ultimaExecucao}`
-                  : "Novo"}
               </span>
             )}
           </div>
@@ -132,129 +119,86 @@ const PlanCard: React.FC<{
         </div>
 
         <div className="flex-1 px-5 pb-4 space-y-2">
-          <ul className="space-y-2">
-            {plan.exercises.slice(0, 3).map((ex) => (
-              <li
-                key={ex.plan_exercise_id}
-                className="flex items-center gap-2 text-sm text-gray-600"
-              >
-                <div className="h-1.5 w-1.5 rounded-full bg-pasPink shrink-0"></div>
-                <span className="truncate">{ex.nome_exercicio}</span>
-              </li>
-            ))}
-            {plan.exercises.length > 3 && (
-              <li className="text-xs text-gray-400 font-medium pl-3.5">
-                + {plan.exercises.length - 3} exercícios
-              </li>
-            )}
-          </ul>
+          {plan.exercises?.length > 0 ? (
+            <ul className="space-y-2">
+              {plan.exercises.slice(0, 3).map((ex) => (
+                <li
+                  key={ex.plan_exercise_id}
+                  className="flex items-center gap-2 text-sm text-gray-600"
+                >
+                  <div
+                    className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                      isTodayPending ? "bg-pasPink" : "bg-gray-300"
+                    }`}
+                  ></div>
+                  <span className="truncate">
+                    {ex.nome_exercicio || ex.exercise?.nome}
+                  </span>
+                </li>
+              ))}
+              {plan.exercises.length > 3 && (
+                <li className="text-xs text-gray-400 font-medium pl-3.5">
+                  + {plan.exercises.length - 3} exercícios
+                </li>
+              )}
+            </ul>
+          ) : (
+            <div className="text-sm text-gray-400 italic">
+              Sem exercícios cadastrados
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-gray-100 bg-gray-50/50 p-4">
-          {musculos.map((musculo) => (
-            <span
-              key={musculo}
-              className="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[10px] font-bold text-gray-500 shadow-sm uppercase tracking-wide"
-            >
-              {musculo}
-            </span>
-          ))}
+        {/* Rodapé com Músculos e Dias */}
+        <div className="flex flex-col gap-2 border-t border-gray-100 bg-gray-50/50 p-4">
+          <div className="flex flex-wrap gap-1">
+            {musculos.map((m) => (
+              <span
+                key={m}
+                className="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[10px] font-bold text-gray-500 uppercase"
+              >
+                {m}
+              </span>
+            ))}
+          </div>
+
+          {plan.assigned_days && plan.assigned_days.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {plan.assigned_days.map((d) => (
+                <span
+                  key={d}
+                  className="text-[10px] font-bold text-pasPink bg-pasPink/10 px-1.5 py-0.5 rounded-md"
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
     </Link>
   );
 };
 
-// --- Subcomponente: Card de Pedido (Histórico) ---
-const RequestCard: React.FC<{ req: WorkoutRequest }> = ({ req }) => {
-  const statusConfig: Record<
-    WorkoutRequestStatus,
-    {
-      color: string;
-      icon: React.ForwardRefExoticComponent<
-        Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
-      >;
-      label: string;
-    }
-  > = {
-    pendente: {
-      color: "bg-gray-100 text-gray-600 border-gray-200",
-      icon: Clock,
-      label: "Aguardando",
-    },
-    em_analise: {
-      color: "bg-pasPink/20 text-gray-800 border-pasPink/30",
-      icon: Loader2,
-      label: "Em Análise",
-    },
-    concluido: {
-      color: "bg-pasGreen text-gray-800 border-pasGreen/50",
-      icon: CheckCircle2,
-      label: "Concluído",
-    },
-    rejeitado: {
-      color: "bg-red-50 text-red-700 border-red-200",
-      icon: XCircle,
-      label: "Recusado",
-    },
-  };
-
-  const config = statusConfig[req.status] || statusConfig.pendente;
-  const Icon = config.icon;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex items-center justify-between gap-4"
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${config.color} uppercase tracking-wide`}
-          >
-            <Icon className="w-3 h-3" /> {config.label}
-          </span>
-          <span className="text-xs text-gray-400">
-            {new Date(req.created_at).toLocaleDateString("pt-BR")}
-          </span>
-        </div>
-        <p className="text-sm font-medium text-gray-800 truncate">
-          Solicitação de Treino Personalizado
-        </p>
-        {req.status === "rejeitado" && req.admin_feedback && (
-          <p className="text-xs text-red-500 mt-1 line-clamp-1">
-            Motivo: {req.admin_feedback}
-          </p>
-        )}
-      </div>
-      {req.status === "concluido" && (
-        <div className="bg-gray-50 p-2 rounded-full text-gray-400">
-          <ChevronRight className="w-5 h-5" />
-        </div>
-      )}
-    </motion.div>
-  );
-};
-
-// --- Componente Principal ---
-
 export default function WorkoutPlansPage() {
   const { userProfile } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"plans" | "requests">("plans");
+  // Dia da semana atual (para lógica de "Próximo Treino")
+  const todayKey = DAYS_MAP[new Date().getDay()].key;
+
+  // Estado para controlar a visualização (inicia com Weekly)
+  const [selectedDay, setSelectedDay] = useState<string>(todayKey);
+  const [viewMode, setViewMode] = useState<"weekly" | "all" | "archived">(
+    "weekly"
+  );
+
   const [plans, setPlans] = useState<WorkoutPlan[]>([]);
-  const [requests, setRequests] = useState<WorkoutRequest[]>([]); // Estado para pedidos
-
   const [allCredits, setCredits] = useState<AllCreditsResponse | null>(null);
-
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const credits = allCredits?.workout;
-
   const hasAccess = useMemo(() => {
     const planName = userProfile?.subscription?.plan_name?.toLowerCase() || "";
     return planName.includes("treino") || planName.includes("completo");
@@ -264,23 +208,14 @@ export default function WorkoutPlansPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [plansData, creditsData, requestsData] = await Promise.all([
+        const [plansData, creditsData] = await Promise.all([
           apiClient.getUserWorkouts(),
           apiClient.getAllCredits(),
-          // Fallback para array vazio se a API não existir ainda
-          apiClient.getWorkoutRequests(),
         ]);
-
         setPlans(plansData);
         setCredits(creditsData);
-        setRequests(requestsData);
-      } catch (err) {
-        if (isApiError(err)) {
-          setError(err.response?.data.error || "Erro");
-        } else {
-          setError("Falha ao carregar dados.");
-        }
-        console.error(err);
+      } catch (error) {
+        console.error("Erro ao carregar:", error);
       } finally {
         setIsLoading(false);
       }
@@ -288,290 +223,241 @@ export default function WorkoutPlansPage() {
     fetchData();
   }, []);
 
-  const handleRequestClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  // --- FILTRAGEM DOS TREINOS ---
+  const activePlans = plans.filter((p) => p.is_active);
+  const archivedPlans = plans.filter((p) => p.is_active === false);
+
+  const filteredPlans = useMemo(() => {
+    if (viewMode === "archived") return archivedPlans;
+    if (viewMode === "all") return activePlans;
+
+    // Weekly: Filtra pelo dia selecionado na aba
+    return activePlans.filter((p) => {
+      if (p.assigned_days && p.assigned_days.length > 0) {
+        const days = Array.isArray(p.assigned_days)
+          ? p.assigned_days
+          : (p.assigned_days as string).split(",");
+        return days.includes(selectedDay);
+      }
+      return true; // Mostra treinos sem dia definido sempre
+    });
+  }, [viewMode, activePlans, archivedPlans, selectedDay]);
+
+  const handleRequestClick = () => {
     if (!hasAccess) {
       setShowUpgradeModal(true);
-      return;
-    }
-    if (credits && !credits.can_request) {
-      toast.error("Limite mensal atingido", {
-        description: `Renova em ${new Date(
-          allCredits.next_reset_date
-        ).toLocaleDateString()}.`,
-        action: {
-          label: "Comprar Crédito",
-          onClick: () => setShowUpgradeModal(true),
-        },
-      });
       return;
     }
     navigate("/treinos/solicitar");
   };
 
-  // --- Lógica de Próximo/Último Treino ---
-  const { lastPlan, nextPlan, nextDate } = useMemo(() => {
-    if (!plans || plans.length === 0)
-      return { lastPlan: null, nextPlan: null, nextDate: null };
-
-    // 1. Último executado
-    const executed = plans.filter((p) => p.data_ultima_execucao);
-    executed.sort((a, b) => {
-      const dA = new Date(a.data_ultima_execucao!).getTime();
-      const dB = new Date(b.data_ultima_execucao!).getTime();
-      return dB - dA;
-    });
-    const last = executed[0] || null;
-
-    // 2. Próximo (Ciclo A -> B -> C -> A)
-    // Ordena por nome para garantir ordem consistente
-    const sorted = [...plans].sort((a, b) => a.nome.localeCompare(b.nome));
-    let next = sorted[0];
-
-    if (last) {
-      const idx = sorted.findIndex((p) => p.plan_id === last.plan_id);
-      if (idx !== -1) {
-        next = sorted[(idx + 1) % sorted.length];
-      }
-    }
-
-    // 3. Data do Próximo
-    let nDate: Date | null = null;
-    const diasTreino = userProfile?.profile?.dias_treino || [];
-    const dayMap: Record<string, number> = {
-      DOM: 0,
-      SEG: 1,
-      TER: 2,
-      QUA: 3,
-      QUI: 4,
-      SEX: 5,
-      SAB: 6,
-    };
-
-    if (diasTreino.length > 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const searchDate = new Date(today);
-
-      // Se treinou hoje, começa a procurar a partir de amanhã
-      if (last && last.data_ultima_execucao) {
-        const lastDate = new Date(last.data_ultima_execucao);
-        lastDate.setHours(0, 0, 0, 0);
-        if (lastDate.getTime() === today.getTime()) {
-          searchDate.setDate(today.getDate() + 1);
-        }
-      }
-
-      // Procura nos próximos 14 dias
-      for (let i = 0; i < 14; i++) {
-        const current = new Date(searchDate);
-        current.setDate(searchDate.getDate() + i);
-        const dayNum = current.getDay();
-
-        // Verifica se o dia da semana está na lista do usuário
-        const isTrainingDay = diasTreino.some((d) => dayMap[d] === dayNum);
-        if (isTrainingDay) {
-          nDate = current;
-          break;
-        }
-      }
-    }
-
-    return { lastPlan: last, nextPlan: next, nextDate: nDate };
-  }, [plans, userProfile]);
-
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="flex h-full items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-pasPink" />
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="animate-spin text-pasPink w-10 h-10" />
       </div>
     );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-        <TriangleAlert className="h-10 w-10 text-red-400" />
-        <p className="text-gray-600">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="text-pasPink font-bold hover:underline"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <>
-      <div className="space-y-6 p-4 md:p-8 max-w-7xl mx-auto pb-24">
-        {/* HEADER & CRÉDITOS */}
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="h-6 w-6 text-pasPink" />
-                Treinos
-              </h1>
-              <p className="text-sm text-gray-500">
-                Suas fichas e solicitações.
-              </p>
+    <div className="space-y-6 p-4 md:p-8 max-w-7xl mx-auto pb-24">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <CalendarDays className="h-6 w-6 text-pasPink" />
+            Agenda de Treinos
+          </h1>
+          <p className="text-sm text-gray-500">Organize sua rotina semanal.</p>
+        </div>
+
+        {credits && hasAccess && (
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end bg-pasPink/20 px-3 py-1.5 rounded-lg border border-pasPink/30">
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                Créditos
+              </span>
+              <span className="text-sm font-bold flex items-center gap-1 text-gray-900">
+                <Ticket className="w-3.5 h-3.5" />{" "}
+                {credits.details.total_remaining}
+              </span>
             </div>
+            <button
+              onClick={() => navigate("/loja/creditos?type=workout")}
+              className="bg-pasPink hover:bg-pasPink/90 text-gray-900 p-2.5 rounded-lg transition-all active:scale-95"
+            >
+              <PlusCircle className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+      </div>
 
-            {/* Display de Créditos Compacto */}
-            {credits && hasAccess && (
-              <div className="flex items-center gap-2">
-                {/* Bloco de info de créditos */}
-                <div className="flex flex-col items-end bg-pasPink/20 px-3 py-1.5 rounded-lg border border-pasPink/30">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                    Créditos
-                  </span>
-                  <span
-                    className={`text-sm font-bold flex items-center gap-1 ${
-                      credits.details.total_remaining > 0
-                        ? "text-gray-900"
-                        : "text-red-500"
-                    }`}
-                  >
-                    <Ticket className="w-3.5 h-3.5" />
-                    {credits.details.total_remaining}
-                  </span>
-                </div>
+      {/* BOTÕES DE AÇÃO RÁPIDA */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          to="/treinos/criar"
+          className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 py-3 text-sm font-bold text-gray-700 shadow-sm active:bg-gray-50"
+        >
+          <Plus className="h-4 w-4" /> Criar Manual
+        </Link>
+        <button
+          onClick={handleRequestClick}
+          className={`relative flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-md overflow-hidden ${
+            hasAccess ? "bg-gray-900" : "bg-gray-700 opacity-90"
+          }`}
+        >
+          {hasAccess && (
+            <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent z-0"></div>
+          )}
+          <div className="relative z-10 flex items-center gap-2">
+            {hasAccess ? (
+              <Sparkles className="h-4 w-4 text-yellow-300" />
+            ) : (
+              <Lock className="h-4 w-4 text-gray-400" />
+            )}
+            Solicitar Pro
+          </div>
+        </button>
+      </div>
 
-                {/* BOTÃO NOVO: Comprar Mais */}
+      {/* MENU DE VISUALIZAÇÃO */}
+      <div className="flex gap-4 border-b border-gray-200 pb-1 overflow-x-auto">
+        <button
+          onClick={() => setViewMode("weekly")}
+          className={`pb-2 px-1 text-sm font-bold transition-colors whitespace-nowrap ${
+            viewMode === "weekly"
+              ? "text-pasPink border-b-2 border-pasPink"
+              : "text-gray-400 hover:text-gray-600"
+          }`}
+        >
+          Semana
+        </button>
+        <button
+          onClick={() => setViewMode("all")}
+          className={`pb-2 px-1 text-sm font-bold transition-colors whitespace-nowrap ${
+            viewMode === "all"
+              ? "text-pasPink border-b-2 border-pasPink"
+              : "text-gray-400 hover:text-gray-600"
+          }`}
+        >
+          Todas as Fichas ({activePlans.length})
+        </button>
+        <button
+          onClick={() => setViewMode("archived")}
+          className={`pb-2 px-1 text-sm font-bold transition-colors whitespace-nowrap ${
+            viewMode === "archived"
+              ? "text-pasPink border-b-2 border-pasPink"
+              : "text-gray-400 hover:text-gray-600"
+          }`}
+        >
+          Arquivadas ({archivedPlans.length})
+        </button>
+      </div>
+
+      {/* SELETOR DE DIAS */}
+      <AnimatePresence mode="wait">
+        {viewMode === "weekly" && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex justify-between gap-2 overflow-x-auto pb-2 scrollbar-hide"
+          >
+            {DAYS_MAP.map((day) => {
+              const isSelected = selectedDay === day.key;
+              const isToday = day.key === todayKey;
+
+              return (
                 <button
-                  onClick={() => navigate("/loja/creditos?type=workout")}
-                  className="bg-pasPink hover:bg-pasPink/90 text-gray-900 p-2.5 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center"
-                  title="Comprar mais créditos"
+                  key={day.key}
+                  onClick={() => setSelectedDay(day.key)}
+                  className={`flex flex-col items-center justify-center min-w-[3.5rem] py-3 rounded-2xl transition-all duration-300 ${
+                    isSelected
+                      ? "bg-pasPink text-gray-900 shadow-md scale-105"
+                      : "bg-white text-gray-400 border border-gray-100 hover:border-pasPink/30"
+                  }`}
                 >
-                  <PlusCircle className="w-5 h-5" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    {day.label}
+                  </span>
+                  {isToday && (
+                    <span className="text-[8px] mt-0.5 font-semibold opacity-70">
+                      Hoje
+                    </span>
+                  )}
                 </button>
-              </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* LISTA DE TREINOS */}
+      <div className="space-y-4">
+        {viewMode === "weekly" && (
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-800">
+              {DAYS_MAP.find((d) => d.key === selectedDay)?.full}
+            </h2>
+            <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-md">
+              {filteredPlans.length} treino(s)
+            </span>
+          </div>
+        )}
+
+        {filteredPlans.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50">
+            <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+              {viewMode === "archived" ? (
+                <Archive className="w-8 h-8 text-gray-300" />
+              ) : (
+                <Dumbbell className="w-8 h-8 text-gray-300" />
+              )}
+            </div>
+            <h3 className="text-gray-900 font-bold text-lg mb-1">
+              Nenhum treino encontrado
+            </h3>
+            <p className="text-gray-500 text-sm max-w-xs mx-auto">
+              {viewMode === "weekly"
+                ? `Você não tem treinos agendados para ${DAYS_MAP.find(
+                    (d) => d.key === selectedDay
+                  )?.full.toLowerCase()}.`
+                : "Não há fichas nesta categoria."}
+            </p>
+            {viewMode === "weekly" && (
+              <Link
+                to="/treinos/criar"
+                className="mt-4 text-pasPink font-bold text-sm hover:underline"
+              >
+                + Adicionar treino para hoje
+              </Link>
             )}
           </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredPlans.map((plan) => {
+              // LÓGICA DO DESTAQUE:
+              // 1. O treino está agendado para o dia da semana ATUAL? (todayKey)
+              const isAssignedToday = plan.assigned_days?.includes(
+                todayKey as DiaSemana
+              );
+              // 2. Ele já foi executado na data de HOJE?
+              const isExecutedToday = isSameDay(plan.data_ultima_execucao);
 
-          {/* BOTÕES DE AÇÃO */}
-          <div className="grid grid-cols-2 gap-3">
-            <Link
-              to="/treinos/criar"
-              className="flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 py-3 text-sm font-bold text-gray-700 shadow-sm active:bg-gray-50"
-            >
-              <Plus className="h-4 w-4" />
-              Criar Manual
-            </Link>
+              // 3. Status Final
+              const isTodayPending = !!isAssignedToday && !isExecutedToday;
+              const isTodayDone = !!isExecutedToday;
 
-            <button
-              onClick={handleRequestClick}
-              className={`relative flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white shadow-md active:scale-[0.98] overflow-hidden ${
-                hasAccess ? "bg-gray-900" : "bg-gray-700 opacity-90"
-              }`}
-            >
-              {hasAccess && (
-                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-white/10 to-transparent z-0"></div>
-              )}
-              <div className="relative z-10 flex items-center gap-2">
-                {hasAccess ? (
-                  <Sparkles className="h-4 w-4 text-yellow-300" />
-                ) : (
-                  <Lock className="h-4 w-4 text-gray-400" />
-                )}
-                Solicitar Pro
-              </div>
-            </button>
+              return (
+                <PlanCard
+                  key={plan.plan_id}
+                  plan={plan}
+                  isTodayPending={isTodayPending}
+                  isTodayDone={isTodayDone}
+                />
+              );
+            })}
           </div>
-        </div>
-
-        {/* CONTROLE DE ABAS (TABS) */}
-        <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur py-2">
-          <div className="flex p-1 bg-gray-200/50 rounded-xl">
-            <button
-              onClick={() => setActiveTab("plans")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all ${
-                activeTab === "plans"
-                  ? "bg-white text-pasPink shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Dumbbell className="w-4 h-4" />
-              Fichas Ativas
-            </button>
-            <button
-              onClick={() => setActiveTab("requests")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-bold rounded-lg transition-all ${
-                activeTab === "requests"
-                  ? "bg-white text-pasPink shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <History className="w-4 h-4" />
-              Meus Pedidos
-            </button>
-          </div>
-        </div>
-
-        {/* CONTEÚDO DAS ABAS */}
-        <AnimatePresence mode="wait">
-          {activeTab === "plans" ? (
-            <motion.div
-              key="plans"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="space-y-4"
-            >
-              {plans.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl">
-                  <Dumbbell className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                  <p>Nenhuma ficha ativa.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {plans.map((plan) => {
-                    const isNext = nextPlan?.plan_id === plan.plan_id;
-                    const isLast = lastPlan?.plan_id === plan.plan_id;
-                    return (
-                      <PlanCard
-                        key={plan.plan_id}
-                        plan={plan}
-                        isNext={isNext}
-                        isLast={isLast}
-                        nextDate={isNext ? nextDate : null}
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="requests"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="space-y-3"
-            >
-              {requests.length === 0 ? (
-                <div className="text-center py-10 text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl">
-                  <History className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm">
-                    Você ainda não solicitou nenhum treino.
-                  </p>
-                  <button
-                    onClick={handleRequestClick}
-                    className="text-pasPink text-sm font-bold mt-2 hover:underline"
-                  >
-                    Fazer primeiro pedido
-                  </button>
-                </div>
-              ) : (
-                requests.map((req) => (
-                  <RequestCard key={req.request_id} req={req} />
-                ))
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        )}
       </div>
 
       <UpgradeModal
@@ -579,6 +465,6 @@ export default function WorkoutPlansPage() {
         onClose={() => setShowUpgradeModal(false)}
         onUpgrade={() => navigate("/assinatura")}
       />
-    </>
+    </div>
   );
 }

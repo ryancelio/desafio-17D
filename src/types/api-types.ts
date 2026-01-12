@@ -162,7 +162,11 @@ export interface Plan {
   price_annually: number;
   features: string[];
   is_featured?: boolean;
-  // is_active: boolean;
+  monthly_workout_limit: number;
+  monthly_diet_limit: number;
+  is_sold_out: boolean;
+  max_limit: number | null;
+  current_usage?: number | null;
 }
 
 // --- LOJA ---
@@ -272,4 +276,23 @@ export interface StreakData {
 export interface GetUserStreaksResponse {
   nutrition: StreakData;
   workout: StreakData;
+}
+
+export interface LeaderboardResponse {
+  list: {
+    rank: number;
+    uid: string;
+    nome: string;
+    photo: string | null;
+    streak: number;
+    is_me: boolean;
+  }[];
+  user_rank: {
+    rank: number;
+    uid: string;
+    nome: string;
+    photo: string | null;
+    streak: number;
+    is_me: boolean;
+  } | null;
 }

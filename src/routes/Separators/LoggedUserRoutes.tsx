@@ -6,6 +6,7 @@ import ActiveUserCheckRoute from "../protected/ActiveUserCheckRoute";
 import AppLayout from "../protected/AppLayout";
 import ProtectedRoute from "../ProtectedRoute";
 import RenewPlanPage from "../protected/planos/RenewalPlanPage";
+import LeaderboardPage from "../leaderboard/LeaderboardPage";
 
 // Lazy Loading Components
 const Dashboard = lazy(() => import("../protected/dashboard/Dashboard"));
@@ -79,6 +80,7 @@ export default function LoggedUserRoutes() {
         </ProtectedRoute>
       }
     >
+      {/* ACTIVE */}
       <Route element={<ActiveUserCheckRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -97,6 +99,7 @@ export default function LoggedUserRoutes() {
           <Route path="/dietas" element={<DietPlansPage />} />
           <Route path="/dieta/:id" element={<DietDetailsPage />} />
           <Route path="/dieta/solicitar" element={<RequestDietPage />} />
+          <Route path="leaderboard" element={<LeaderboardPage />} />
         </Route>
         <Route path="/treinos/:id" element={<WorkoutExecutionPage />} />
         <Route
@@ -104,6 +107,8 @@ export default function LoggedUserRoutes() {
           element={<WorkoutCompletionPage />}
         />
       </Route>
+      {/*  ^^^ ACTIVE ^^^ */}
+
       <Route path="/treinos/criar" element={<CreateWorkoutPlanPage />} />
       <Route path="/treinos/solicitar" element={<RequestWorkoutPage />} />
       <Route path="/upgrade" element={<ChangePlanPage />} />

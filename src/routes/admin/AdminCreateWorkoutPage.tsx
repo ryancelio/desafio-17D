@@ -8,7 +8,9 @@ import {
   LuDumbbell,
   LuArrowLeft,
   LuLoader as LuLoader2,
-  LuTag,
+  LuCalendarDays,
+  LuPencilLine,
+  LuTag, // Reimportado para uso nas tags
 } from "react-icons/lu";
 import type { Exercise, ExerciseTaxonomy } from "../../types/models";
 import {
@@ -18,16 +20,6 @@ import {
   saveWorkout,
   completeWorkoutRequest,
 } from "./shared/AdminApi";
-// Importamos a API centralizada
-// import {
-//   ManageExercises,
-//   ManageExerciseMetadata,
-//   saveWorkout,
-//   completeWorkoutRequest,
-// } from "../../../api/adminApi";
-// Importamos tipos
-// import type { Exercise, ExerciseTaxonomy } from "../../../types/models";
-// import type { SaveWorkoutPayload } from "../../../api/adminApi";
 
 // Interface Local para controle de estado da lista de construção
 interface PlanItem {
@@ -41,6 +33,17 @@ interface PlanItem {
     notes: string;
   };
 }
+
+// Dias da semana disponíveis
+const DAYS_OPTIONS = [
+  { key: "DOM", label: "Dom" },
+  { key: "SEG", label: "Seg" },
+  { key: "TER", label: "Ter" },
+  { key: "QUA", label: "Qua" },
+  { key: "QUI", label: "Qui" },
+  { key: "SEX", label: "Sex" },
+  { key: "SAB", label: "Sáb" },
+];
 
 export default function AdminCreateWorkoutPage() {
   const [searchParams] = useSearchParams();
@@ -63,6 +66,9 @@ export default function AdminCreateWorkoutPage() {
   const [planName, setPlanName] = useState(
     defaultName ? decodeURIComponent(defaultName) : ""
   );
+  // Estado para os dias da semana
+  const [assignedDays, setAssignedDays] = useState<string[]>([]);
+
   const [planItems, setPlanItems] = useState<PlanItem[]>([]);
 
   // --- Estados de Filtro e UI ---
@@ -71,11 +77,10 @@ export default function AdminCreateWorkoutPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   type CategoriaTypes = "todas" | "academia" | "calistenia";
-  // Filtros
-  const [filterMuscle, setFilterMuscle] = useState(""); // Value do músculo
+  const [filterMuscle, setFilterMuscle] = useState("");
   const [filterCategory, setFilterCategory] = useState<CategoriaTypes>("todas");
 
-  // 1. Carregar Dados Iniciais (Exercícios e Taxonomias)
+  // 1. Carregar Dados Iniciais
   useEffect(() => {
     if (!userUid) {
       alert("UID do usuário não fornecido.");
@@ -85,7 +90,6 @@ export default function AdminCreateWorkoutPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        // Busca em paralelo para ser mais rápido
         const [exercisesData, metaData] = await Promise.all([
           ManageExercises.get(),
           ManageExerciseMetadata.get(),
@@ -115,27 +119,21 @@ export default function AdminCreateWorkoutPage() {
   useEffect(() => {
     let results = availableExercises;
 
-    // A. Filtro por Texto (Nome)
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       results = results.filter((ex) => ex.nome.toLowerCase().includes(term));
     }
 
-    // B. Filtro por Músculo (Dinâmico)
     if (filterMuscle) {
       results = results.filter((ex) =>
-        // Verifica se o array de musculos contém o value selecionado
         ex.musculos_trabalhados?.some(
           (m: string) => m.toLowerCase() === filterMuscle.toLowerCase()
         )
       );
     }
 
-    // C. Filtro por Categoria (Academia / Calistenia / Ambos)
     if (filterCategory !== "todas") {
       results = results.filter((ex) => {
-        // Se filtro é 'academia', mostra 'academia' E 'ambos'
-        // Se filtro é 'calistenia', mostra 'calistenia' E 'ambos'
         return ex.categoria === filterCategory || ex.categoria === "ambos";
       });
     }
@@ -143,7 +141,7 @@ export default function AdminCreateWorkoutPage() {
     setFilteredExercises(results);
   }, [searchTerm, filterMuscle, filterCategory, availableExercises]);
 
-  // 3. Adicionar Exercício ao Treino
+  // 3. Helpers de Manipulação do Treino
   const addToPlan = (ex: Exercise) => {
     const newItem: PlanItem = {
       uid: Date.now().toString() + Math.random(),
@@ -159,12 +157,10 @@ export default function AdminCreateWorkoutPage() {
     setPlanItems([...planItems, newItem]);
   };
 
-  // 4. Remover Exercício do Treino
   const removeFromPlan = (itemUid: string) => {
     setPlanItems(planItems.filter((item) => item.uid !== itemUid));
   };
 
-  // 5. Atualizar Detalhes
   const updateItem = (
     itemUid: string,
     field: keyof PlanItem["prescription"],
@@ -183,7 +179,16 @@ export default function AdminCreateWorkoutPage() {
     );
   };
 
-  // 6. Salvar Treino
+  // Toggle de Dias
+  const toggleDay = (dayKey: string) => {
+    setAssignedDays((prev) =>
+      prev.includes(dayKey)
+        ? prev.filter((d) => d !== dayKey)
+        : [...prev, dayKey]
+    );
+  };
+
+  // 4. Salvar Treino
   const handleSave = async () => {
     if (!planName.trim()) return alert("Dê um nome ao treino (Ex: Treino A)");
     if (planItems.length === 0)
@@ -194,8 +199,10 @@ export default function AdminCreateWorkoutPage() {
       const payload: SaveWorkoutPayload = {
         user_uid: userUid!,
         nome: planName,
-        exercises: planItems.map((item) => ({
+        assigned_days: assignedDays,
+        exercises: planItems.map((item, index) => ({
           exercise_id: item.exercise_id,
+          ordem: index,
           prescription: item.prescription,
         })),
       };
@@ -216,8 +223,8 @@ export default function AdminCreateWorkoutPage() {
         } else {
           alert("Treino salvo com sucesso!");
         }
-        // Reset para criar próximo treino
         setPlanName("");
+        setAssignedDays([]);
         setPlanItems([]);
       } else {
         throw new Error("Erro desconhecido ao salvar.");
@@ -231,7 +238,7 @@ export default function AdminCreateWorkoutPage() {
     }
   };
 
-  // Helper para buscar Label da Tag pelo Value (para exibição bonita)
+  // Helper usado na lista lateral
   const getTagLabel = (tagValue: string) => {
     const tag = tagList.find((t) => t.value === tagValue);
     return tag ? tag.label : tagValue;
@@ -245,9 +252,9 @@ export default function AdminCreateWorkoutPage() {
     );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden font-sans">
       {/* HEADER */}
-      <header className="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm z-10">
+      <header className="bg-white border-b px-6 py-3 flex justify-between items-center shadow-sm z-20 h-16 shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
@@ -256,48 +263,37 @@ export default function AdminCreateWorkoutPage() {
             <LuArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-800">
-              Editor de Treinos
+            <h1 className="text-lg font-bold text-gray-800 leading-tight">
+              Criar Treino
             </h1>
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <span>Aluno UID:</span>
-              <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-700">
+              <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-mono">
                 {userUid?.slice(0, 8)}...
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <input
-            type="text"
-            placeholder="Nome da Ficha (ex: Treino A - Superiores)"
-            className="border border-gray-300 rounded-lg px-4 py-2 w-80 focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all"
-            value={planName}
-            onChange={(e) => setPlanName(e.target.value)}
-          />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 active:bg-indigo-800 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
-          >
-            {saving ? (
-              <LuLoader2 className="animate-spin w-4 h-4" />
-            ) : (
-              <LuSave className="w-4 h-4" />
-            )}
-            Salvar Treino
-          </button>
-        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-indigo-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-indigo-700 active:bg-indigo-800 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-colors text-sm shadow-sm"
+        >
+          {saving ? (
+            <LuLoader2 className="animate-spin w-4 h-4" />
+          ) : (
+            <LuSave className="w-4 h-4" />
+          )}
+          Salvar Ficha
+        </button>
       </header>
 
       {/* BODY (2 COLUNAS) */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ESQUERDA: LISTA DE EXERCÍCIOS (FILTROS + LISTA) */}
-        <aside className="w-96 bg-white border-r flex flex-col z-0">
+        {/* ESQUERDA: LISTA DE EXERCÍCIOS */}
+        <aside className="w-96 bg-white border-r flex flex-col z-10 shadow-lg">
           {/* Área de Filtros */}
-          <div className="p-4 border-b space-y-3 bg-gray-50/50">
-            {/* Busca */}
+          <div className="p-4 border-b space-y-3 bg-gray-50/80">
             <div className="relative">
               <LuSearch className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
               <input
@@ -309,7 +305,6 @@ export default function AdminCreateWorkoutPage() {
               />
             </div>
 
-            {/* Categorias (Academia vs Calistenia) */}
             <div className="flex bg-gray-200 rounded-lg p-1">
               {["todas", "academia", "calistenia"].map((cat) => (
                 <button
@@ -326,7 +321,6 @@ export default function AdminCreateWorkoutPage() {
               ))}
             </div>
 
-            {/* Músculos (Dinâmico via API) */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-200">
               <button
                 onClick={() => setFilterMuscle("")}
@@ -369,7 +363,6 @@ export default function AdminCreateWorkoutPage() {
                     <h4 className="font-semibold text-gray-800 text-sm leading-tight truncate">
                       {ex.nome}
                     </h4>
-                    {/* Badge Categoria */}
                     {ex.categoria !== "ambos" && (
                       <span
                         className={`text-[9px] px-1.5 rounded uppercase font-bold ${
@@ -384,7 +377,6 @@ export default function AdminCreateWorkoutPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {/* Músculos */}
                     {ex.musculos_trabalhados?.slice(0, 3).map((m, i) => (
                       <span
                         key={i}
@@ -393,7 +385,7 @@ export default function AdminCreateWorkoutPage() {
                         {m}
                       </span>
                     ))}
-                    {/* Tags (Ex: Com halter) */}
+                    {/* USO DA FUNÇÃO getTagLabel AQUI */}
                     {ex.tags?.slice(0, 2).map((t, i) => (
                       <span
                         key={i}
@@ -409,136 +401,185 @@ export default function AdminCreateWorkoutPage() {
                 </button>
               </div>
             ))}
-
-            {filteredExercises.length === 0 && (
-              <div className="p-8 text-center text-gray-400 text-sm">
-                Nenhum exercício encontrado.
-              </div>
-            )}
           </div>
         </aside>
 
-        {/* DIREITA: FICHA DE TREINO (EDITOR) */}
-        <main className="flex-1 bg-gray-50/50 overflow-y-auto p-6 lg:p-8">
-          {planItems.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl bg-white/50">
-              <div className="bg-gray-50 p-4 rounded-full mb-4">
-                <LuDumbbell className="w-12 h-12 text-gray-300" />
-              </div>
-              <p className="text-lg font-medium text-gray-600">
-                Seu treino está vazio
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Clique nos exercícios da lista ao lado para adicionar.
-              </p>
-            </div>
-          ) : (
-            <div className="max-w-4xl mx-auto space-y-3">
-              <div className="flex justify-between items-center mb-2 px-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  {planItems.length} Exercícios Adicionados
-                </span>
-                <button
-                  onClick={() => setPlanItems([])}
-                  className="text-xs text-red-500 hover:underline"
-                >
-                  Limpar Tudo
-                </button>
+        {/* DIREITA: EDITOR DE TREINO */}
+        <main className="flex-1 bg-gray-100 overflow-y-auto p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* CONFIGURAÇÕES DO PLANO */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-4">
+              <div className="flex items-center gap-2 text-indigo-600 mb-1">
+                <LuPencilLine className="w-5 h-5" />
+                <h2 className="font-bold text-lg">Configurações da Ficha</h2>
               </div>
 
-              {planItems.map((item, index) => (
-                <div
-                  key={item.uid}
-                  className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex gap-4 group hover:shadow-md transition-all items-start"
-                >
-                  {/* Número da Ordem */}
-                  <div className="flex flex-col items-center justify-center w-8 pt-1">
-                    <span className="text-gray-300 font-bold text-lg bg-gray-50 w-8 h-8 flex items-center justify-center rounded-lg">
-                      {index + 1}
-                    </span>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Nome do Treino */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    Nome da Ficha
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Treino A - Peito e Tríceps"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all"
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
+                  />
+                </div>
 
-                  {/* Detalhes */}
-                  <div className="flex-1 grid grid-cols-12 gap-x-4 gap-y-3 items-center">
-                    {/* Nome */}
-                    <div className="col-span-5 md:col-span-4">
-                      <h3
-                        className="font-bold text-gray-800 text-sm md:text-base truncate"
-                        title={item.nome}
-                      >
-                        {item.nome}
-                      </h3>
-                    </div>
-
-                    {/* Inputs de Prescrição */}
-                    <div className="col-span-2">
-                      <label className="block text-[9px] text-gray-400 uppercase font-bold mb-1 text-center">
-                        Séries
-                      </label>
-                      <input
-                        type="text"
-                        value={item.prescription.sets}
-                        onChange={(e) =>
-                          updateItem(item.uid, "sets", e.target.value)
-                        }
-                        className="w-full p-1.5 border border-gray-200 rounded text-center text-sm font-medium bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[9px] text-gray-400 uppercase font-bold mb-1 text-center">
-                        Reps
-                      </label>
-                      <input
-                        type="text"
-                        value={item.prescription.reps}
-                        onChange={(e) =>
-                          updateItem(item.uid, "reps", e.target.value)
-                        }
-                        className="w-full p-1.5 border border-gray-200 rounded text-center text-sm font-medium bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-colors"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[9px] text-gray-400 uppercase font-bold mb-1 text-center">
-                        Descanso
-                      </label>
-                      <input
-                        type="text"
-                        value={item.prescription.rest}
-                        onChange={(e) =>
-                          updateItem(item.uid, "rest", e.target.value)
-                        }
-                        className="w-full p-1.5 border border-gray-200 rounded text-center text-sm font-medium bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-colors"
-                      />
-                    </div>
-
-                    {/* Botão Remover */}
-                    <div className="col-span-1 text-right flex justify-end">
-                      <button
-                        onClick={() => removeFromPlan(item.uid)}
-                        className="text-gray-300 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Remover exercício"
-                      >
-                        <LuTrash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Notas */}
-                    <div className="col-span-12 border-t border-gray-50 pt-2 mt-1">
-                      <input
-                        type="text"
-                        placeholder="Observações (ex: Drop-set na última, carga moderada...)"
-                        value={item.prescription.notes}
-                        onChange={(e) =>
-                          updateItem(item.uid, "notes", e.target.value)
-                        }
-                        className="w-full text-xs text-gray-600 focus:text-gray-900 bg-transparent placeholder-gray-300 outline-none hover:bg-gray-50 p-1 rounded transition-colors"
-                      />
-                    </div>
+                {/* Seletor de Dias */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    <LuCalendarDays className="w-3 h-3" /> Dias Recomendados
+                  </label>
+                  <div className="flex gap-1.5">
+                    {DAYS_OPTIONS.map((day) => {
+                      const isSelected = assignedDays.includes(day.key);
+                      return (
+                        <button
+                          key={day.key}
+                          onClick={() => toggleDay(day.key)}
+                          className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${
+                            isSelected
+                              ? "bg-indigo-600 text-white border-indigo-600 shadow-md transform scale-105"
+                              : "bg-white text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          )}
+
+            {/* LISTA DE EXERCÍCIOS ADICIONADOS */}
+            <div>
+              <div className="flex justify-between items-center mb-3 px-1">
+                <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                  <LuDumbbell className="w-4 h-4 text-gray-400" />
+                  Exercícios ({planItems.length})
+                </h3>
+                {planItems.length > 0 && (
+                  <button
+                    onClick={() => setPlanItems([])}
+                    className="text-xs text-red-500 hover:text-red-700 font-medium hover:underline"
+                  >
+                    Limpar Tudo
+                  </button>
+                )}
+              </div>
+
+              {planItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl bg-white/50">
+                  <div className="bg-gray-100 p-4 rounded-full mb-3">
+                    <LuDumbbell className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <p className="font-medium text-gray-600">
+                    O treino está vazio
+                  </p>
+                  <p className="text-sm">
+                    Selecione exercícios na lista lateral para começar.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {planItems.map((item, index) => (
+                    <div
+                      key={item.uid}
+                      className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex gap-4 group hover:shadow-md transition-all items-start"
+                    >
+                      {/* Número */}
+                      <div className="flex flex-col items-center justify-center w-8 pt-1">
+                        <span className="text-indigo-600 font-bold text-lg bg-indigo-50 w-8 h-8 flex items-center justify-center rounded-lg">
+                          {index + 1}
+                        </span>
+                      </div>
+
+                      {/* Detalhes */}
+                      <div className="flex-1 grid grid-cols-12 gap-x-4 gap-y-3 items-center">
+                        {/* Nome */}
+                        <div className="col-span-12 md:col-span-4">
+                          <h3
+                            className="font-bold text-gray-800 text-sm md:text-base truncate"
+                            title={item.nome}
+                          >
+                            {item.nome}
+                          </h3>
+                        </div>
+
+                        {/* Prescrição */}
+                        <div className="col-span-3 md:col-span-2">
+                          <label className="block text-[9px] text-gray-400 uppercase font-bold mb-1 text-center">
+                            Séries
+                          </label>
+                          <input
+                            type="text"
+                            value={item.prescription.sets}
+                            onChange={(e) =>
+                              updateItem(item.uid, "sets", e.target.value)
+                            }
+                            className="w-full p-1.5 border border-gray-200 rounded text-center text-sm font-medium bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-colors"
+                          />
+                        </div>
+                        <div className="col-span-3 md:col-span-2">
+                          <label className="block text-[9px] text-gray-400 uppercase font-bold mb-1 text-center">
+                            Reps
+                          </label>
+                          <input
+                            type="text"
+                            value={item.prescription.reps}
+                            onChange={(e) =>
+                              updateItem(item.uid, "reps", e.target.value)
+                            }
+                            className="w-full p-1.5 border border-gray-200 rounded text-center text-sm font-medium bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-colors"
+                          />
+                        </div>
+                        <div className="col-span-4 md:col-span-2">
+                          <label className="block text-[9px] text-gray-400 uppercase font-bold mb-1 text-center">
+                            Descanso
+                          </label>
+                          <input
+                            type="text"
+                            value={item.prescription.rest}
+                            onChange={(e) =>
+                              updateItem(item.uid, "rest", e.target.value)
+                            }
+                            className="w-full p-1.5 border border-gray-200 rounded text-center text-sm font-medium bg-gray-50 focus:bg-white focus:border-indigo-500 outline-none transition-colors"
+                          />
+                        </div>
+
+                        <div className="col-span-2 md:col-span-2 flex justify-end">
+                          <button
+                            onClick={() => removeFromPlan(item.uid)}
+                            className="text-gray-300 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            <LuTrash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Notas */}
+                        <div className="col-span-12 border-t border-gray-50 pt-2 mt-1">
+                          <input
+                            type="text"
+                            placeholder="Observações (ex: Drop-set na última, carga moderada...)"
+                            value={item.prescription.notes}
+                            onChange={(e) =>
+                              updateItem(item.uid, "notes", e.target.value)
+                            }
+                            className="w-full text-xs text-gray-600 focus:text-gray-900 bg-transparent placeholder-gray-300 outline-none hover:bg-gray-50 p-1 rounded transition-colors"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     </div>

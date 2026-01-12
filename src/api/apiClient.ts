@@ -18,30 +18,31 @@ import type {
   DietRequest,
 } from "../types/models";
 
-import type {
-  ApiResponse,
-  ApiErrorResponse,
-  SyncUserRequest,
-  UpdateProfileRequest,
-  RecipeFilters,
-  ExerciseFilters,
-  CreateWorkoutRequest,
-  AddConsumptionRequest,
-  MeasurementDetailsResponse,
-  GetUserDietsResponse,
-  AllCreditsResponse,
-  DailyConsumptionResponse,
-  ExerciseMetadataResponse,
-  Plan,
-  UploadProgressPhotosResponse,
-  UploadProfilePhotoResponse,
-  RequestWorkoutResponse,
-  CreateSubscriptionRedirectResponse,
-  ProcessPaymentResponse,
-  CheckPaymentStatusResponse,
-  GetCreditPackagesResponse,
-  RequestForm,
-  GetUserStreaksResponse,
+import {
+  type ApiResponse,
+  type ApiErrorResponse,
+  type SyncUserRequest,
+  type UpdateProfileRequest,
+  type RecipeFilters,
+  type ExerciseFilters,
+  type CreateWorkoutRequest,
+  type AddConsumptionRequest,
+  type MeasurementDetailsResponse,
+  type GetUserDietsResponse,
+  type AllCreditsResponse,
+  type DailyConsumptionResponse,
+  type ExerciseMetadataResponse,
+  type Plan,
+  type UploadProgressPhotosResponse,
+  type UploadProfilePhotoResponse,
+  type RequestWorkoutResponse,
+  type CreateSubscriptionRedirectResponse,
+  type ProcessPaymentResponse,
+  type CheckPaymentStatusResponse,
+  type GetCreditPackagesResponse,
+  type RequestForm,
+  type GetUserStreaksResponse,
+  type LeaderboardResponse,
 } from "../types/api-types";
 
 import type { OnboardingState } from "../types/onboarding.schema";
@@ -364,6 +365,13 @@ async function setDailyConsumption(
   return response.data;
 }
 
+async function getLeaderboard(type: "nutrition" | "workout") {
+  const response = await axiosInstance.get<LeaderboardResponse>(
+    `/get_leaderboard.php?type=${type}`
+  );
+  return response.data;
+}
+
 async function addMeasurement(data: FormData): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
     "/add_measurement.php",
@@ -410,6 +418,18 @@ async function processPayment(
       db_plan_id,
       cycle,
     }
+  );
+  return response.data;
+}
+async function processPixPayment(payload: {
+  db_plan_id: string;
+  doc_number: string;
+  payment_method_id: string;
+  email?: string;
+}) {
+  const response = await axiosInstance.post<ProcessPaymentResponse>(
+    "/process_pix.php",
+    payload
   );
   return response.data;
 }
@@ -521,6 +541,15 @@ export async function uploadProfilePhoto(
   return response.data;
 }
 
+export async function logLoginAttempt(
+  email: string,
+  status: "failed_attempt",
+  reason?: string
+) {
+  return (await axios.post("/api/log_attempt.php", { email, status, reason }))
+    .data;
+}
+
 // --- 4. TYPE GUARD ---
 
 export function isApiError(
@@ -577,6 +606,8 @@ const apiClient = {
   confirmPayment,
   requestWorkoutPlan,
   getUserStreaks,
+  getLeaderboard,
+  processPixPayment,
 };
 
 export default apiClient;

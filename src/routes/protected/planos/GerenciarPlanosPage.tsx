@@ -35,7 +35,23 @@ export default function SubscriptionPage() {
     const fetchPlans = async () => {
       try {
         const data = await apiClient.getPlans();
-        setPlans(data);
+
+        const sortedData = data.sort((a, b) => {
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+          return a.price_monthly - b.price_monthly;
+        });
+
+        const plansToDisplay = sortedData.filter((plan) => {
+          // Se o ciclo selecionado for "ANUAL", só mostra planos que tenham preço anual maior que 0
+          if (billingCycle === "annual") {
+            return plan.price_annually > 0;
+          }
+          // Se for "MENSAL", mostra todos (ou filtre se houver algum exclusivo anual)
+          return true;
+        });
+
+        setPlans(plansToDisplay);
       } catch (error) {
         console.error("Erro ao buscar planos", error);
       } finally {
@@ -304,7 +320,7 @@ export default function SubscriptionPage() {
                       : "bg-green-100 text-green-700"
                   }`}
                 >
-                  -17%
+                  -73%
                 </span>
               </button>
             </div>
@@ -330,6 +346,10 @@ export default function SubscriptionPage() {
                   {plan.is_featured && billingCycle === "annual" && (
                     <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-lg">
                       RECOMENDADO
+                      <div>
+                        Current usage: {plan.current_usage} /{" "}
+                        {plan.max_limit ?? "Sem limite"}
+                      </div>
                     </div>
                   )}
 
@@ -343,6 +363,7 @@ export default function SubscriptionPage() {
                       </span>
                       <span className="text-3xl font-extrabold text-gray-900">
                         {price.toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </span>

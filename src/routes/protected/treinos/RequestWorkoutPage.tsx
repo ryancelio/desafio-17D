@@ -78,7 +78,8 @@ export default function RequestWorkoutPage() {
         setStatus("success");
       }
     } catch (err: any) {
-      setErrorMsg(err.message);
+      console.log(err);
+      setErrorMsg(err.response.data.error);
       setStatus("error");
     }
   };

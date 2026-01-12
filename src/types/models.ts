@@ -170,6 +170,10 @@ export interface WorkoutPlanExercise {
   descricao: string | null;
   musculos_trabalhados: string[] | null;
   tags: string[] | null;
+  exercise?: {
+    nome: string;
+    // Adicione outras propriedades do objeto exercise aninhado se necessário
+  };
 }
 
 export interface WorkoutPlan {
@@ -181,6 +185,7 @@ export interface WorkoutPlan {
   data_vencimento: string | null;
   data_ultima_execucao: string | null;
   is_active: boolean;
+  assigned_days: DiaSemana[] | null;
   exercises: WorkoutPlanExercise[];
 }
 

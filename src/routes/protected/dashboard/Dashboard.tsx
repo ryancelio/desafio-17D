@@ -20,7 +20,7 @@ import { LuPencil } from "react-icons/lu";
 import { AnimatePresence, motion } from "framer-motion";
 import PesoAlvoModal from "./Components/PesoAlvoModal";
 import DailyMonitoringCard from "./Components/DailyMonitoringCard";
-import WeightEvolutionChart from "./Components/WeightEvolutionChart"; // <--- Importado
+import WeightEvolutionChart from "./Components/WeightEvolutionChart";
 import type {
   DailyConsumption,
   WeightHistoryEntry,
@@ -61,10 +61,9 @@ const cardColorVariants: Record<string, { bg: string; text: string }> = {
 const QuickActionCard: React.FC<{
   icon: React.ElementType;
   label: string;
-  color: "blue" | "green" | "pink" | "purple"; // Tipagem restrita para segurança
+  color: "blue" | "green" | "pink" | "purple";
   onClick: () => void;
 }> = ({ icon: Icon, label, color, onClick }) => {
-  // Pega as classes do mapa ou usa azul como fallback
   const theme = cardColorVariants[color] || cardColorVariants.blue;
 
   return (
@@ -120,11 +119,12 @@ const NextWorkoutCard: React.FC<{
   </div>
 );
 
+// --- STREAKS CARD ATUALIZADO ---
 const StreaksCard: React.FC<{
   nutrition: StreakData;
   workout: StreakData;
-}> = ({ nutrition, workout }) => {
-  // Helper para definir cores e ícones baseados no status
+  onViewLeaderboard: () => void; // Nova Prop
+}> = ({ nutrition, workout, onViewLeaderboard }) => {
   const getStatusConfig = (status: StreakData["status"]) => {
     switch (status) {
       case "completed_today":
@@ -143,7 +143,7 @@ const StreaksCard: React.FC<{
           borderColor: "border-blue-100",
           icon: Clock,
           label: "Mantenha o foco",
-          desc: "Complete hoje para continuar",
+          desc: "Complete hoje",
         };
       case "broken":
       default:
@@ -153,7 +153,7 @@ const StreaksCard: React.FC<{
           borderColor: "border-gray-100",
           icon: AlertCircle,
           label: "Recomeçar",
-          desc: "A sequência foi interrompida",
+          desc: "Sequência parada",
         };
     }
   };
@@ -182,12 +182,11 @@ const StreaksCard: React.FC<{
             </span>
             <span className="text-xs font-medium text-gray-500 mb-1">dias</span>
           </div>
-          <p className="text-[10px] text-gray-500 mt-1 font-medium">
+          <p className="text-[10px] text-gray-500 mt-1 font-medium truncate">
             {config.desc}
           </p>
         </div>
 
-        {/* Recorde */}
         <div className="mt-3 pt-3 border-t border-black/5 flex items-center gap-1.5 text-xs text-gray-500">
           <Trophy className="w-3 h-3" />
           <span>
@@ -200,10 +199,21 @@ const StreaksCard: React.FC<{
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-      <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-        Ofensiva (Streaks)
-      </h3>
+      {/* Header com Botão de Leaderboard */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-gray-800 flex items-center gap-2">
+          <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
+          Ofensiva
+        </h3>
+        <button
+          onClick={onViewLeaderboard}
+          className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg transition-colors active:scale-95"
+        >
+          <Trophy className="w-3.5 h-3.5" />
+          Ranking
+        </button>
+      </div>
+
       <div className="flex gap-4">
         {renderItem("Dieta", nutrition)}
         {renderItem("Treino", workout)}
@@ -244,7 +254,6 @@ export default function Dashboard() {
             apiClient.getWeightHistory(),
             apiClient.getDailyConsumption(),
             apiClient.getUserStreaks().catch(() => ({
-              // Fallback caso a API falhe ou ainda não exista
               nutrition: {
                 current: 0,
                 max: 0,
@@ -262,7 +271,7 @@ export default function Dashboard() {
         );
 
         setWeightHistory(historyData);
-        setNutritionData(nutritionResponse); // Salva o objeto completo (consumed + targets)
+        setNutritionData(nutritionResponse);
         setStreaks(streaksData);
       } catch (err) {
         if (isApiError(err)) {
@@ -309,19 +318,19 @@ export default function Dashboard() {
       agua_l: 2.5,
       proteinas_g: 140,
       fibras_g: 30,
-      calorias_kcal: 2000, // Fallback seguro
+      calorias_kcal: 2000,
       carboidratos_g: 30,
       gorduras_g: 30,
     };
+
   const mappedTargets = useMemo(() => {
-    // Valores padrão de fallback caso a API não retorne
     const targets = nutritionData?.targets || {
       agua_l: 2.5,
       proteinas_g: 140,
       fibras_g: 30,
       calorias_kcal: 2000,
-      carboidratos_g: 150, // Fallback
-      gorduras_g: 60, // Fallback
+      carboidratos_g: 150,
+      gorduras_g: 60,
     };
 
     return {
@@ -336,15 +345,10 @@ export default function Dashboard() {
 
   const allGoalsMet = useMemo(() => {
     if (!nutritionData) return false;
-
-    // Regra:
-    // Nutrientes positivos (Água, Proteína, Fibra) -> TEM que bater (>=)
-    // Nutrientes de controle (Calorias, Carbs, Gordura) -> NÃO pode estourar (<=)
     return (
       currentConsumption.agua_l >= mappedTargets.aguaRecomendadaL &&
       currentConsumption.proteinas_g >= mappedTargets.metaProteinas &&
       currentConsumption.fibras_g >= mappedTargets.metaFibras &&
-      // Limites máximos
       currentConsumption.calorias_kcal <= mappedTargets.metaCalorias &&
       currentConsumption.carboidratos_g <= mappedTargets.metaCarboidratos &&
       currentConsumption.gorduras_g <= mappedTargets.metaGorduras
@@ -358,14 +362,12 @@ export default function Dashboard() {
     try {
       let newTotals: DailyConsumption;
 
-      // 1. Salva os dados de nutrição
       if (mode === "add") newTotals = await apiClient.addDailyConsumption(data);
       else newTotals = await apiClient.setDailyConsumption(data);
 
-      // 2. Atualiza o estado visual da nutrição (Gráfico/Card de Monitoramento)
       setNutritionData({
         consumed: newTotals,
-        targets: currentTargets, // Mantém os targets atuais
+        targets: currentTargets,
       });
 
       try {
@@ -430,7 +432,6 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* --- COLUNA ESQUERDA --- */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Monitoramento Diário */}
           <DailyMonitoringCard
             dailyConsumption={currentConsumption}
             nutritionTargets={mappedTargets}
@@ -438,7 +439,6 @@ export default function Dashboard() {
             onOpenModal={() => setNutritionModalOpen(true)}
           />
 
-          {/* Componente de Gráfico Separado */}
           <div className="h-96 w-full">
             <WeightEvolutionChart
               weightHistory={weightHistory}
@@ -449,16 +449,16 @@ export default function Dashboard() {
 
         {/* --- COLUNA DIREITA --- */}
         <div className="space-y-6">
-          {/* CTA Treino */}
           <NextWorkoutCard
             onClick={() => navigate("/treinos")}
             isLoading={false}
           />
 
-          {/* Streaks */}
+          {/* Card de Streaks com Botão de Leaderboard */}
           <StreaksCard
             nutrition={streaks.nutrition}
             workout={streaks.workout}
+            onViewLeaderboard={() => navigate("/leaderboard")}
           />
 
           {/* Ações Rápidas */}

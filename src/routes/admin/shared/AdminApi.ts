@@ -66,6 +66,7 @@ export interface SaveWorkoutPayload {
   plan_id?: number; // Opcional: Se enviado, é edição. Se não, criação.
   user_uid: string;
   nome: string;
+  assigned_days: string[]; // Dias da semana atribuídos
   exercises: WorkoutExercisePayload[];
 }
 

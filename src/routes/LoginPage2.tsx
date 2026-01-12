@@ -1,22 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  FacebookAuthProvider,
-} from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router";
-import {
-  FaGoogle,
-  FaFacebookF,
-  FaLock,
-  FaEnvelope,
-  FaEye,
-  FaEyeSlash,
-} from "react-icons/fa6";
-import apiClient, { isApiError } from "../api/apiClient";
+import { FaLock, FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa6";
+import apiClient, { isApiError, logLoginAttempt } from "../api/apiClient";
 import { FirebaseError } from "firebase/app";
 
 export default function LoginPage() {
@@ -44,6 +32,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    // Validação básica
     if (!email || password.length < 6) {
       setError("Verifique seus dados.");
       setLoading(false);
@@ -58,7 +47,12 @@ export default function LoginPage() {
       );
       await processLoginSuccess(userCredential.user.displayName);
     } catch (err: unknown) {
+      // Variável para armazenar a razão do erro como STRING
+      let failureReason = "unknown_error";
+
       if (err instanceof FirebaseError) {
+        failureReason = err.code; // Ex: 'auth/wrong-password'
+
         switch (err.code) {
           case "auth/invalid-credential":
           case "auth/user-not-found":
@@ -72,38 +66,19 @@ export default function LoginPage() {
             setError("Erro ao realizar login.");
         }
       } else if (isApiError(err)) {
+        failureReason = String(err.response?.data?.error || "api_error");
         setError(err.response?.data.error || "Erro de conexão com servidor.");
       } else {
+        // Converte qualquer outro erro para string
+        failureReason = err instanceof Error ? err.message : String(err);
         setError("Ocorreu um erro inesperado.");
       }
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  async function handleSocialLogin(providerName: "google" | "facebook") {
-    const provider =
-      providerName === "google"
-        ? new GoogleAuthProvider()
-        : new FacebookAuthProvider();
+      // CORREÇÃO: Envia 'failureReason' que é garantidamente uma string
+      logLoginAttempt(email, "failed_attempt", failureReason).catch(
+        console.error
+      );
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await processLoginSuccess(result.user.displayName);
-    } catch (err: unknown) {
-      if (err instanceof FirebaseError) {
-        if (err.code === "auth/popup-closed-by-user") {
-          setError(null);
-        } else {
-          setError(`Erro ao entrar com ${providerName}.`);
-        }
-      } else {
-        setError("Erro inesperado.");
-      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -211,30 +186,6 @@ export default function LoginPage() {
             {loading ? "Entrando..." : "Entrar"}
           </motion.button>
         </form>
-
-        <div className="mt-6 flex items-center justify-center gap-2 text-gray-500 text-sm">
-          <div className="h-px bg-gray-400 flex-1"></div>
-          <span>ou</span>
-          <div className="h-px bg-gray-400 flex-1"></div>
-        </div>
-
-        <div className="mt-5 flex flex-col sm:flex-row gap-3">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            onClick={() => handleSocialLogin("google")}
-            className="flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all text-gray-700 font-medium shadow-sm hover:shadow-md"
-          >
-            <FaGoogle className="text-[#ea4335]" /> Google
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            onClick={() => handleSocialLogin("facebook")}
-            className="flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-all text-gray-700 font-medium shadow-sm hover:shadow-md"
-          >
-            <FaFacebookF className="text-[#1877f2]" /> Facebook
-          </motion.button>
-        </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Não tem uma conta?{" "}
