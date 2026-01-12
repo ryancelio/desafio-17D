@@ -24,7 +24,7 @@ export const PlanosStep: React.FC<StepProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [faturamento, setFaturamento] = useState<Faturamento>("annual");
+  const [faturamento, setFaturamento] = useState<Faturamento>("monthly");
   const [planoSelecionadoId, setPlanoSelecionadoId] = useState<number | null>(
     null
   );

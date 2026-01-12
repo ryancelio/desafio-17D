@@ -120,6 +120,7 @@ const OnboardingWizard: React.FC = () => {
     }
 
     // stepComponentsRef.current = [PlanosStep, Checkout];
+    // stepComponentsRef.current = [SocialProofStep];
     stepComponentsRef.current = steps;
   }
 

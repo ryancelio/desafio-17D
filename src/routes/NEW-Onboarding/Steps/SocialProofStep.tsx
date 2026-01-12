@@ -14,18 +14,18 @@ const transformations = [
   {
     id: 1,
     name: "Ricardo M.",
-    result: "-14kg em 3 meses",
+    result: "+14kg em 3 meses",
     imgBefore: "/antes_depois/Antes Masc.png",
     imgAfter: "/antes_depois/Depois Masc.png",
-    tag: "Perda de Peso",
+    tag: "Ganho de massa",
   },
   {
     id: 2,
     name: "Juliana S.",
-    result: "Definição muscular",
+    result: "-8% de gordura em 2 meses",
     imgBefore: "/antes_depois/Antes Fem.jpg",
     imgAfter: "/antes_depois/Depois Fem.jpg",
-    tag: "Hipertrofia",
+    tag: "Definição muscular",
   },
 ];
 
