@@ -8,7 +8,7 @@ import {
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./../firebase";
-import apiClient from "../api/apiClient"; // 👈 NOVO
+import { getUserProfile } from "../api/apiClient"; // 👈 NOVO
 import type { UserProfile } from "../types/models";
 
 interface AuthContextType {
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserProfile = async () => {
     try {
       // O interceptor do apiClient só funciona se 'auth.currentUser' existir
-      const profile = await apiClient.getUserProfile();
+      const profile = await getUserProfile();
       setUserProfile(profile);
     } catch (error) {
       console.error("Falha ao buscar perfil do MySQL", error);

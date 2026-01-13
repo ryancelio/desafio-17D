@@ -1,6 +1,11 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import apiClient, { isApiError } from "../../../api/apiClient";
+import {
+  getLatestMeasurements,
+  getUserPreferences,
+  isApiError,
+  uploadProfilePhoto,
+} from "../../../api/apiClient";
 import {
   LuCircleUser,
   LuCake,
@@ -341,8 +346,8 @@ export default function ProfilePage() {
       setError(null);
       try {
         const [measureData, prefsData] = await Promise.all([
-          apiClient.getLatestMeasurements(),
-          apiClient.getUserPreferences(),
+          getLatestMeasurements(),
+          getUserPreferences(),
         ]);
         setMeasurements(measureData);
         setPreferences(prefsData);
@@ -378,7 +383,7 @@ export default function ProfilePage() {
       }
       setIsUploading(true);
       try {
-        await apiClient.uploadProfilePhoto(file);
+        await uploadProfilePhoto(file);
         setProfileImageKey(Date.now());
         await refetchProfile();
       } catch (err) {

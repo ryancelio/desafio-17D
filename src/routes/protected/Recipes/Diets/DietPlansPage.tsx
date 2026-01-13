@@ -19,7 +19,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import apiClient, { isApiError } from "../../../../api/apiClient";
+import {
+  getAllCredits,
+  getDietRequests,
+  getUserDiets,
+  isApiError,
+} from "../../../../api/apiClient";
 import type {
   GetUserDietsResponse,
   DietPlanResponse,
@@ -178,9 +183,9 @@ export default function DietPlansPage() {
       setIsLoading(true);
       try {
         const [plansData, creditsData, requestsData] = await Promise.all([
-          apiClient.getUserDiets(),
-          apiClient.getAllCredits(),
-          apiClient.getDietRequests(),
+          getUserDiets(),
+          getAllCredits(),
+          getDietRequests(),
         ]);
 
         setPlans(plansData);
@@ -280,7 +285,6 @@ export default function DietPlansPage() {
                   </span>
                 </div>
 
-                {/* BOTÃO NOVO: Comprar Mais */}
                 <button
                   onClick={() => navigate("/loja/creditos?type=diet")}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white p-2.5 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center"

@@ -4,7 +4,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router";
 import { FaLock, FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa6";
-import apiClient, { isApiError, logLoginAttempt } from "../api/apiClient";
+import { isApiError, logLoginAttempt, syncUser } from "../api/apiClient";
 import { FirebaseError } from "firebase/app";
 
 export default function LoginPage() {
@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   const processLoginSuccess = async (userDisplayName?: string | null) => {
     try {
-      await apiClient.syncUser({
+      await syncUser({
         nome: userDisplayName || email.split("@")[0] || "Usuário",
       });
       navigate("/dashboard");

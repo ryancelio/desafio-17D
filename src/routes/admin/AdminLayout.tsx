@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { IoCashOutline } from "react-icons/io5";
 
@@ -114,6 +115,10 @@ export default function AdminLayout() {
           <Link to="/admin/leads" className={getLinkClass("/admin/leads")}>
             <IoCashOutline className="w-5 h-5" />
             Leads
+          </Link>
+          <Link to="/admin/logs" className={getLinkClass("/admin/logs")}>
+            <ShieldCheck className="w-5 h-5" />
+            Logs de Acesso
           </Link>
         </nav>
 

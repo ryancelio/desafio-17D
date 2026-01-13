@@ -79,7 +79,7 @@ axiosInstance.interceptors.request.use(
 
 // --- 3. FUNÇÕES DA API ---
 
-async function syncUser(data: SyncUserRequest): Promise<ApiResponse> {
+export async function syncUser(data: SyncUserRequest): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
     "/sync_user.php",
     data
@@ -87,7 +87,7 @@ async function syncUser(data: SyncUserRequest): Promise<ApiResponse> {
   return response.data;
 }
 
-async function syncUserPreferences(
+export async function syncUserPreferences(
   preferences: UserPreference[]
 ): Promise<ApiResponse> {
   const res = await axiosInstance.post<ApiResponse>("/sync_preferences.php", {
@@ -95,7 +95,7 @@ async function syncUserPreferences(
   });
   return res.data;
 }
-async function getPlans(isPublic = false): Promise<Plan[]> {
+export async function getPlans(isPublic = false): Promise<Plan[]> {
   if (!isPublic) {
     const res = await axiosInstance.get("/get_plans.php");
     return res.data;
@@ -105,12 +105,12 @@ async function getPlans(isPublic = false): Promise<Plan[]> {
   }
 }
 
-async function cancelSubscription(): Promise<ApiResponse> {
+export async function cancelSubscription(): Promise<ApiResponse> {
   const res = await axiosInstance.post<ApiResponse>("/cancel_subscription.php");
   return res.data;
 }
 
-async function completeOnboarding(payload: {
+export async function completeOnboarding(payload: {
   personal: {
     email: string | null | undefined;
     nome: string | null | undefined;
@@ -155,19 +155,19 @@ async function completeOnboarding(payload: {
   return response.data;
 }
 
-async function getUserProfile(): Promise<UserProfile> {
+export async function getUserProfile(): Promise<UserProfile> {
   const response = await axiosInstance.get<UserProfile>("/users/get_user.php");
   return response.data;
 }
 
-async function getUserStreaks(): Promise<GetUserStreaksResponse> {
+export async function getUserStreaks(): Promise<GetUserStreaksResponse> {
   const response = await axiosInstance.get<GetUserStreaksResponse>(
     "/get_user_streaks.php"
   );
   return response.data;
 }
 
-async function getAllCredits(): Promise<AllCreditsResponse> {
+export async function getAllCredits(): Promise<AllCreditsResponse> {
   // Nota: Atualize a URL para o novo nome do arquivo se você renomeou
   const response = await axiosInstance.get<AllCreditsResponse>(
     "/check_credits.php"
@@ -175,7 +175,7 @@ async function getAllCredits(): Promise<AllCreditsResponse> {
   return response.data;
 }
 
-async function updateUserProfile(
+export async function updateUserProfile(
   data: UpdateProfileRequest
 ): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
@@ -185,7 +185,9 @@ async function updateUserProfile(
   return response.data;
 }
 
-async function submitOnboarding(data: OnboardingState): Promise<ApiResponse> {
+export async function submitOnboarding(
+  data: OnboardingState
+): Promise<ApiResponse> {
   if (!data.fotosProgresso || data.fotosProgresso.length === 0) {
     const response = await axiosInstance.post<ApiResponse>(
       "/submit_onboarding.php",
@@ -208,47 +210,47 @@ async function submitOnboarding(data: OnboardingState): Promise<ApiResponse> {
   return response.data;
 }
 
-async function getWeightHistory(): Promise<WeightHistoryEntry[]> {
+export async function getWeightHistory(): Promise<WeightHistoryEntry[]> {
   const response = await axiosInstance.get<WeightHistoryEntry[]>(
     "/get_weight_history.php"
   );
   return response.data;
 }
 
-async function getLatestMeasurements(): Promise<UserMeasurement | null> {
+export async function getLatestMeasurements(): Promise<UserMeasurement | null> {
   const response = await axiosInstance.get<UserMeasurement | null>(
     "/get_latest_measurements.php"
   );
   return response.data;
 }
 
-async function getUserPreferences(): Promise<UserPreference[]> {
+export async function getUserPreferences(): Promise<UserPreference[]> {
   const response = await axiosInstance.get<UserPreference[]>(
     "/get_user_preferences.php"
   );
   return response.data;
 }
 
-async function getUserDiets(): Promise<GetUserDietsResponse> {
+export async function getUserDiets(): Promise<GetUserDietsResponse> {
   const response = await axiosInstance.get<GetUserDietsResponse>(
     "/get_user_diets.php"
   );
   return response.data;
 }
 
-async function getNotifications(): Promise<Notification[]> {
+export async function getNotifications(): Promise<Notification[]> {
   const res = await axiosInstance.get("/get_notifications.php");
   return res.data;
 }
 
-async function markNotificationRead(id: number): Promise<ApiResponse> {
+export async function markNotificationRead(id: number): Promise<ApiResponse> {
   const res = await axiosInstance.post("/mark_notification_read.php", {
     id: id,
   });
   return res.data;
 }
 
-async function checkPaymentStatus(
+export async function checkPaymentStatus(
   paymentId: number | string
 ): Promise<CheckPaymentStatusResponse> {
   const response = await axiosInstance.get<CheckPaymentStatusResponse>(
@@ -257,14 +259,16 @@ async function checkPaymentStatus(
   return response.data; // Retorna { status: 'approved' | 'pending' | ... }
 }
 
-async function getRecipes(filters: RecipeFilters = {}): Promise<Recipe[]> {
+export async function getRecipes(
+  filters: RecipeFilters = {}
+): Promise<Recipe[]> {
   const response = await axiosInstance.get<Recipe[]>("/get_recipes.php", {
     params: filters,
   });
   return response.data;
 }
 
-async function getExercises(
+export async function getExercises(
   filters: ExerciseFilters = {}
 ): Promise<Exercise[]> {
   const response = await axiosInstance.get<Exercise[]>("/get_exercises.php", {
@@ -273,27 +277,27 @@ async function getExercises(
   return response.data;
 }
 
-async function getUserWorkouts(): Promise<WorkoutPlan[]> {
+export async function getUserWorkouts(): Promise<WorkoutPlan[]> {
   const response = await axiosInstance.get<WorkoutPlan[]>(
     "/get_user_workouts.php"
   );
   return response.data;
 }
-async function getWorkoutRequests(): Promise<WorkoutRequest[]> {
+export async function getWorkoutRequests(): Promise<WorkoutRequest[]> {
   const response = await axiosInstance.get<WorkoutRequest[]>(
     "/get_workout_requests.php"
   );
   return response.data;
 }
 
-async function getDietRequests(): Promise<DietRequest[]> {
+export async function getDietRequests(): Promise<DietRequest[]> {
   const response = await axiosInstance.get<DietRequest[]>(
     "/get_diet_requests.php"
   );
   return response.data;
 }
 
-async function requestDietPlan(
+export async function requestDietPlan(
   request: DietRequestPayload
 ): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
@@ -303,14 +307,14 @@ async function requestDietPlan(
   return response.data;
 }
 
-async function getExerciseMetadata(): Promise<ExerciseMetadataResponse> {
+export async function getExerciseMetadata(): Promise<ExerciseMetadataResponse> {
   const response = await axiosInstance.get<ExerciseMetadataResponse>(
     "/get_exercise_taxonomies.php"
   );
   return response.data;
 }
 
-async function createWorkoutPlan(
+export async function createWorkoutPlan(
   data: CreateWorkoutRequest
 ): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
@@ -320,7 +324,7 @@ async function createWorkoutPlan(
   return response.data;
 }
 
-async function getWorkoutDetails(planId: number): Promise<WorkoutPlan> {
+export async function getWorkoutDetails(planId: number): Promise<WorkoutPlan> {
   const response = await axiosInstance.get<WorkoutPlan>(
     "/get_workout_details.php",
     {
@@ -330,7 +334,7 @@ async function getWorkoutDetails(planId: number): Promise<WorkoutPlan> {
   return response.data;
 }
 
-async function completeWorkout(planId: number): Promise<ApiResponse> {
+export async function completeWorkout(planId: number): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
     "/complete_workout.php",
     { plan_id: planId }
@@ -338,14 +342,14 @@ async function completeWorkout(planId: number): Promise<ApiResponse> {
   return response.data;
 }
 
-async function getDailyConsumption(): Promise<DailyConsumptionResponse> {
+export async function getDailyConsumption(): Promise<DailyConsumptionResponse> {
   const response = await axiosInstance.get<DailyConsumptionResponse>(
     "/nutrition/get_daily_consumption.php"
   );
   return response.data;
 }
 
-async function addDailyConsumption(
+export async function addDailyConsumption(
   data: AddConsumptionRequest
 ): Promise<DailyConsumption> {
   const response = await axiosInstance.post<DailyConsumption>(
@@ -355,7 +359,7 @@ async function addDailyConsumption(
   return response.data;
 }
 
-async function setDailyConsumption(
+export async function setDailyConsumption(
   data: AddConsumptionRequest
 ): Promise<DailyConsumption> {
   const response = await axiosInstance.post<DailyConsumption>(
@@ -365,14 +369,14 @@ async function setDailyConsumption(
   return response.data;
 }
 
-async function getLeaderboard(type: "nutrition" | "workout") {
+export async function getLeaderboard(type: "nutrition" | "workout") {
   const response = await axiosInstance.get<LeaderboardResponse>(
     `/get_leaderboard.php?type=${type}`
   );
   return response.data;
 }
 
-async function addMeasurement(data: FormData): Promise<ApiResponse> {
+export async function addMeasurement(data: FormData): Promise<ApiResponse> {
   const response = await axiosInstance.post<ApiResponse>(
     "/add_measurement.php",
     data,
@@ -383,7 +387,7 @@ async function addMeasurement(data: FormData): Promise<ApiResponse> {
   return response.data;
 }
 
-async function getMeasurementDetails(
+export async function getMeasurementDetails(
   measurementId: number
 ): Promise<MeasurementDetailsResponse> {
   const response = await axiosInstance.get<MeasurementDetailsResponse>(
@@ -394,7 +398,7 @@ async function getMeasurementDetails(
   );
   return response.data;
 }
-async function createSubscriptionRedirect(
+export async function createSubscriptionRedirect(
   plan_id: string,
   cycle: "monthly" | "yearly"
 ): Promise<CreateSubscriptionRedirectResponse> {
@@ -405,7 +409,7 @@ async function createSubscriptionRedirect(
 
   return response.data;
 }
-async function processPayment(
+export async function processPayment(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any,
   db_plan_id: string,
@@ -421,7 +425,7 @@ async function processPayment(
   );
   return response.data;
 }
-async function processPixPayment(payload: {
+export async function processPixPayment(payload: {
   db_plan_id: string;
   doc_number: string;
   payment_method_id: string;
@@ -434,7 +438,7 @@ async function processPixPayment(payload: {
   return response.data;
 }
 
-async function confirmStatus(
+export async function confirmStatus(
   preaprovalId: string,
   paymentId: string
 ): Promise<CheckPaymentStatusResponse> {
@@ -448,7 +452,7 @@ async function confirmStatus(
   return response.data;
 }
 
-async function confirmPayment(
+export async function confirmPayment(
   preapprovalId: string,
   paymentId: string
 ): Promise<ProcessPaymentResponse> {
@@ -464,7 +468,7 @@ async function confirmPayment(
   return response.data;
 }
 
-async function requestWorkoutPlan(
+export async function requestWorkoutPlan(
   data: RequestForm
 ): Promise<RequestWorkoutResponse> {
   const response = await axiosInstance.post<RequestWorkoutResponse>(
@@ -474,7 +478,7 @@ async function requestWorkoutPlan(
   return response.data;
 }
 
-async function getUserPhotos(src: string): Promise<UserPhoto[]> {
+export async function getUserPhotos(src: string): Promise<UserPhoto[]> {
   const response = await axiosInstance.get<UserPhoto[]>("/get_image.php", {
     params: { path: src },
     responseType: "blob",
@@ -482,7 +486,7 @@ async function getUserPhotos(src: string): Promise<UserPhoto[]> {
   return response.data;
 }
 
-async function purchaseCredits(payload: {
+export async function purchaseCredits(payload: {
   token: string;
   issuer_id: string;
   payment_method_id: string;
@@ -499,7 +503,7 @@ async function purchaseCredits(payload: {
   return response.data;
 }
 
-async function getCreditPackages(
+export async function getCreditPackages(
   type: "workout" | "diet" = "workout"
 ): Promise<GetCreditPackagesResponse> {
   const response = await axiosInstance.get<GetCreditPackagesResponse>(
@@ -508,7 +512,7 @@ async function getCreditPackages(
   return response.data;
 }
 
-async function uploadProgressPhotos(files: File[]): Promise<string[]> {
+export async function uploadProgressPhotos(files: File[]): Promise<string[]> {
   const formData = new FormData();
 
   // Anexa cada arquivo ao campo 'photos[]' (o [] é importante para o PHP entender como array)
@@ -550,6 +554,18 @@ export async function logLoginAttempt(
     .data;
 }
 
+export async function sendFeedback(payload: {
+  category: string;
+  message: string;
+  page_context: string;
+}) {
+  const response = await axiosInstance.post<ApiResponse>(
+    "/send_feedback.php",
+    payload
+  );
+  return response.data;
+}
+
 // --- 4. TYPE GUARD ---
 
 export function isApiError(
@@ -560,54 +576,3 @@ export function isApiError(
   }
   return (error.response.data as ApiErrorResponse).error !== undefined;
 }
-
-// --- 5. EXPORT DEFAULT ---
-
-const apiClient = {
-  syncUser,
-  getUserProfile,
-  updateUserProfile,
-  submitOnboarding,
-  getWeightHistory,
-  getLatestMeasurements,
-  getUserPreferences,
-  getRecipes,
-  getExercises,
-  getUserWorkouts,
-  getDailyConsumption,
-  addDailyConsumption,
-  setDailyConsumption,
-  createWorkoutPlan,
-  getWorkoutDetails,
-  completeWorkout,
-  addMeasurement,
-  uploadProgressPhotos,
-  getMeasurementDetails,
-  syncUserPreferences,
-  getUserDiets,
-  getNotifications,
-  completeOnboarding,
-  getAllCredits,
-  getExerciseMetadata,
-  getUserPhotos,
-  uploadProfilePhoto,
-  getPlans,
-  cancelSubscription,
-  getWorkoutRequests,
-  getDietRequests,
-  requestDietPlan,
-  purchaseCredits,
-  getCreditPackages,
-  markNotificationRead,
-  checkPaymentStatus,
-  createSubscriptionRedirect,
-  processPayment,
-  confirmStatus,
-  confirmPayment,
-  requestWorkoutPlan,
-  getUserStreaks,
-  getLeaderboard,
-  processPixPayment,
-};
-
-export default apiClient;

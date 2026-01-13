@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import apiClient, {
+import {
+  getMeasurementDetails,
   isApiError,
   // type MeasurementDetailsResponse,
 } from "../../../api/apiClient";
@@ -53,9 +54,7 @@ export default function MeasurementDetailsPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await apiClient.getMeasurementDetails(
-          parseInt(id, 10)
-        );
+        const response = await getMeasurementDetails(parseInt(id, 10));
         setData(response);
       } catch (err) {
         if (isApiError(err)) {

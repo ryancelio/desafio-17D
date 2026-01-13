@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import apiClient, { isApiError } from "../../../api/apiClient";
+import {
+  getExerciseMetadata,
+  getExercises,
+  isApiError,
+} from "../../../api/apiClient";
 import {
   // LuLoaderCircle as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
@@ -24,7 +28,7 @@ const SkeletonCard = () => (
     {/* Imagem Skeleton */}
     <div className="aspect-video w-full bg-gray-200 relative overflow-hidden">
       <div
-        className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer"
+        className="absolute inset-0 bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 animate-shimmer"
         style={{ backgroundSize: "200% 100%" }}
       ></div>
     </div>
@@ -273,7 +277,7 @@ export default function ExercisesPage() {
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const metadata = await apiClient.getExerciseMetadata();
+        const metadata = await getExerciseMetadata();
         setAvailableMuscles(metadata.musculos);
         setAvailableTags(metadata.tags);
       } catch (err) {
@@ -296,7 +300,7 @@ export default function ExercisesPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await apiClient.getExercises(filters);
+        const data = await getExercises(filters);
         setExercises(data);
       } catch (err) {
         if (isApiError(err)) {

@@ -1,5 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
-import apiClient, { isApiError } from "../../../api/apiClient";
+import {
+  addDailyConsumption,
+  getDailyConsumption,
+  getUserStreaks,
+  getWeightHistory,
+  isApiError,
+  setDailyConsumption,
+  updateUserProfile,
+} from "../../../api/apiClient";
 import {
   Loader2,
   Calendar,
@@ -251,9 +259,9 @@ export default function Dashboard() {
       try {
         const [historyData, nutritionResponse, streaksData] = await Promise.all(
           [
-            apiClient.getWeightHistory(),
-            apiClient.getDailyConsumption(),
-            apiClient.getUserStreaks().catch(() => ({
+            getWeightHistory(),
+            getDailyConsumption(),
+            getUserStreaks().catch(() => ({
               nutrition: {
                 current: 0,
                 max: 0,
@@ -362,8 +370,8 @@ export default function Dashboard() {
     try {
       let newTotals: DailyConsumption;
 
-      if (mode === "add") newTotals = await apiClient.addDailyConsumption(data);
-      else newTotals = await apiClient.setDailyConsumption(data);
+      if (mode === "add") newTotals = await addDailyConsumption(data);
+      else newTotals = await setDailyConsumption(data);
 
       setNutritionData({
         consumed: newTotals,
@@ -371,7 +379,7 @@ export default function Dashboard() {
       });
 
       try {
-        const updatedStreaks = await apiClient.getUserStreaks();
+        const updatedStreaks = await getUserStreaks();
         setStreaks(updatedStreaks);
       } catch (streakErr) {
         console.error("Erro ao atualizar streak visual:", streakErr);
@@ -385,7 +393,7 @@ export default function Dashboard() {
 
   const handleSavePesoAlvo = async (novoPesoAlvo: number) => {
     try {
-      await apiClient.updateUserProfile({ peso_alvo_kg: novoPesoAlvo });
+      await updateUserProfile({ peso_alvo_kg: novoPesoAlvo });
       if (profile) await refetchProfile();
       setEditPesoAlvoModalOpen(false);
     } catch (err) {

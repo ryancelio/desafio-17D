@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate, Link } from "react-router"; // 👈 ATUALIZADO
 import { FaUserPlus } from "react-icons/fa6";
-import apiClient, { isApiError } from "../api/apiClient"; // 👈 NOVO
+import { isApiError, syncUser } from "../api/apiClient"; // 👈 NOVO
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -44,7 +44,7 @@ export default function SignUpPage() {
 
       // 2. 👈 ATUALIZADO: Sincroniza o usuário com o backend MySQL
       // Removemos a lógica do Firestore e chamamos nossa API.
-      await apiClient.syncUser({
+      await syncUser({
         nome: email.split("@")[0] || "", // Envia um nome padrão
       });
 

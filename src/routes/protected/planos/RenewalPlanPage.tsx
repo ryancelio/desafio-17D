@@ -15,10 +15,10 @@ import { toast } from "sonner";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-import apiClient from "../../../api/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import type { IPaymentBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/payment/type";
 import type { Plan } from "../../../types/api-types";
+import { getPlans, processPayment } from "../../../api/apiClient";
 
 // Chave Pública
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST || "";
@@ -51,7 +51,7 @@ export default function RenewPlanPage() {
       try {
         // Buscamos a lista de planos para pegar o preço ATUALIZADO e nome
         // (Idealmente poderia ter um endpoint getPlan(id), mas filtrar a lista funciona)
-        const plans = await apiClient.getPlans(); // Assumindo que você tem esse método
+        const plans = await getPlans(); // Assumindo que você tem esse método
         const found = plans.find((p) => p.id === currentPlanId);
 
         if (found) {
@@ -92,7 +92,7 @@ export default function RenewPlanPage() {
       // Payload compatível com process_payment.php
 
       // Usa a função existente que chama /api/process_payment.php
-      const result = await apiClient.processPayment(
+      const result = await processPayment(
         formData,
         targetPlan.id.toString(),
         "annually"

@@ -12,6 +12,7 @@ import AdminRecipeEditor from "../admin/AdminRecipeEditor";
 import AdminRecipesPage from "../admin/AdminRecipesPage";
 import AdminSalesRecoveryPage from "../admin/AdminSalesRecoveryPage";
 import AdminWorkoutRequestsPage from "../admin/AdminWorkoutRequestsPage";
+import AdminAuthLogsPage from "../admin/AdminAuthLogsPage";
 
 export default function AdminRoutes() {
   return (
@@ -42,6 +43,7 @@ export default function AdminRoutes() {
         <Route path="dietas/pedidos" element={<AdminDietRequestsPage />} />
         <Route path="dietas/pedidos/criar" element={<AdminCreateDietPage />} />
         <Route path="leads" element={<AdminSalesRecoveryPage />} />
+        <Route path="logs" element={<AdminAuthLogsPage />} />
 
         {/* Redireciona /admin para dashboard */}
         <Route index element={<AdminDashboard />} />

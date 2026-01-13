@@ -7,7 +7,7 @@ import {
   LuUtensils,
   LuUser,
 } from "react-icons/lu";
-import apiClient from "../../api/apiClient"; // Assumindo que você criou o método getLeaderboard
+import { getLeaderboard } from "../../api/apiClient";
 
 // Tipos
 interface LeaderboardItem {
@@ -31,8 +31,7 @@ export default function LeaderboardPage() {
     const fetch = async () => {
       setLoading(true);
       try {
-        // Ex: apiClient.get("/get_leaderboard.php?type=" + activeTab)
-        const data = await apiClient.getLeaderboard(activeTab);
+        const data = await getLeaderboard(activeTab);
         setList(data.list);
         setUserRank(data.user_rank);
       } catch (error) {
@@ -64,11 +63,11 @@ export default function LeaderboardPage() {
           : "bg-white border-gray-100"
       }`}
     >
-      <div className="flex-shrink-0 w-10 flex justify-center">
+      <div className="shrink-0 w-10 flex justify-center">
         {renderRankIcon(item.rank)}
       </div>
 
-      <div className="flex-shrink-0 ml-4">
+      <div className="shrink-0 ml-4">
         {item.photo ? (
           <img
             src={item.photo}

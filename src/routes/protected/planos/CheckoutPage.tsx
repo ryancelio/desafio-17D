@@ -15,7 +15,12 @@ import {
   LuHeadset,
 } from "react-icons/lu";
 import { toast } from "sonner";
-import apiClient from "../../../api/apiClient";
+import {
+  createSubscriptionRedirect,
+  processPayment,
+  processPixPayment,
+  isApiError,
+} from "../../../api/apiClient";
 
 // Função auxiliar de máscara
 const cpfMask = (value: string) => {
@@ -54,13 +59,20 @@ export default function CheckoutPage() {
   const isMonthly = selectedPlan?.planType === "monthly";
 
   // --- TRATAMENTO DE ERROS DE PROMOÇÃO ---
-  const handleCheckoutError = (error: any) => {
+  const handleCheckoutError = (error: unknown) => {
     console.error(error);
-    const msg =
-      error.response?.data?.error || error.message || "Erro ao processar.";
+    let msg = "Erro ao processar.";
+    let status = 0;
+
+    if (isApiError(error)) {
+      msg = error.response?.data?.error || error.message;
+      status = error.response?.status || 0;
+    } else if (error instanceof Error) {
+      msg = error.message;
+    }
 
     // Se o erro for de escassez (409 Conflict vindo do PHP)
-    if (error.response?.status === 409 || msg.includes("esgotada")) {
+    if (status === 409 || msg.includes("esgotada")) {
       toast.error("Promoção Esgotada!", {
         description: "Infelizmente as vagas para este plano acabaram agora.",
         duration: 5000,
@@ -77,7 +89,7 @@ export default function CheckoutPage() {
   const handleMonthlyRedirect = async () => {
     setLoading(true);
     try {
-      const data = await apiClient.createSubscriptionRedirect(
+      const data = await createSubscriptionRedirect(
         selectedPlan?.plan_id,
         "monthly"
       );
@@ -86,7 +98,7 @@ export default function CheckoutPage() {
       } else {
         throw new Error(data.error || "Erro ao gerar link de pagamento.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       handleCheckoutError(error);
     }
   };
@@ -148,7 +160,7 @@ export default function CheckoutPage() {
           return;
         }
 
-        result = await apiClient.processPixPayment({
+        result = await processPixPayment({
           db_plan_id: selectedPlan?.plan_id,
           doc_number: finalCpf,
           payment_method_id: "pix",
@@ -159,7 +171,7 @@ export default function CheckoutPage() {
           formData.payer.identification = { type: "CPF", number: finalCpf };
         }
 
-        result = await apiClient.processPayment(
+        result = await processPayment(
           formData,
           selectedPlan?.plan_id,
           "annually"
@@ -172,7 +184,7 @@ export default function CheckoutPage() {
       } else {
         throw new Error("Resposta inválida do servidor.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       handleCheckoutError(error);
     }
   };

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../../context/AuthContext";
-import apiClient from "../../../api/apiClient";
 import {
   updateProfile,
   updatePassword,
@@ -27,11 +26,18 @@ import {
 } from "lucide-react";
 import type {
   DiaSemana,
+  Genero,
   NivelAtividade,
   Objetivo,
   UserPreference,
   UserProfile,
 } from "../../../types/models";
+import {
+  getUserPreferences,
+  syncUserPreferences,
+  updateUserProfile,
+  isApiError,
+} from "../../../api/apiClient";
 
 // --- Função Auxiliar de Máscara ---
 const formatPhone = (value: string) => {
@@ -150,7 +156,7 @@ export default function EditProfilePage() {
 
     const fetchPrefs = async () => {
       try {
-        const prefs = await apiClient.getUserPreferences();
+        const prefs = await getUserPreferences();
         setPreferences(prefs);
       } catch (err) {
         console.error("Erro prefs", err);
@@ -200,7 +206,7 @@ export default function EditProfilePage() {
           ...userProfile.profile,
           data_nascimento: dataNascimento,
           altura_cm: Number(alturaCm) || 0,
-          genero: genero as any,
+          genero: genero as Genero,
           objetivo: objetivo,
           local_treino: localTreino,
           peso_alvo: Number(pesoAlvo) || 0,
@@ -209,8 +215,8 @@ export default function EditProfilePage() {
         },
       };
 
-      await apiClient.updateUserProfile(updates);
-      await apiClient.syncUserPreferences(preferences);
+      await updateUserProfile(updates);
+      await syncUserPreferences(preferences);
 
       if (nome !== firebaseUser.displayName) {
         await updateProfile(firebaseUser, { displayName: nome });
@@ -229,10 +235,20 @@ export default function EditProfilePage() {
       await refetchProfile();
       setSuccess("Perfil atualizado!");
       setTimeout(() => navigate("/perfil"), 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      if (err.code === "auth/wrong-password") setError("Senha incorreta.");
-      else setError("Erro ao atualizar. Verifique os dados.");
+      let msg = "Erro ao atualizar. Verifique os dados.";
+
+      if (typeof err === "object" && err !== null && "code" in err) {
+        if ((err as { code: string }).code === "auth/wrong-password") {
+          msg = "Senha incorreta.";
+        }
+      } else if (isApiError(err)) {
+        msg = err.response?.data?.error || err.message;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -453,7 +469,7 @@ export default function EditProfilePage() {
 
             {/* Dias de Treino */}
             <div className="pt-2">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-2">
+              <label className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" /> Dias de Treino
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
@@ -507,7 +523,14 @@ export default function EditProfilePage() {
               <div className="w-1/3">
                 <select
                   value={newPrefType}
-                  onChange={(e) => setNewPrefType(e.target.value as any)}
+                  onChange={(e) =>
+                    setNewPrefType(
+                      e.target.value as
+                        | "preferencia"
+                        | "alergia"
+                        | "intolerancia"
+                    )
+                  }
                   className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white outline-none"
                 >
                   {PREFERENCE_TYPES.map((t) => (

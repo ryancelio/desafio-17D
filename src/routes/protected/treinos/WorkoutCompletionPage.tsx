@@ -11,8 +11,8 @@ import {
   LuShieldCheck,
   LuTriangleAlert,
 } from "react-icons/lu";
-import apiClient from "../../../api/apiClient";
 import type { WorkoutPlan } from "../../../types/models";
+import { getWorkoutDetails } from "../../../api/apiClient";
 
 const MuscleChip: React.FC<{ muscle: string; index: number }> = ({
   muscle,
@@ -46,7 +46,7 @@ export default function WorkoutCompletionPage() {
         return;
       }
       try {
-        const data = await apiClient.getWorkoutDetails(parseInt(id, 10));
+        const data = await getWorkoutDetails(parseInt(id, 10));
         setPlan(data);
       } catch {
         setError("Não foi possível carregar os detalhes do treino.");

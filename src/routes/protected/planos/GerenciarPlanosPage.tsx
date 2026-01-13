@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router";
-import apiClient from "../../../api/apiClient";
 import {
   CalendarClock as LuCalendarClock,
   AlertTriangle,
@@ -18,6 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { Plan } from "../../../types/api-types";
 import { toast } from "sonner";
+import { cancelSubscription, getPlans } from "../../../api/apiClient";
 
 export default function SubscriptionPage() {
   const { userProfile, refetchProfile, loading: authLoading } = useAuth();
@@ -34,7 +34,7 @@ export default function SubscriptionPage() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const data = await apiClient.getPlans();
+        const data = await getPlans();
 
         const sortedData = data.sort((a, b) => {
           if (a.is_featured && !b.is_featured) return -1;
@@ -83,7 +83,7 @@ export default function SubscriptionPage() {
   const handleCancelSubscription = async () => {
     setIsProcessing(true);
     try {
-      await apiClient.cancelSubscription();
+      await cancelSubscription();
       await refetchProfile();
       setShowCancelModal(false);
       toast.success("Assinatura cancelada com sucesso.");

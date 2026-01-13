@@ -9,8 +9,8 @@ import {
   LuChefHat,
   LuExternalLink,
 } from "react-icons/lu";
-import apiClient from "../../../../api/apiClient";
 import type { DietPlanResponse } from "../../../../types/api-types";
+import { getUserDiets } from "../../../../api/apiClient";
 
 export default function DietDetailsPage() {
   const { id } = useParams();
@@ -21,7 +21,7 @@ export default function DietDetailsPage() {
   const [openMeal, setOpenMeal] = useState<number | null>(null);
 
   useEffect(() => {
-    apiClient.getUserDiets().then((diets) => {
+    getUserDiets().then((diets) => {
       // TypeScript infere que 'diets' é GetUserDietsResponse
       const found = diets.find((d) => d.plan_id.toString() === id);
 

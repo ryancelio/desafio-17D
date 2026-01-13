@@ -7,7 +7,7 @@ import {
   LuLoader,
 } from "react-icons/lu";
 import { motion } from "framer-motion";
-import apiClient from "../../../api/apiClient";
+import { confirmPayment, getPlans } from "../../../api/apiClient";
 
 declare global {
   interface Window {
@@ -56,10 +56,7 @@ export const Sucesso: React.FC = () => {
       if (!firebaseUser) return;
 
       try {
-        const data = await apiClient.confirmPayment(
-          preapprovalId || "",
-          paymentId || ""
-        );
+        const data = await confirmPayment(preapprovalId || "", paymentId || "");
 
         if (data.status === "active" || data.status === "approved") {
           setStatus("success");
@@ -68,7 +65,7 @@ export const Sucesso: React.FC = () => {
           if (!pixelTracked.current && typeof window.fbq !== "undefined") {
             pixelTracked.current = true; // Marca como rastreado imediatamente
 
-            const plan = (await apiClient.getPlans()).filter(
+            const plan = (await getPlans()).filter(
               (plan) => searchParams.get("plan_id") == String(plan.id)
             )[0];
 

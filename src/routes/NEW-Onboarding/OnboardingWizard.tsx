@@ -31,7 +31,6 @@ import { Checkout } from "./Steps/Checkout";
 // Imports Firebase
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../../firebase";
-import apiClient from "../../api/apiClient";
 import TelefoneStep from "./Steps/TelefoneStep";
 import LocalTreinoStep from "./Steps/LocalTreinoStep";
 import SocialProofStep from "./Steps/SocialProofStep";
@@ -39,6 +38,7 @@ import FeaturesStep from "./Steps/FeaturesStep";
 import FeaturesDetailedStep from "./Steps/FeaturesDetailedStep";
 import PreferenciasStep from "./Steps/PreferenciaStep";
 import { toast } from "sonner";
+import { completeOnboarding, uploadProgressPhotos } from "../../api/apiClient";
 
 export interface StepProps {
   onboardingData: OnboardingState;
@@ -144,9 +144,7 @@ const OnboardingWizard: React.FC = () => {
     ) {
       try {
         // Usa o novo endpoint PHP
-        photoUrls = await apiClient.uploadProgressPhotos(
-          onboardingData.fotosProgresso
-        );
+        photoUrls = await uploadProgressPhotos(onboardingData.fotosProgresso);
       } catch (uploadError) {
         toast.error("Falha ao enviar fotos");
         console.error("Erro ao enviar fotos:", uploadError);
@@ -165,7 +163,7 @@ const OnboardingWizard: React.FC = () => {
       photos: photoUrls,
     };
 
-    const response = await apiClient.completeOnboarding(payload);
+    const response = await completeOnboarding(payload);
 
     console.log(payload);
     console.log(response);

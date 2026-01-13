@@ -14,7 +14,11 @@ import {
   LuStickyNote,
 } from "react-icons/lu";
 import { motion, AnimatePresence } from "framer-motion";
-import apiClient, { isApiError } from "../../../api/apiClient"; // A interface WorkoutPrescriptionInput é usada implicitamente
+import {
+  createWorkoutPlan,
+  getExercises,
+  isApiError,
+} from "../../../api/apiClient"; // A interface WorkoutPrescriptionInput é usada implicitamente
 import type { Exercise } from "../../../types/models";
 import type { CreateWorkoutExerciseInput } from "../../../types/api-types";
 
@@ -35,7 +39,7 @@ const ExerciseSelectorModal: React.FC<{
       setIsLoading(true);
       try {
         // Reutiliza sua API de exercícios com filtro
-        const data = await apiClient.getExercises({ search: searchTerm });
+        const data = await getExercises({ search: searchTerm });
         setExercises(data);
       } catch (err) {
         console.error(err);
@@ -326,7 +330,7 @@ export default function CreateWorkoutPlanPage() {
     setError(null);
 
     try {
-      await apiClient.createWorkoutPlan({
+      await createWorkoutPlan({
         nome: planName,
         // Remove a propriedade 'name' que só existe na UI antes de enviar para a API
         exercises: exercises.map(({ ...rest }) => rest),

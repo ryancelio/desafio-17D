@@ -268,6 +268,21 @@ const getPendingLeads = async (): Promise<PendingLead[]> => {
   const response = await axiosInstance.get("/pending_leads.php");
   return response.data;
 };
+const getAuthLogs = async (page = 1, limit = 50, email = "", status = "") => {
+  // Constrói query string
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (email) params.append("email", email);
+  if (status) params.append("status", status);
+
+  const response = await axiosInstance.get(
+    `/auth_logs.php?${params.toString()}`
+  );
+  return response.data; // Espera { data: [], pagination: {} }
+};
 
 // -----------------------------------------------------------
 
@@ -325,4 +340,5 @@ export {
   getWorkoutRequests,
   completeWorkoutRequest,
   getPendingLeads,
+  getAuthLogs,
 };

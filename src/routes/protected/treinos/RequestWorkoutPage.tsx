@@ -12,8 +12,8 @@ import {
 import { LuArrowLeft } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import BuyMoreModal from "../components/BuyMoreModal";
-import apiClient from "../../../api/apiClient";
 import type { RequestForm } from "../../../types/api-types";
+import { getAllCredits, requestWorkoutPlan } from "../../../api/apiClient";
 
 export default function RequestWorkoutPage() {
   const [status, setStatus] = useState<
@@ -40,7 +40,7 @@ export default function RequestWorkoutPage() {
   useEffect(() => {
     const loadCredits = async () => {
       try {
-        const data = await apiClient.getAllCredits();
+        const data = await getAllCredits();
         // Pega o total restante (Plano + Extra)
         const total = data.workout?.details?.total_remaining || 0;
         setMaxAllowed(total);
@@ -68,7 +68,7 @@ export default function RequestWorkoutPage() {
     setStatus("loading");
     setErrorMsg("");
     try {
-      const res = await apiClient.requestWorkoutPlan(data);
+      const res = await requestWorkoutPlan(data);
 
       if (res.error === "limit_reached") {
         setLimitReached(true);

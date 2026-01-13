@@ -14,11 +14,15 @@ import {
   QrCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import apiClient from "../../../api/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import { toast } from "sonner";
 import type { IPaymentBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/payment/type";
 import type { CreditPackage, PixData } from "../../../types/api-types";
+import {
+  checkPaymentStatus,
+  getCreditPackages,
+  purchaseCredits,
+} from "../../../api/apiClient";
 
 // Defina sua chave pública aqui
 const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY_TEST || "";
@@ -58,7 +62,7 @@ export default function BuyCreditsPage() {
       setLoadingPackages(true);
       setSelectedPkg(null); // Reseta seleção se mudar de tipo
       try {
-        const data = await apiClient.getCreditPackages(purchaseType);
+        const data = await getCreditPackages(purchaseType);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedData = data.map((pkg: any) => ({
           ...pkg,
@@ -83,7 +87,7 @@ export default function BuyCreditsPage() {
     pollingRef.current = window.setInterval(async () => {
       try {
         if (!id) return;
-        const res = await apiClient.checkPaymentStatus(id);
+        const res = await checkPaymentStatus(id);
         if (res.status === "approved") {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setShowPixModal(false);
@@ -110,7 +114,7 @@ export default function BuyCreditsPage() {
         credits_amount: selectedPkg.credits,
       };
 
-      const result = await apiClient.purchaseCredits(payload);
+      const result = await purchaseCredits(payload);
 
       if (result.status === "approved") {
         toast.success(

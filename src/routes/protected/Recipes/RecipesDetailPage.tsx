@@ -10,8 +10,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import apiClient from "../../../api/apiClient";
 import type { Recipe } from "../../../types/models";
+import { getRecipes } from "../../../api/apiClient";
 
 // Componente para exibir os Macros Nutricionais
 const MacroBadge = ({
@@ -46,7 +46,7 @@ export default function RecipeDetailsPage() {
       if (!id) return;
       try {
         setLoading(true);
-        const data = await apiClient.getRecipes({ id: Number(id) });
+        const data = await getRecipes({ id: Number(id) });
         setRecipe(data[0]);
       } catch (err) {
         console.error(err);

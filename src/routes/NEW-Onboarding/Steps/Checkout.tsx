@@ -15,8 +15,12 @@ import {
   LuUser,
 } from "react-icons/lu";
 import { toast } from "sonner";
-import apiClient from "../../../api/apiClient";
 import type { IStatusScreenBrickCustomization } from "@mercadopago/sdk-react/esm/bricks/statusScreen/types";
+import {
+  createSubscriptionRedirect,
+  processPayment,
+  processPixPayment,
+} from "../../../api/apiClient";
 
 // Função simples de máscara de CPF
 const cpfMask = (value: string) => {
@@ -93,7 +97,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
   const handleMonthlyRedirect = async () => {
     setLoading(true);
     try {
-      const data = await apiClient.createSubscriptionRedirect(
+      const data = await createSubscriptionRedirect(
         String(selectedPlan?.plan_id),
         "monthly"
       );
@@ -162,7 +166,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
           return;
         }
 
-        result = await apiClient.processPixPayment({
+        result = await processPixPayment({
           db_plan_id: String(selectedPlan?.plan_id),
           doc_number: finalCpf, // Envia o CPF manual ou do brick
           payment_method_id: "pix",
@@ -174,7 +178,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
           formData.payer.identification = { type: "CPF", number: finalCpf };
         }
 
-        result = await apiClient.processPayment(
+        result = await processPayment(
           formData,
           String(selectedPlan?.plan_id),
           "annually"
@@ -310,7 +314,7 @@ export const Checkout: React.FC<StepProps> = ({ onboardingData }) => {
           >
             {/* 2. INPUT DE CPF MANUAL (ACIMA DO BRICK) */}
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+              <label className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
                 <LuUser className="text-gray-400" /> CPF do Titular
               </label>
               <input

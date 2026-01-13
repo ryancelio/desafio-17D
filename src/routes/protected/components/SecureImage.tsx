@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import apiClient from "../../../api/apiClient"; // Seu cliente axios configurado
 import { LuImageOff, LuLoader } from "react-icons/lu";
+import { getUserPhotos } from "../../../api/apiClient";
 
 interface SecureImageProps {
   src: string; // O caminho que vem do banco (ex: /uploads/...)
@@ -27,7 +27,7 @@ export const SecureImage: React.FC<SecureImageProps> = ({
         setLoading(true);
         // Chama o endpoint PHP passando o caminho
         // Importante: responseType 'blob' para imagens
-        const response = await apiClient.getUserPhotos(src);
+        const response = await getUserPhotos(src);
 
         if (isMounted) {
           // Cria uma URL temporária local para o blob baixado

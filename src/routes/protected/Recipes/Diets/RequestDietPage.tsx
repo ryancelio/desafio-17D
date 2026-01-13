@@ -17,8 +17,8 @@ import {
   LuCircleAlert,
 } from "react-icons/lu";
 import { useAuth } from "../../../../context/AuthContext";
-import apiClient from "../../../../api/apiClient";
 import type { DietRequestPayload } from "../../../../types/models";
+import { getUserPreferences, requestDietPlan } from "../../../../api/apiClient";
 
 // Helper para calcular idade
 const calculateAge = (dateString?: string | null) => {
@@ -80,7 +80,7 @@ export default function RequestDietPage() {
     const fetchPreferences = async () => {
       if (!firebaseUser) return;
       try {
-        const data = await apiClient.getUserPreferences();
+        const data = await getUserPreferences();
 
         if (Array.isArray(data) && data.length > 0) {
           const formattedText = data
@@ -108,7 +108,7 @@ export default function RequestDietPage() {
     setStatus("loading");
     setErrorMsg("");
     try {
-      const res = await apiClient.requestDietPlan(data);
+      const res = await requestDietPlan(data);
 
       if (res.success) {
         // Redireciona para /dietas passando um state para exibir o Toast de sucesso lá

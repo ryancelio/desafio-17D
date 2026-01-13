@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import apiClient, { isApiError } from "../../../api/apiClient";
+import { getRecipes, isApiError } from "../../../api/apiClient";
 import {
   LuLoaderCircle as LuLoader2,
   LuTriangleAlert as LuAlertTriangle,
@@ -312,7 +312,7 @@ export default function RecipesPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const recipesData = await apiClient.getRecipes(filters);
+        const recipesData = await getRecipes(filters);
         setRecipes(recipesData);
       } catch (err) {
         if (isApiError(err)) {

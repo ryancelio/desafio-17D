@@ -15,7 +15,7 @@ import { Checkout } from "../../NEW-Onboarding/Steps/Checkout";
 // Tipagem parcial para compatibilidade
 import type { OnboardingState } from "../../../types/onboarding.schema";
 import type { SubscriptionDetails } from "../../../types/models";
-import apiClient from "../../../api/apiClient";
+import { getUserProfile } from "../../../api/apiClient";
 
 export default function ChangePlanPage() {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ export default function ChangePlanPage() {
   useEffect(() => {
     const fetchCurrent = async () => {
       try {
-        const data = await apiClient.getUserProfile();
+        const data = await getUserProfile();
         setCurrentPlan(data.subscription);
       } catch (err) {
         console.error("Erro ao carregar plano atual", err);
@@ -151,7 +151,7 @@ export default function ChangePlanPage() {
               transition={{ duration: 0.3 }}
             >
               <PlanosStep
-                onboardingData={onboardingData as any}
+                onboardingData={onboardingData as OnboardingState}
                 updateOnboardingData={updateOnboardingData}
                 setStepvalid={setStepValid}
                 setStep={() => {}} // No-op
@@ -168,7 +168,7 @@ export default function ChangePlanPage() {
               transition={{ duration: 0.3 }}
             >
               <Checkout
-                onboardingData={onboardingData as any}
+                onboardingData={onboardingData as OnboardingState}
                 updateOnboardingData={updateOnboardingData}
                 setStepvalid={setStepValid}
                 setStep={() => {}}

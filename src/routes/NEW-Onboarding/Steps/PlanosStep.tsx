@@ -11,8 +11,8 @@ import {
   LuTrophy,
   LuUsers,
 } from "react-icons/lu";
-import apiClient from "../../../api/apiClient";
 import type { Plan } from "../../../types/api-types";
+import { getPlans } from "../../../api/apiClient";
 
 type Faturamento = "monthly" | "annual";
 
@@ -48,7 +48,7 @@ export const PlanosStep: React.FC<StepProps> = ({
       try {
         setLoading(true);
         setError(null);
-        const data = await apiClient.getPlans(true);
+        const data = await getPlans(true);
 
         if (Array.isArray(data)) {
           // --- LÓGICA DE ORDENAÇÃO CORRIGIDA ---
@@ -292,7 +292,7 @@ export const PlanosStep: React.FC<StepProps> = ({
                           isFeatured ? "ring-indigo-600/20" : "ring-gray-200"
                         }`
                       : isFeatured
-                      ? "border-2 border-indigo-200 bg-gradient-to-br from-white to-indigo-50/50 shadow-lg hover:border-indigo-400 hover:shadow-indigo-100"
+                      ? "border-2 border-indigo-200 bg-linear-to-br from-white to-indigo-50/50 shadow-lg hover:border-indigo-400 hover:shadow-indigo-100"
                       : "border border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md opacity-90"
                   }
                 `}
@@ -312,7 +312,7 @@ export const PlanosStep: React.FC<StepProps> = ({
                   <>
                     {isScarcityPlan ? (
                       // 1. BARRA DE VAGAS RESTANTES
-                      <div className="bg-gradient-to-r from-red-600 to-orange-600 py-2 px-4 flex justify-between items-center text-white">
+                      <div className="bg-linear-to-r from-red-600 to-orange-600 py-2 px-4 flex justify-between items-center text-white">
                         <div className="flex items-center gap-2">
                           <LuUsers className="w-4 h-4 text-white" />
                           <span className="text-[11px] font-bold tracking-wide uppercase">
@@ -325,7 +325,7 @@ export const PlanosStep: React.FC<StepProps> = ({
                       </div>
                     ) : (
                       // 2. BARRA DE TIMER
-                      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 py-2 px-4 flex justify-between items-center text-white">
+                      <div className="bg-linear-to-r from-indigo-600 to-violet-600 py-2 px-4 flex justify-between items-center text-white">
                         <div className="flex items-center gap-2">
                           <LuTrophy className="w-4 h-4 text-yellow-300" />
                           <span className="text-[11px] font-bold tracking-wide uppercase">
@@ -401,7 +401,7 @@ export const PlanosStep: React.FC<StepProps> = ({
                   </div>
 
                   {/* Preço */}
-                  <div className="flex flex-col justify-center items-start sm:items-end border-t sm:border-t-0 sm:border-l border-gray-100/50 pt-4 sm:pt-0 sm:pl-5 mt-2 sm:mt-0 min-w-[100px]">
+                  <div className="flex flex-col justify-center items-start sm:items-end border-t sm:border-t-0 sm:border-l border-gray-100/50 pt-4 sm:pt-0 sm:pl-5 mt-2 sm:mt-0 min-w-25">
                     <span className="text-xs text-gray-400 line-through font-semibold mb-0.5">
                       De {formatCurrency(originalPrice)}
                     </span>

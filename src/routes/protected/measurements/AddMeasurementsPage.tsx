@@ -12,7 +12,7 @@ import {
   LuTriangleAlert as LuAlertTriangle,
   LuRuler,
 } from "react-icons/lu";
-import apiClient from "../../../api/apiClient";
+import { addMeasurement } from "../../../api/apiClient";
 
 // --- Tipos ---
 type MeasurementData = {
@@ -134,7 +134,7 @@ export default function AddMeasurementsPage() {
     });
 
     try {
-      await apiClient.addMeasurement(formData);
+      await addMeasurement(formData);
       setStatus("success");
       // Redireciona para o dashboard após 2 segundos
       setTimeout(() => navigate("/dashboard"), 2000);

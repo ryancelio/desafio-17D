@@ -12,9 +12,9 @@ import {
   LuCalendarClock,
   LuBanknote,
 } from "react-icons/lu";
-import apiClient from "../../api/apiClient";
 import LandingLayout from "./LandingLayout";
 import type { Plan } from "../../types/api-types";
+import { getPlans } from "../../api/apiClient";
 
 // --- COMPONENTES AUXILIARES ---
 
@@ -66,7 +66,7 @@ export default function PlansPage() {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const data = await apiClient.getPlans(true);
+        const data = await getPlans(true);
 
         // ORDENAÇÃO: Featured primeiro, depois menor preço
         const sortedData = data.sort((a, b) => {
@@ -231,9 +231,9 @@ export default function PlansPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className={`relative p-8 rounded-[2rem] border-2 flex flex-col h-full transition-all duration-300 ${
+                    className={`relative p-8 rounded-4xl border-2 flex flex-col h-full transition-all duration-300 ${
                       isFeatured
-                        ? "bg-white border-pasPink shadow-2xl z-10 scale-105 md:scale-110 order-first md:order-none"
+                        ? "bg-white border-pasPink shadow-2xl z-10 scale-105 md:scale-110 order-first md:order-0"
                         : "bg-white border-gray-100 shadow-xl opacity-90 hover:opacity-100 hover:border-gray-200"
                     }`}
                   >
@@ -276,7 +276,7 @@ export default function PlansPage() {
                         </div>
 
                         {/* Detalhes do Pagamento */}
-                        <div className="mt-3 min-h-[60px]">
+                        <div className="mt-3 min-h-15">
                           {billingCycle === "annual" ? (
                             <div className="bg-pasGreen/10 border border-pasGreen/20 rounded-lg p-2.5">
                               <p className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
@@ -404,7 +404,7 @@ export default function PlansPage() {
             <p className="text-gray-500">Tire suas dúvidas antes de começar.</p>
           </div>
 
-          <div className="bg-white rounded-[2rem] p-6 md:p-10 shadow-sm border border-gray-100">
+          <div className="bg-white rounded-4xl p-6 md:p-10 shadow-sm border border-gray-100">
             <FaqItem
               question="Posso cancelar a qualquer momento?"
               answer="Sim! No plano mensal, você pode cancelar quando quiser e terá acesso até o fim do ciclo. No plano anual, você garante o desconto e o acesso pelos 12 meses."
